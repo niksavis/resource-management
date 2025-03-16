@@ -19,11 +19,10 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
     utilization_df = calculate_resource_utilization(df)
 
     # Create a mapping of resources to their utilization percentage for coloring
-    utilization_map = {}
-    overallocation_map = {}
-    for _, row in utilization_df.iterrows():
-        utilization_map[row["Resource"]] = row["Utilization %"]
-        overallocation_map[row["Resource"]] = row["Overallocation %"]
+    utilization_map = utilization_df.set_index("Resource")["Utilization %"].to_dict()
+    overallocation_map = utilization_df.set_index("Resource")[
+        "Overallocation %"
+    ].to_dict()
 
     # Add utilization data to the dataframe
     df["Utilization %"] = df["Resource"].map(utilization_map)
@@ -83,7 +82,6 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
     for i, resource in enumerate(df["Resource"].unique()):
         overallocation = overallocation_map.get(resource, 0)
         if overallocation > 0:
-            # Add a colored rectangle to highlight overallocated resources
             fig.add_shape(
                 type="rect",
                 x0=df["Start"].min(),

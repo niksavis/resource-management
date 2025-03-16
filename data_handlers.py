@@ -193,28 +193,18 @@ def filter_dataframe(
         for i, col in enumerate(columns):
             with col_filters[i % 4]:
                 if df[col].dtype == "object" or df[col].dtype == "string":
-                    # Handle None values properly before sorting
-                    unique_values = list(df[col].unique())
-                    # Filter out None values, sort the rest, then add None back if it existed
-                    non_none_values = [val for val in unique_values if val is not None]
-                    sorted_values = sorted(non_none_values)
-                    if None in unique_values:
-                        sorted_values = [None] + sorted_values
-
-                    if (
-                        len(sorted_values) < 15
-                    ):  # Only show multiselect for reasonable number of options
+                    unique_values = sorted(df[col].dropna().unique())
+                    if len(unique_values) < 15:
                         selected = st.multiselect(
                             f"Filter {col}",
-                            options=sorted_values,
-                            format_func=lambda x: "None" if x is None else x,
+                            options=unique_values,
                             default=[],
                             key=f"filter_{key}_{col}",
                         )
                         if selected:
                             active_filters[col] = selected
 
-        # Apply search term across all columns with safer string conversion
+        # Apply search term across all columns
         if search_term:
             mask = np.column_stack(
                 [
@@ -231,7 +221,7 @@ def filter_dataframe(
         for col, values in active_filters.items():
             df = df[df[col].isin(values)]
 
-        # Sorting with proper NaN handling
+        # Sorting
         if not df.empty:
             sort_options = ["None"] + list(df.columns)
             sort_col = st.selectbox("Sort by", options=sort_options, key=f"sort_{key}")
@@ -298,3 +288,46 @@ def find_resource_conflicts(df: pd.DataFrame) -> List[Dict]:
                                 }
                             )
     return conflicts
+
+
+def parse_resources(resources_list):
+    people_names = [person["name"] for person in st.session_state.data["people"]]
+    team_names = [team["name"] for team in st.session_state.data["teams"]]
+    """
+    Parses the assigned resources into people, teams, and departments.
+    """
+    assigned_people = []
+    assigned_teams = []
+    assigned_departments = set()
+
+    for r in resources_list:
+        if r in people_names:
+            assigned_people.append(r)
+            # Add the person's department
+            person_data = next(
+                (p for p in st.session_state.data["people"] if p["name"] == r),
+                None,
+            )
+            if person_data and person_data["department"]:
+                assigned_departments.add(person_data["department"])
+        elif r in team_names:
+            assigned_teams.append(r)
+            # Add the departments of all team members
+            team_data = next(
+                (t for t in st.session_state.data["teams"] if t["name"] == r),
+                None,
+            )
+            if team_data and team_data["members"]:
+                for member in team_data["members"]:
+                    person_data = next(
+                        (
+                            p
+                            for p in st.session_state.data["people"]
+                            if p["name"] == member
+                        ),
+                        None,
+                    )
+                    if person_data and person_data["department"]:
+                        assigned_departments.add(person_data["department"])
+
+    return assigned_people, assigned_teams, list(assigned_departments)

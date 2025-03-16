@@ -1,5 +1,6 @@
 import streamlit as st
 from typing import List, Dict
+import pandas as pd
 
 
 def delete_resource(resource_list: List[Dict], resource_name: str) -> bool:
@@ -489,3 +490,203 @@ def department_crud_form() -> None:
 
                                     st.success(f"Updated {selected_dept} to {new_name}")
                                     st.rerun()
+
+
+def add_project_form():
+    """
+    Form for adding a new project.
+    """
+    with st.expander("Add new project", expanded=False):
+        with st.form("add_project_form"):
+            st.write("Add new project")
+            name = st.text_input("Project Name")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                start_date = st.date_input("Start Date")
+            with col2:
+                end_date = st.date_input("End Date")
+
+            priority = st.number_input(
+                "Priority (lower = higher priority)", min_value=1, value=1, step=1
+            )
+
+            # Resource assignment
+            people_options = [
+                p["name"] for p in st.session_state.data["people"] if p["team"] is None
+            ]
+            people_options = list(
+                set(people_options + st.session_state["new_project_people"])
+            )
+            selected_people = st.multiselect(
+                "Select People",
+                people_options,
+                default=st.session_state["new_project_people"],
+            )
+            st.session_state["new_project_people"] = selected_people
+
+            team_options = [t["name"] for t in st.session_state.data["teams"]]
+            team_options = list(
+                set(team_options + st.session_state["new_project_teams"])
+            )
+            selected_teams = st.multiselect(
+                "Select Teams",
+                team_options,
+                default=st.session_state["new_project_teams"],
+            )
+            st.session_state["new_project_teams"] = selected_teams
+
+            submit = st.form_submit_button("Add Project")
+
+            if submit and name and start_date and end_date:
+                if start_date > end_date:
+                    st.error("End date must be after start date.")
+                else:
+                    # Add project
+                    combined_resources = (
+                        st.session_state["new_project_people"]
+                        + st.session_state["new_project_teams"]
+                    )
+                    st.session_state.data["projects"].append(
+                        {
+                            "name": name,
+                            "start_date": start_date.strftime("%Y-%m-%d"),
+                            "end_date": end_date.strftime("%Y-%m-%d"),
+                            "priority": priority,
+                            "assigned_resources": combined_resources,
+                        }
+                    )
+                    st.session_state["new_project_people"].clear()
+                    st.session_state["new_project_teams"].clear()
+                    st.success(f"Added project {name}")
+                    st.rerun()
+
+
+def edit_project_form():
+    """
+    Form for editing an existing project.
+    """
+    if st.session_state.data["projects"]:
+        st.subheader("Edit Project")
+        project_to_edit = st.selectbox(
+            "Select project to edit",
+            [p["name"] for p in st.session_state.data["projects"]],
+        )
+
+        selected_project = next(
+            (
+                p
+                for p in st.session_state.data["projects"]
+                if p["name"] == project_to_edit
+            ),
+            None,
+        )
+
+        if selected_project:
+            # Reset initialization if a different project is chosen
+            if "last_edited_project" not in st.session_state:
+                st.session_state["last_edited_project"] = None
+            if st.session_state["last_edited_project"] != project_to_edit:
+                st.session_state["edit_form_initialized"] = False
+                st.session_state["last_edited_project"] = project_to_edit
+
+            with st.form("edit_project_form"):
+                if "edit_form_initialized" not in st.session_state:
+                    st.session_state["edit_form_initialized"] = False
+
+                # Populate session lists only once
+                if not st.session_state["edit_form_initialized"]:
+                    st.session_state["edit_project_people"] = [
+                        r
+                        for r in selected_project["assigned_resources"]
+                        if r in [p["name"] for p in st.session_state.data["people"]]
+                    ]
+                    st.session_state["edit_project_teams"] = [
+                        r
+                        for r in selected_project["assigned_resources"]
+                        if r in [t["name"] for t in st.session_state.data["teams"]]
+                    ]
+                    st.session_state["edit_form_initialized"] = True
+
+                new_name = st.text_input("Project Name", value=selected_project["name"])
+                # ...existing code...
+                priority = st.number_input(
+                    "Priority (lower = higher priority)",
+                    min_value=1,
+                    value=selected_project["priority"],
+                    step=1,
+                )
+
+                # Resource assignment
+                all_people = [
+                    p["name"]
+                    for p in st.session_state.data["people"]
+                    if p["team"] is None
+                ]
+                all_people = list(
+                    set(all_people + st.session_state["edit_project_people"])
+                )
+                selected_people = st.multiselect(
+                    "Select People",
+                    all_people,
+                    default=st.session_state["edit_project_people"],
+                )
+                st.session_state["edit_project_people"] = selected_people
+
+                all_teams = [t["name"] for t in st.session_state.data["teams"]]
+                all_teams = list(
+                    set(all_teams + st.session_state["edit_project_teams"])
+                )
+                selected_teams = st.multiselect(
+                    "Select Teams",
+                    all_teams,
+                    default=st.session_state["edit_project_teams"],
+                )
+                st.session_state["edit_project_teams"] = selected_teams
+
+                update_button = st.form_submit_button("Update Project")
+                if update_button:
+                    start_str = selected_project["start_date"]
+                    end_str = selected_project["end_date"]
+                    start_date = pd.to_datetime(start_str)
+                    end_date = pd.to_datetime(end_str)
+
+                    # ...existing code...
+                    if start_date > end_date:
+                        st.error("End date must be after start date.")
+                    else:
+                        combined_resources = (
+                            st.session_state["edit_project_people"]
+                            + st.session_state["edit_project_teams"]
+                        )
+                        for i, project in enumerate(st.session_state.data["projects"]):
+                            if project["name"] == project_to_edit:
+                                # Keep unhandled resource types (departments, etc.)
+                                preserved_resources = [
+                                    r
+                                    for r in project["assigned_resources"]
+                                    if (
+                                        r
+                                        not in [
+                                            p["name"]
+                                            for p in st.session_state.data["people"]
+                                        ]
+                                        and r
+                                        not in [
+                                            t["name"]
+                                            for t in st.session_state.data["teams"]
+                                        ]
+                                    )
+                                ]
+                                updated_resources = (
+                                    preserved_resources + combined_resources
+                                )
+                                st.session_state.data["projects"][i] = {
+                                    "name": new_name,
+                                    "start_date": start_str,
+                                    "end_date": end_str,
+                                    "priority": priority,
+                                    "assigned_resources": updated_resources,
+                                }
+                        st.success(f"Updated project {project_to_edit} to {new_name}")
+                        st.rerun()
