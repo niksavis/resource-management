@@ -1,493 +1,972 @@
 {
   "people": [
     {
-      "name": "Emma Johnson",
+      "name": "Thomas Wilson",
       "role": "Head of Department",
-      "department": "Engineering",
+      "department": "Network Engineering",
       "team": null
     },
     {
-      "name": "Liam Smith",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Sarah Johnson",
+      "role": "Network Architect",
+      "department": "Network Engineering",
+      "team": "Network Planning Team"
+    },
+    {
+      "name": "Michael Chen",
+      "role": "Network Engineer",
+      "department": "Network Engineering",
+      "team": "Network Planning Team"
+    },
+    {
+      "name": "Emma Rodriguez",
+      "role": "Network Engineer",
+      "department": "Network Engineering",
+      "team": "Network Planning Team"
+    },
+    {
+      "name": "David Thompson",
+      "role": "Team Leader",
+      "department": "Network Engineering",
+      "team": "Network Planning Team"
+    },
+    {
+      "name": "James Williams",
+      "role": "Network Engineer",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team"
+    },
+    {
+      "name": "Olivia Garcia",
+      "role": "Field Technician",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team"
+    },
+    {
+      "name": "Ethan Martinez",
+      "role": "Field Technician",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team"
+    },
+    {
+      "name": "Sophia Anderson",
+      "role": "Team Leader",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team"
+    },
+    {
+      "name": "Benjamin Taylor",
+      "role": "Network Operations Specialist",
+      "department": "Network Engineering",
+      "team": "Network Operations Team"
+    },
+    {
+      "name": "Isabella Thomas",
+      "role": "Network Operations Specialist",
+      "department": "Network Engineering",
+      "team": "Network Operations Team"
+    },
+    {
+      "name": "Alexander Hernandez",
+      "role": "Team Leader",
+      "department": "Network Engineering",
+      "team": "Network Operations Team"
+    },
+    {
+      "name": "Mia Jackson",
+      "role": "Project Manager",
+      "department": "Network Engineering",
+      "team": null
+    },
+    {
+      "name": "William Davis",
+      "role": "Head of Department",
+      "department": "Software Development",
+      "team": null
+    },
+    {
+      "name": "Charlotte White",
+      "role": "Software Developer",
+      "department": "Software Development",
       "team": "Frontend Team"
     },
     {
-      "name": "Olivia Brown",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Jacob Harris",
+      "role": "Software Developer",
+      "department": "Software Development",
       "team": "Frontend Team"
     },
     {
-      "name": "Noah Williams",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Amelia Clark",
+      "role": "UX/UI Designer",
+      "department": "Software Development",
       "team": "Frontend Team"
     },
     {
-      "name": "Ava Jones",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Daniel Lewis",
+      "role": "Team Leader",
+      "department": "Software Development",
       "team": "Frontend Team"
     },
     {
-      "name": "Ethan Garcia",
-      "role": "Product Owner",
-      "department": "Engineering",
-      "team": "Frontend Team"
-    },
-    {
-      "name": "Sophia Miller",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Harper Young",
+      "role": "Software Developer",
+      "department": "Software Development",
       "team": "Backend Team"
     },
     {
-      "name": "Mason Davis",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Matthew Walker",
+      "role": "Software Developer",
+      "department": "Software Development",
       "team": "Backend Team"
     },
     {
-      "name": "Isabella Rodriguez",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Abigail Allen",
+      "role": "Database Administrator",
+      "department": "Software Development",
       "team": "Backend Team"
     },
     {
-      "name": "Logan Martinez",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Joseph King",
+      "role": "Team Leader",
+      "department": "Software Development",
       "team": "Backend Team"
     },
     {
-      "name": "Charlotte Wilson",
-      "role": "Product Owner",
-      "department": "Engineering",
-      "team": "Backend Team"
+      "name": "Elizabeth Wright",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Mobile App Team"
     },
     {
-      "name": "Benjamin Anderson",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "Samuel Lopez",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Mobile App Team"
+    },
+    {
+      "name": "Grace Hill",
+      "role": "UX/UI Designer",
+      "department": "Software Development",
+      "team": "Mobile App Team"
+    },
+    {
+      "name": "Christopher Scott",
+      "role": "Team Leader",
+      "department": "Software Development",
+      "team": "Mobile App Team"
+    },
+    {
+      "name": "Victoria Green",
+      "role": "Tester",
+      "department": "Software Development",
+      "team": "QA Team"
+    },
+    {
+      "name": "Andrew Adams",
+      "role": "Tester",
+      "department": "Software Development",
+      "team": "QA Team"
+    },
+    {
+      "name": "Scarlett Baker",
+      "role": "Tester",
+      "department": "Software Development",
+      "team": "QA Team"
+    },
+    {
+      "name": "Joshua Nelson",
+      "role": "Team Leader",
+      "department": "Software Development",
+      "team": "QA Team"
+    },
+    {
+      "name": "Ella Carter",
+      "role": "Project Manager",
+      "department": "Software Development",
       "team": null
     },
     {
-      "name": "Amelia Thomas",
-      "role": "Developer",
-      "department": "Engineering",
+      "name": "John Mitchell",
+      "role": "Agile Coach",
+      "department": "Software Development",
       "team": null
     },
-
     {
-      "name": "James Taylor",
+      "name": "Oliver Brown",
+      "role": "Software Architect",
+      "department": "Software Development",
+      "team": null
+    },
+    {
+      "name": "Ryan Phillips",
       "role": "Head of Department",
-      "department": "Design",
+      "department": "Information Technology",
       "team": null
     },
     {
-      "name": "Mia Hernandez",
-      "role": "UX/UI Designer",
-      "department": "Design",
-      "team": "UX Team"
+      "name": "Chloe Evans",
+      "role": "System Administrator",
+      "department": "Information Technology",
+      "team": "Infrastructure Team"
     },
     {
-      "name": "Alexander Moore",
-      "role": "UX/UI Designer",
-      "department": "Design",
-      "team": "UX Team"
+      "name": "Nathan Turner",
+      "role": "System Administrator",
+      "department": "Information Technology",
+      "team": "Infrastructure Team"
     },
     {
-      "name": "Harper Jackson",
-      "role": "UX/UI Designer",
-      "department": "Design",
-      "team": "UX Team"
+      "name": "Lily Torres",
+      "role": "DevOps Engineer",
+      "department": "Information Technology",
+      "team": "Infrastructure Team"
     },
     {
-      "name": "Elijah Martin",
-      "role": "UX/UI Designer",
-      "department": "Design",
-      "team": "UX Team"
+      "name": "Caleb Morgan",
+      "role": "Team Leader",
+      "department": "Information Technology",
+      "team": "Infrastructure Team"
     },
     {
-      "name": "Evelyn Thompson",
-      "role": "Product Owner",
-      "department": "Design",
-      "team": "UX Team"
+      "name": "Nora Cooper",
+      "role": "Security Specialist",
+      "department": "Information Technology",
+      "team": "Security Team"
     },
     {
-      "name": "Daniel White",
-      "role": "UX/UI Designer",
-      "department": "Design",
-      "team": null
+      "name": "Isaac Rivera",
+      "role": "Security Specialist",
+      "department": "Information Technology",
+      "team": "Security Team"
     },
     {
-      "name": "Abigail Harris",
-      "role": "UX/UI Designer",
-      "department": "Design",
-      "team": null
+      "name": "Leah Reed",
+      "role": "Security Analyst",
+      "department": "Information Technology",
+      "team": "Security Team"
     },
-
     {
-      "name": "Michael Clark",
+      "name": "Owen Bailey",
+      "role": "Team Leader",
+      "department": "Information Technology",
+      "team": "Security Team"
+    },
+    {
+      "name": "Hannah Peterson",
+      "role": "Enterprise Systems Specialist",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team"
+    },
+    {
+      "name": "Luke Kelly",
+      "role": "Enterprise Systems Specialist",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team"
+    },
+    {
+      "name": "Zoe Howard",
+      "role": "Database Administrator",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team"
+    },
+    {
+      "name": "Gabriel Cox",
+      "role": "Team Leader",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team"
+    },
+    {
+      "name": "Audrey Ward",
       "role": "Head of Department",
-      "department": "Product",
+      "department": "Product Management",
       "team": null
     },
     {
-      "name": "Elizabeth Lewis",
-      "role": "Business Analyst",
-      "department": "Product",
-      "team": "Core Product Team"
-    },
-    {
-      "name": "William Lee",
-      "role": "Business Analyst",
-      "department": "Product",
-      "team": "Core Product Team"
-    },
-    {
-      "name": "Sofia Walker",
-      "role": "Business Analyst",
-      "department": "Product",
-      "team": "Core Product Team"
-    },
-    {
-      "name": "Henry Hall",
-      "role": "Business Analyst",
-      "department": "Product",
-      "team": "Core Product Team"
-    },
-    {
-      "name": "Camila Allen",
+      "name": "Theodore Brooks",
       "role": "Product Owner",
-      "department": "Product",
-      "team": "Core Product Team"
+      "department": "Product Management",
+      "team": "Consumer Products Team"
     },
     {
-      "name": "Sebastian Young",
+      "name": "Claire Richardson",
       "role": "Business Analyst",
-      "department": "Product",
-      "team": null
+      "department": "Product Management",
+      "team": "Consumer Products Team"
     },
     {
-      "name": "Victoria King",
+      "name": "Julian Watson",
       "role": "Business Analyst",
-      "department": "Product",
-      "team": null
-    },
-
-    {
-      "name": "David Wright",
-      "role": "Head of Department",
-      "department": "Marketing",
-      "team": null
+      "department": "Product Management",
+      "team": "Consumer Products Team"
     },
     {
-      "name": "Luna Scott",
-      "role": "Marketing Specialist",
-      "department": "Marketing",
-      "team": "Growth Team"
+      "name": "Skylar Price",
+      "role": "Team Leader",
+      "department": "Product Management",
+      "team": "Consumer Products Team"
     },
     {
-      "name": "Jack Green",
-      "role": "Marketing Specialist",
-      "department": "Marketing",
-      "team": "Growth Team"
-    },
-    {
-      "name": "Penelope Baker",
-      "role": "Marketing Specialist",
-      "department": "Marketing",
-      "team": "Growth Team"
-    },
-    {
-      "name": "Gabriel Adams",
-      "role": "Marketing Specialist",
-      "department": "Marketing",
-      "team": "Growth Team"
-    },
-    {
-      "name": "Riley Nelson",
+      "name": "Elias Jenkins",
       "role": "Product Owner",
-      "department": "Marketing",
-      "team": "Growth Team"
+      "department": "Product Management",
+      "team": "Enterprise Products Team"
     },
     {
-      "name": "Leo Hill",
-      "role": "Marketing Specialist",
-      "department": "Marketing",
+      "name": "Naomi Powell",
+      "role": "Business Analyst",
+      "department": "Product Management",
+      "team": "Enterprise Products Team"
+    },
+    {
+      "name": "Adrian Long",
+      "role": "Business Analyst",
+      "department": "Product Management",
+      "team": "Enterprise Products Team"
+    },
+    {
+      "name": "Madeline Russell",
+      "role": "Team Leader",
+      "department": "Product Management",
+      "team": "Enterprise Products Team"
+    },
+    {
+      "name": "Ian Barnes",
+      "role": "Project Manager",
+      "department": "Product Management",
       "team": null
     },
     {
-      "name": "Zoe Phillips",
-      "role": "Marketing Specialist",
-      "department": "Marketing",
+      "name": "Willow Simmons",
+      "role": "Scrum Master",
+      "department": "Product Management",
       "team": null
     },
-
     {
-      "name": "Nora Campbell",
+      "name": "Jason Ross",
       "role": "Head of Department",
-      "department": "Finance",
+      "department": "Customer Experience",
       "team": null
     },
     {
-      "name": "Theodore Mitchell",
-      "role": "Financial Analyst",
-      "department": "Finance",
+      "name": "Jade Foster",
+      "role": "UX/UI Designer",
+      "department": "Customer Experience",
+      "team": "User Experience Team"
+    },
+    {
+      "name": "Wyatt Butler",
+      "role": "UX/UI Designer",
+      "department": "Customer Experience",
+      "team": "User Experience Team"
+    },
+    {
+      "name": "Isabelle Simmons",
+      "role": "UX Researcher",
+      "department": "Customer Experience",
+      "team": "User Experience Team"
+    },
+    {
+      "name": "Levi Griffin",
+      "role": "Team Leader",
+      "department": "Customer Experience",
+      "team": "User Experience Team"
+    },
+    {
+      "name": "Violet Hayes",
+      "role": "Service Designer",
+      "department": "Customer Experience",
+      "team": "Service Design Team"
+    },
+    {
+      "name": "Grayson Fisher",
+      "role": "Service Designer",
+      "department": "Customer Experience",
+      "team": "Service Design Team"
+    },
+    {
+      "name": "Aurora Diaz",
+      "role": "Customer Journey Specialist",
+      "department": "Customer Experience",
+      "team": "Service Design Team"
+    },
+    {
+      "name": "Lincoln Wood",
+      "role": "Team Leader",
+      "department": "Customer Experience",
+      "team": "Service Design Team"
+    },
+    {
+      "name": "Stella Rogers",
+      "role": "Head of Department",
+      "department": "Operations",
       "team": null
     },
     {
-      "name": "Hazel Roberts",
-      "role": "Financial Analyst",
-      "department": "Finance",
+      "name": "Hudson Reed",
+      "role": "Field Operations Manager",
+      "department": "Operations",
+      "team": "Field Operations Team"
+    },
+    {
+      "name": "Nova Coleman",
+      "role": "Field Technician",
+      "department": "Operations",
+      "team": "Field Operations Team"
+    },
+    {
+      "name": "Ezra Perry",
+      "role": "Field Technician",
+      "department": "Operations",
+      "team": "Field Operations Team"
+    },
+    {
+      "name": "Autumn Bryant",
+      "role": "Team Leader",
+      "department": "Operations",
+      "team": "Field Operations Team"
+    },
+    {
+      "name": "Kai Russell",
+      "role": "Customer Support Specialist",
+      "department": "Operations",
+      "team": "Customer Support Team"
+    },
+    {
+      "name": "Iris Gray",
+      "role": "Customer Support Specialist",
+      "department": "Operations",
+      "team": "Customer Support Team"
+    },
+    {
+      "name": "Oscar Sullivan",
+      "role": "Customer Support Specialist",
+      "department": "Operations",
+      "team": "Customer Support Team"
+    },
+    {
+      "name": "Ruby Price",
+      "role": "Team Leader",
+      "department": "Operations",
+      "team": "Customer Support Team"
+    },
+    {
+      "name": "Miles Patterson",
+      "role": "Technical Support Specialist",
+      "department": "Operations",
+      "team": "Technical Support Team"
+    },
+    {
+      "name": "Eden Campbell",
+      "role": "Technical Support Specialist",
+      "department": "Operations",
+      "team": "Technical Support Team"
+    },
+    {
+      "name": "Felix Hughes",
+      "role": "Technical Support Specialist",
+      "department": "Operations",
+      "team": "Technical Support Team"
+    },
+    {
+      "name": "Ivy Washington",
+      "role": "Team Leader",
+      "department": "Operations",
+      "team": "Technical Support Team"
+    },
+    {
+      "name": "Harvey Butler",
+      "role": "Head of Department",
+      "department": "Research and Development",
       "team": null
     },
     {
-      "name": "Christopher Carter",
-      "role": "Financial Analyst",
-      "department": "Finance",
-      "team": null
-    },
-
-    {
-      "name": "Samuel Cooper",
-      "role": "Project Manager",
-      "department": "Engineering",
-      "team": null
+      "name": "Lydia Simmons",
+      "role": "Data Scientist",
+      "department": "Research and Development",
+      "team": "Innovation Team"
     },
     {
-      "name": "Scarlett Murphy",
-      "role": "Project Manager",
-      "department": "Product",
-      "team": null
+      "name": "Rowan Foster",
+      "role": "Research Engineer",
+      "department": "Research and Development",
+      "team": "Innovation Team"
     },
     {
-      "name": "Joseph Rivera",
-      "role": "Project Manager",
-      "department": "Design",
-      "team": null
+      "name": "Emery Ross",
+      "role": "AI Specialist",
+      "department": "Research and Development",
+      "team": "Innovation Team"
     },
     {
-      "name": "Audrey Cook",
-      "role": "Project Manager",
-      "department": "Marketing",
-      "team": null
+      "name": "Rosalie Sanders",
+      "role": "Team Leader",
+      "department": "Research and Development",
+      "team": "Innovation Team"
     },
     {
-      "name": "Owen Reed",
-      "role": "Project Manager",
-      "department": "Engineering",
-      "team": null
+      "name": "Sawyer Barnes",
+      "role": "Research Engineer",
+      "department": "Research and Development",
+      "team": "Technology Research Team"
     },
     {
-      "name": "Claire Bailey",
-      "role": "Project Manager",
-      "department": "Product",
-      "team": null
+      "name": "Dahlia Reed",
+      "role": "Research Engineer",
+      "department": "Research and Development",
+      "team": "Technology Research Team"
     },
     {
-      "name": "John Parker",
-      "role": "Project Manager",
-      "department": "Engineering",
-      "team": null
+      "name": "Jasper Coleman",
+      "role": "Technology Analyst",
+      "department": "Research and Development",
+      "team": "Technology Research Team"
+    },
+    {
+      "name": "Ophelia Gray",
+      "role": "Team Leader",
+      "department": "Research and Development",
+      "team": "Technology Research Team"
     }
   ],
-
   "teams": [
     {
-      "name": "Frontend Team",
-      "department": "Engineering",
+      "name": "Network Planning Team",
+      "department": "Network Engineering",
       "members": [
-        "Liam Smith",
-        "Olivia Brown",
-        "Noah Williams",
-        "Ava Jones",
-        "Ethan Garcia"
+        "Sarah Johnson",
+        "Michael Chen",
+        "Emma Rodriguez",
+        "David Thompson"
+      ]
+    },
+    {
+      "name": "Network Implementation Team",
+      "department": "Network Engineering",
+      "members": [
+        "James Williams",
+        "Olivia Garcia",
+        "Ethan Martinez",
+        "Sophia Anderson"
+      ]
+    },
+    {
+      "name": "Network Operations Team",
+      "department": "Network Engineering",
+      "members": ["Benjamin Taylor", "Isabella Thomas", "Alexander Hernandez"]
+    },
+    {
+      "name": "Frontend Team",
+      "department": "Software Development",
+      "members": [
+        "Charlotte White",
+        "Jacob Harris",
+        "Amelia Clark",
+        "Daniel Lewis"
       ]
     },
     {
       "name": "Backend Team",
-      "department": "Engineering",
+      "department": "Software Development",
       "members": [
-        "Sophia Miller",
-        "Mason Davis",
-        "Isabella Rodriguez",
-        "Logan Martinez",
-        "Charlotte Wilson"
+        "Harper Young",
+        "Matthew Walker",
+        "Abigail Allen",
+        "Joseph King"
       ]
     },
     {
-      "name": "UX Team",
-      "department": "Design",
+      "name": "Mobile App Team",
+      "department": "Software Development",
       "members": [
-        "Mia Hernandez",
-        "Alexander Moore",
-        "Harper Jackson",
-        "Elijah Martin",
-        "Evelyn Thompson"
+        "Elizabeth Wright",
+        "Samuel Lopez",
+        "Grace Hill",
+        "Christopher Scott"
       ]
     },
     {
-      "name": "Core Product Team",
-      "department": "Product",
+      "name": "QA Team",
+      "department": "Software Development",
       "members": [
-        "Elizabeth Lewis",
-        "William Lee",
-        "Sofia Walker",
-        "Henry Hall",
-        "Camila Allen"
+        "Victoria Green",
+        "Andrew Adams",
+        "Scarlett Baker",
+        "Joshua Nelson"
       ]
     },
     {
-      "name": "Growth Team",
-      "department": "Marketing",
+      "name": "Infrastructure Team",
+      "department": "Information Technology",
+      "members": ["Chloe Evans", "Nathan Turner", "Lily Torres", "Caleb Morgan"]
+    },
+    {
+      "name": "Security Team",
+      "department": "Information Technology",
+      "members": ["Nora Cooper", "Isaac Rivera", "Leah Reed", "Owen Bailey"]
+    },
+    {
+      "name": "Enterprise Systems Team",
+      "department": "Information Technology",
+      "members": ["Hannah Peterson", "Luke Kelly", "Zoe Howard", "Gabriel Cox"]
+    },
+    {
+      "name": "Consumer Products Team",
+      "department": "Product Management",
       "members": [
-        "Luna Scott",
-        "Jack Green",
-        "Penelope Baker",
-        "Gabriel Adams",
-        "Riley Nelson"
+        "Theodore Brooks",
+        "Claire Richardson",
+        "Julian Watson",
+        "Skylar Price"
+      ]
+    },
+    {
+      "name": "Enterprise Products Team",
+      "department": "Product Management",
+      "members": [
+        "Elias Jenkins",
+        "Naomi Powell",
+        "Adrian Long",
+        "Madeline Russell"
+      ]
+    },
+    {
+      "name": "User Experience Team",
+      "department": "Customer Experience",
+      "members": [
+        "Jade Foster",
+        "Wyatt Butler",
+        "Isabelle Simmons",
+        "Levi Griffin"
+      ]
+    },
+    {
+      "name": "Service Design Team",
+      "department": "Customer Experience",
+      "members": [
+        "Violet Hayes",
+        "Grayson Fisher",
+        "Aurora Diaz",
+        "Lincoln Wood"
+      ]
+    },
+    {
+      "name": "Field Operations Team",
+      "department": "Operations",
+      "members": ["Hudson Reed", "Nova Coleman", "Ezra Perry", "Autumn Bryant"]
+    },
+    {
+      "name": "Customer Support Team",
+      "department": "Operations",
+      "members": ["Kai Russell", "Iris Gray", "Oscar Sullivan", "Ruby Price"]
+    },
+    {
+      "name": "Technical Support Team",
+      "department": "Operations",
+      "members": [
+        "Miles Patterson",
+        "Eden Campbell",
+        "Felix Hughes",
+        "Ivy Washington"
+      ]
+    },
+    {
+      "name": "Innovation Team",
+      "department": "Research and Development",
+      "members": [
+        "Lydia Simmons",
+        "Rowan Foster",
+        "Emery Ross",
+        "Rosalie Sanders"
+      ]
+    },
+    {
+      "name": "Technology Research Team",
+      "department": "Research and Development",
+      "members": [
+        "Sawyer Barnes",
+        "Dahlia Reed",
+        "Jasper Coleman",
+        "Ophelia Gray"
       ]
     }
   ],
-
   "departments": [
     {
-      "name": "Engineering",
-      "teams": ["Frontend Team", "Backend Team"],
+      "name": "Network Engineering",
+      "teams": [
+        "Network Planning Team",
+        "Network Implementation Team",
+        "Network Operations Team"
+      ],
       "members": [
-        "Emma Johnson",
-        "Liam Smith",
-        "Olivia Brown",
-        "Noah Williams",
-        "Ava Jones",
-        "Ethan Garcia",
-        "Sophia Miller",
-        "Mason Davis",
-        "Isabella Rodriguez",
-        "Logan Martinez",
-        "Charlotte Wilson",
-        "Benjamin Anderson",
-        "Amelia Thomas",
-        "Samuel Cooper",
-        "Owen Reed",
-        "John Parker"
+        "Thomas Wilson",
+        "Sarah Johnson",
+        "Michael Chen",
+        "Emma Rodriguez",
+        "David Thompson",
+        "James Williams",
+        "Olivia Garcia",
+        "Ethan Martinez",
+        "Sophia Anderson",
+        "Benjamin Taylor",
+        "Isabella Thomas",
+        "Alexander Hernandez",
+        "Mia Jackson"
       ]
     },
     {
-      "name": "Design",
-      "teams": ["UX Team"],
+      "name": "Software Development",
+      "teams": ["Frontend Team", "Backend Team", "Mobile App Team", "QA Team"],
       "members": [
-        "James Taylor",
-        "Mia Hernandez",
-        "Alexander Moore",
-        "Harper Jackson",
-        "Elijah Martin",
-        "Evelyn Thompson",
-        "Daniel White",
-        "Abigail Harris",
-        "Joseph Rivera"
+        "William Davis",
+        "Charlotte White",
+        "Jacob Harris",
+        "Amelia Clark",
+        "Daniel Lewis",
+        "Harper Young",
+        "Matthew Walker",
+        "Abigail Allen",
+        "Joseph King",
+        "Elizabeth Wright",
+        "Samuel Lopez",
+        "Grace Hill",
+        "Christopher Scott",
+        "Victoria Green",
+        "Andrew Adams",
+        "Scarlett Baker",
+        "Joshua Nelson",
+        "Ella Carter",
+        "John Mitchell",
+        "Oliver Brown"
       ]
     },
     {
-      "name": "Product",
-      "teams": ["Core Product Team"],
+      "name": "Information Technology",
+      "teams": [
+        "Infrastructure Team",
+        "Security Team",
+        "Enterprise Systems Team"
+      ],
       "members": [
-        "Michael Clark",
-        "Elizabeth Lewis",
-        "William Lee",
-        "Sofia Walker",
-        "Henry Hall",
-        "Camila Allen",
-        "Sebastian Young",
-        "Victoria King",
-        "Scarlett Murphy",
-        "Claire Bailey"
+        "Ryan Phillips",
+        "Chloe Evans",
+        "Nathan Turner",
+        "Lily Torres",
+        "Caleb Morgan",
+        "Nora Cooper",
+        "Isaac Rivera",
+        "Leah Reed",
+        "Owen Bailey",
+        "Hannah Peterson",
+        "Luke Kelly",
+        "Zoe Howard",
+        "Gabriel Cox"
       ]
     },
     {
-      "name": "Marketing",
-      "teams": ["Growth Team"],
+      "name": "Product Management",
+      "teams": ["Consumer Products Team", "Enterprise Products Team"],
       "members": [
-        "David Wright",
-        "Luna Scott",
-        "Jack Green",
-        "Penelope Baker",
-        "Gabriel Adams",
-        "Riley Nelson",
-        "Leo Hill",
-        "Zoe Phillips",
-        "Audrey Cook"
+        "Audrey Ward",
+        "Theodore Brooks",
+        "Claire Richardson",
+        "Julian Watson",
+        "Skylar Price",
+        "Elias Jenkins",
+        "Naomi Powell",
+        "Adrian Long",
+        "Madeline Russell",
+        "Ian Barnes",
+        "Willow Simmons"
       ]
     },
     {
-      "name": "Finance",
-      "teams": [],
+      "name": "Customer Experience",
+      "teams": ["User Experience Team", "Service Design Team"],
       "members": [
-        "Nora Campbell",
-        "Theodore Mitchell",
-        "Hazel Roberts",
-        "Christopher Carter"
+        "Jason Ross",
+        "Jade Foster",
+        "Wyatt Butler",
+        "Isabelle Simmons",
+        "Levi Griffin",
+        "Violet Hayes",
+        "Grayson Fisher",
+        "Aurora Diaz",
+        "Lincoln Wood"
+      ]
+    },
+    {
+      "name": "Operations",
+      "teams": [
+        "Field Operations Team",
+        "Customer Support Team",
+        "Technical Support Team"
+      ],
+      "members": [
+        "Stella Rogers",
+        "Hudson Reed",
+        "Nova Coleman",
+        "Ezra Perry",
+        "Autumn Bryant",
+        "Kai Russell",
+        "Iris Gray",
+        "Oscar Sullivan",
+        "Ruby Price",
+        "Miles Patterson",
+        "Eden Campbell",
+        "Felix Hughes",
+        "Ivy Washington"
+      ]
+    },
+    {
+      "name": "Research and Development",
+      "teams": ["Innovation Team", "Technology Research Team"],
+      "members": [
+        "Harvey Butler",
+        "Lydia Simmons",
+        "Rowan Foster",
+        "Emery Ross",
+        "Rosalie Sanders",
+        "Sawyer Barnes",
+        "Dahlia Reed",
+        "Jasper Coleman",
+        "Ophelia Gray"
       ]
     }
   ],
-
   "projects": [
     {
-      "name": "Website Redesign",
+      "name": "5G Network Expansion",
       "start_date": "2025-04-01",
-      "end_date": "2025-06-30",
-      "priority": 1,
-      "assigned_resources": ["Frontend Team", "UX Team", "Samuel Cooper"]
-    },
-    {
-      "name": "Backend API Development",
-      "start_date": "2025-03-15",
-      "end_date": "2025-07-15",
-      "priority": 2,
-      "assigned_resources": ["Backend Team", "Scarlett Murphy"]
-    },
-    {
-      "name": "Mobile App Launch",
-      "start_date": "2025-05-01",
       "end_date": "2025-08-31",
       "priority": 1,
       "assigned_resources": [
-        "Frontend Team",
-        "Backend Team",
-        "UX Team",
-        "Joseph Rivera"
+        "Network Planning Team",
+        "Network Implementation Team",
+        "Mia Jackson"
       ]
     },
     {
-      "name": "Product Analytics Dashboard",
-      "start_date": "2025-02-15",
-      "end_date": "2025-04-30",
-      "priority": 3,
-      "assigned_resources": ["Core Product Team", "Backend Team", "Audrey Cook"]
-    },
-    {
-      "name": "Enterprise Security Upgrade",
-      "start_date": "2025-04-15",
-      "end_date": "2025-06-15",
+      "name": "Customer Self-Service Portal",
+      "start_date": "2025-03-15",
+      "end_date": "2025-07-15",
       "priority": 2,
-      "assigned_resources": ["Backend Team", "Owen Reed"]
+      "assigned_resources": [
+        "Frontend Team",
+        "Backend Team",
+        "User Experience Team",
+        "Ella Carter"
+      ]
     },
     {
-      "name": "Marketing Campaign Q2",
-      "start_date": "2025-03-01",
-      "end_date": "2025-05-31",
+      "name": "Enterprise Billing System Upgrade",
+      "start_date": "2025-05-01",
+      "end_date": "2025-09-30",
       "priority": 3,
-      "assigned_resources": ["Growth Team", "Claire Bailey"]
+      "assigned_resources": [
+        "Enterprise Systems Team",
+        "Enterprise Products Team",
+        "Ian Barnes"
+      ]
     },
     {
-      "name": "Performance Optimization",
-      "start_date": "2025-06-01",
-      "end_date": "2025-07-31",
+      "name": "Network Security Enhancement",
+      "start_date": "2025-02-15",
+      "end_date": "2025-06-30",
       "priority": 4,
-      "assigned_resources": ["Frontend Team", "Backend Team", "John Parker"]
+      "assigned_resources": [
+        "Security Team",
+        "Network Operations Team",
+        "Thomas Wilson"
+      ]
+    },
+    {
+      "name": "Mobile App Redesign",
+      "start_date": "2025-04-15",
+      "end_date": "2025-07-31",
+      "priority": 5,
+      "assigned_resources": [
+        "Mobile App Team",
+        "User Experience Team",
+        "Customer Support Team",
+        "John Mitchell"
+      ]
+    },
+    {
+      "name": "AI-Powered Customer Support",
+      "start_date": "2025-03-01",
+      "end_date": "2025-08-15",
+      "priority": 2,
+      "assigned_resources": [
+        "Innovation Team",
+        "Technical Support Team",
+        "Consumer Products Team",
+        "Willow Simmons"
+      ]
+    },
+    {
+      "name": "IoT Service Platform",
+      "start_date": "2025-05-15",
+      "end_date": "2025-10-31",
+      "priority": 1,
+      "assigned_resources": [
+        "Technology Research Team",
+        "Backend Team",
+        "QA Team",
+        "Product Management"
+      ]
+    },
+    {
+      "name": "Cloud Migration",
+      "start_date": "2025-01-01",
+      "end_date": "2025-12-31",
+      "priority": 3,
+      "assigned_resources": [
+        "Backend Team",
+        "Infrastructure Team",
+        "Oliver Brown"
+      ]
+    },
+    {
+      "name": "E-commerce Platform Upgrade",
+      "start_date": "2025-06-01",
+      "end_date": "2025-09-30",
+      "priority": 4,
+      "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"]
+    },
+    {
+      "name": "Data Analytics Platform",
+      "start_date": "2025-03-01",
+      "end_date": "2026-02-28",
+      "priority": 1,
+      "assigned_resources": [
+        "Data Science Team",
+        "Backend Team",
+        "Oliver Brown"
+      ]
+    },
+    {
+      "name": "Customer Feedback System",
+      "start_date": "2025-04-01",
+      "end_date": "2025-06-30",
+      "priority": 5,
+      "assigned_resources": [
+        "Frontend Team",
+        "User Experience Team",
+        "Ella Carter"
+      ]
+    },
+    {
+      "name": "AI Research Initiative",
+      "start_date": "2025-01-01",
+      "end_date": "2026-12-31",
+      "priority": 6,
+      "assigned_resources": [
+        "Innovation Team",
+        "Technology Research Team",
+        "Oliver Brown"
+      ]
     }
   ]
 }
