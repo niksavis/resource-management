@@ -206,13 +206,20 @@ def main() -> None:
 
     with tabs[0]:
         st.subheader("Home")
-        st.header("Project Resource Management")
+        # Introduction section
+        st.subheader("Introduction")
         st.write("""
-        Welcome to the Resource Management App. This application helps you manage project resources 
-        and visualize their allocation across multiple projects.
-        
+        This application helps you manage project resources and visualize
+        their allocation across multiple projects.
+
         Use the sidebar to navigate through different sections of the app.
         """)
+
+        # Resource summary section
+        st.subheader("Resource Summary")
+        st.markdown(
+            "Below is the total number of each resource type currently available in the system:"
+        )
 
         # Display resource summary
         col1, col2, col3, col4 = st.columns(4)
@@ -224,6 +231,12 @@ def main() -> None:
             st.metric("Departments", len(st.session_state.data["departments"]))
         with col4:
             st.metric("Projects", len(st.session_state.data["projects"]))
+
+        # Project timeline section
+        st.subheader("Project Timeline Overview")
+        st.write(
+            "A snapshot of ongoing projects, their priorities, and assigned resources."
+        )
 
         # Add overview visualization to home page
         if st.session_state.data["projects"]:
@@ -242,13 +255,23 @@ def main() -> None:
                     for p in st.session_state.data["projects"]
                 ]
             )
+            # Mark duplicate priorities
+            projects_df["priority_count"] = projects_df.groupby("Priority")[
+                "Priority"
+            ].transform("count")
+            projects_df["Priority Label"] = projects_df.apply(
+                lambda row: f"Priority {row['Priority']} (Duplicate)"
+                if row["priority_count"] > 1
+                else f"Priority {row['Priority']}",
+                axis=1,
+            )
 
             fig = px.timeline(
                 projects_df,
                 x_start="Start",
                 x_end="Finish",
                 y="Project",
-                color="Priority",
+                color="Priority Label",
                 hover_data=["Resources"],
                 color_continuous_scale="Viridis_r",  # Lower numbers (higher priority) are darker
                 title="Project Timeline",
@@ -286,6 +309,27 @@ def main() -> None:
 
         # Display existing projects with enhanced table
         if st.session_state.data["projects"]:
+            people_names = [
+                person["name"] for person in st.session_state.data["people"]
+            ]
+            team_names = [team["name"] for team in st.session_state.data["teams"]]
+            department_names = [
+                dept["name"] for dept in st.session_state.data["departments"]
+            ]
+
+            def parse_resources(resources_list):
+                assigned_people = []
+                assigned_teams = []
+                assigned_departments = []
+                for r in resources_list:
+                    if r in people_names:
+                        assigned_people.append(r)
+                    elif r in team_names:
+                        assigned_teams.append(r)
+                    elif r in department_names:
+                        assigned_departments.append(r)
+                return assigned_people, assigned_teams, assigned_departments
+
             projects_df = pd.DataFrame(
                 [
                     {
@@ -293,71 +337,85 @@ def main() -> None:
                         "Start Date": p["start_date"],
                         "End Date": p["end_date"],
                         "Priority": p["priority"],
-                        "Resources": len(p["assigned_resources"]),
                         "Duration (days)": (
                             pd.to_datetime(p["end_date"])
                             - pd.to_datetime(p["start_date"])
                         ).days
                         + 1,
-                        "Assigned Resources": ", ".join(p["assigned_resources"]),
+                        # Split assigned resources
+                        "Assigned People": ", ".join(
+                            parse_resources(p["assigned_resources"])[0]
+                        ),
+                        "Assigned Teams": ", ".join(
+                            parse_resources(p["assigned_resources"])[1]
+                        ),
+                        "Assigned Departments": ", ".join(
+                            parse_resources(p["assigned_resources"])[2]
+                        ),
                     }
                     for p in st.session_state.data["projects"]
                 ]
             )
 
-            # Apply filtering and sorting
             filtered_projects_df = filter_dataframe(projects_df, "projects")
             st.dataframe(filtered_projects_df, use_container_width=True)
 
-        # Add new project form
-        with st.form("add_project_form"):
-            st.write("Add new project")
-            name = st.text_input("Project Name")
+        # Wrap the Add Project form in an expander
+        with st.expander("Add new project", expanded=False):
+            with st.form("add_project_form"):
+                st.write("Add new project")
+                name = st.text_input("Project Name")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                start_date = st.date_input("Start Date")
-            with col2:
-                end_date = st.date_input("End Date")
+                col1, col2 = st.columns(2)
+                with col1:
+                    start_date = st.date_input("Start Date")
+                with col2:
+                    end_date = st.date_input("End Date")
 
-            priority = st.number_input(
-                "Priority (lower = higher priority)", min_value=1, value=1, step=1
-            )
+                priority = st.number_input(
+                    "Priority (lower = higher priority)", min_value=1, value=1, step=1
+                )
 
-            # Resource assignment
-            resource_type = st.radio(
-                "Assign resources by", ["People", "Teams", "Departments"]
-            )
+                # Resource assignment
+                resource_type = st.radio(
+                    "Assign resources by", ["People", "Teams", "Departments"]
+                )
 
-            if resource_type == "People":
-                resource_options = [p["name"] for p in st.session_state.data["people"]]
-            elif resource_type == "Teams":
-                resource_options = [t["name"] for t in st.session_state.data["teams"]]
-            else:  # Departments
-                resource_options = [
-                    d["name"] for d in st.session_state.data["departments"]
-                ]
+                if resource_type == "People":
+                    resource_options = [
+                        p["name"] for p in st.session_state.data["people"]
+                    ]
+                elif resource_type == "Teams":
+                    resource_options = [
+                        t["name"] for t in st.session_state.data["teams"]
+                    ]
+                else:  # Departments
+                    resource_options = [
+                        d["name"] for d in st.session_state.data["departments"]
+                    ]
 
-            assigned_resources = st.multiselect("Assign Resources", resource_options)
+                assigned_resources = st.multiselect(
+                    "Assign Resources", resource_options
+                )
 
-            submit = st.form_submit_button("Add Project")
+                submit = st.form_submit_button("Add Project")
 
-            if submit and name and start_date and end_date:
-                if start_date > end_date:
-                    st.error("End date must be after start date.")
-                else:
-                    # Add project
-                    st.session_state.data["projects"].append(
-                        {
-                            "name": name,
-                            "start_date": start_date.strftime("%Y-%m-%d"),
-                            "end_date": end_date.strftime("%Y-%m-%d"),
-                            "priority": priority,
-                            "assigned_resources": assigned_resources,
-                        }
-                    )
-                    st.success(f"Added project {name}")
-                    st.rerun()
+                if submit and name and start_date and end_date:
+                    if start_date > end_date:
+                        st.error("End date must be after start date.")
+                    else:
+                        # Add project
+                        st.session_state.data["projects"].append(
+                            {
+                                "name": name,
+                                "start_date": start_date.strftime("%Y-%m-%d"),
+                                "end_date": end_date.strftime("%Y-%m-%d"),
+                                "priority": priority,
+                                "assigned_resources": assigned_resources,
+                            }
+                        )
+                        st.success(f"Added project {name}")
+                        st.rerun()
 
         # Edit Project functionality
         if st.session_state.data["projects"]:
