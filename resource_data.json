@@ -1,0 +1,493 @@
+{
+  "people": [
+    {
+      "name": "Emma Johnson",
+      "role": "Head of Department",
+      "department": "Engineering",
+      "team": null
+    },
+    {
+      "name": "Liam Smith",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Frontend Team"
+    },
+    {
+      "name": "Olivia Brown",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Frontend Team"
+    },
+    {
+      "name": "Noah Williams",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Frontend Team"
+    },
+    {
+      "name": "Ava Jones",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Frontend Team"
+    },
+    {
+      "name": "Ethan Garcia",
+      "role": "Product Owner",
+      "department": "Engineering",
+      "team": "Frontend Team"
+    },
+    {
+      "name": "Sophia Miller",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Backend Team"
+    },
+    {
+      "name": "Mason Davis",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Backend Team"
+    },
+    {
+      "name": "Isabella Rodriguez",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Backend Team"
+    },
+    {
+      "name": "Logan Martinez",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Backend Team"
+    },
+    {
+      "name": "Charlotte Wilson",
+      "role": "Product Owner",
+      "department": "Engineering",
+      "team": "Backend Team"
+    },
+    {
+      "name": "Benjamin Anderson",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": null
+    },
+    {
+      "name": "Amelia Thomas",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": null
+    },
+
+    {
+      "name": "James Taylor",
+      "role": "Head of Department",
+      "department": "Design",
+      "team": null
+    },
+    {
+      "name": "Mia Hernandez",
+      "role": "UX/UI Designer",
+      "department": "Design",
+      "team": "UX Team"
+    },
+    {
+      "name": "Alexander Moore",
+      "role": "UX/UI Designer",
+      "department": "Design",
+      "team": "UX Team"
+    },
+    {
+      "name": "Harper Jackson",
+      "role": "UX/UI Designer",
+      "department": "Design",
+      "team": "UX Team"
+    },
+    {
+      "name": "Elijah Martin",
+      "role": "UX/UI Designer",
+      "department": "Design",
+      "team": "UX Team"
+    },
+    {
+      "name": "Evelyn Thompson",
+      "role": "Product Owner",
+      "department": "Design",
+      "team": "UX Team"
+    },
+    {
+      "name": "Daniel White",
+      "role": "UX/UI Designer",
+      "department": "Design",
+      "team": null
+    },
+    {
+      "name": "Abigail Harris",
+      "role": "UX/UI Designer",
+      "department": "Design",
+      "team": null
+    },
+
+    {
+      "name": "Michael Clark",
+      "role": "Head of Department",
+      "department": "Product",
+      "team": null
+    },
+    {
+      "name": "Elizabeth Lewis",
+      "role": "Business Analyst",
+      "department": "Product",
+      "team": "Core Product Team"
+    },
+    {
+      "name": "William Lee",
+      "role": "Business Analyst",
+      "department": "Product",
+      "team": "Core Product Team"
+    },
+    {
+      "name": "Sofia Walker",
+      "role": "Business Analyst",
+      "department": "Product",
+      "team": "Core Product Team"
+    },
+    {
+      "name": "Henry Hall",
+      "role": "Business Analyst",
+      "department": "Product",
+      "team": "Core Product Team"
+    },
+    {
+      "name": "Camila Allen",
+      "role": "Product Owner",
+      "department": "Product",
+      "team": "Core Product Team"
+    },
+    {
+      "name": "Sebastian Young",
+      "role": "Business Analyst",
+      "department": "Product",
+      "team": null
+    },
+    {
+      "name": "Victoria King",
+      "role": "Business Analyst",
+      "department": "Product",
+      "team": null
+    },
+
+    {
+      "name": "David Wright",
+      "role": "Head of Department",
+      "department": "Marketing",
+      "team": null
+    },
+    {
+      "name": "Luna Scott",
+      "role": "Marketing Specialist",
+      "department": "Marketing",
+      "team": "Growth Team"
+    },
+    {
+      "name": "Jack Green",
+      "role": "Marketing Specialist",
+      "department": "Marketing",
+      "team": "Growth Team"
+    },
+    {
+      "name": "Penelope Baker",
+      "role": "Marketing Specialist",
+      "department": "Marketing",
+      "team": "Growth Team"
+    },
+    {
+      "name": "Gabriel Adams",
+      "role": "Marketing Specialist",
+      "department": "Marketing",
+      "team": "Growth Team"
+    },
+    {
+      "name": "Riley Nelson",
+      "role": "Product Owner",
+      "department": "Marketing",
+      "team": "Growth Team"
+    },
+    {
+      "name": "Leo Hill",
+      "role": "Marketing Specialist",
+      "department": "Marketing",
+      "team": null
+    },
+    {
+      "name": "Zoe Phillips",
+      "role": "Marketing Specialist",
+      "department": "Marketing",
+      "team": null
+    },
+
+    {
+      "name": "Nora Campbell",
+      "role": "Head of Department",
+      "department": "Finance",
+      "team": null
+    },
+    {
+      "name": "Theodore Mitchell",
+      "role": "Financial Analyst",
+      "department": "Finance",
+      "team": null
+    },
+    {
+      "name": "Hazel Roberts",
+      "role": "Financial Analyst",
+      "department": "Finance",
+      "team": null
+    },
+    {
+      "name": "Christopher Carter",
+      "role": "Financial Analyst",
+      "department": "Finance",
+      "team": null
+    },
+
+    {
+      "name": "Samuel Cooper",
+      "role": "Project Manager",
+      "department": "Engineering",
+      "team": null
+    },
+    {
+      "name": "Scarlett Murphy",
+      "role": "Project Manager",
+      "department": "Product",
+      "team": null
+    },
+    {
+      "name": "Joseph Rivera",
+      "role": "Project Manager",
+      "department": "Design",
+      "team": null
+    },
+    {
+      "name": "Audrey Cook",
+      "role": "Project Manager",
+      "department": "Marketing",
+      "team": null
+    },
+    {
+      "name": "Owen Reed",
+      "role": "Project Manager",
+      "department": "Engineering",
+      "team": null
+    },
+    {
+      "name": "Claire Bailey",
+      "role": "Project Manager",
+      "department": "Product",
+      "team": null
+    },
+    {
+      "name": "John Parker",
+      "role": "Project Manager",
+      "department": "Engineering",
+      "team": null
+    }
+  ],
+
+  "teams": [
+    {
+      "name": "Frontend Team",
+      "department": "Engineering",
+      "members": [
+        "Liam Smith",
+        "Olivia Brown",
+        "Noah Williams",
+        "Ava Jones",
+        "Ethan Garcia"
+      ]
+    },
+    {
+      "name": "Backend Team",
+      "department": "Engineering",
+      "members": [
+        "Sophia Miller",
+        "Mason Davis",
+        "Isabella Rodriguez",
+        "Logan Martinez",
+        "Charlotte Wilson"
+      ]
+    },
+    {
+      "name": "UX Team",
+      "department": "Design",
+      "members": [
+        "Mia Hernandez",
+        "Alexander Moore",
+        "Harper Jackson",
+        "Elijah Martin",
+        "Evelyn Thompson"
+      ]
+    },
+    {
+      "name": "Core Product Team",
+      "department": "Product",
+      "members": [
+        "Elizabeth Lewis",
+        "William Lee",
+        "Sofia Walker",
+        "Henry Hall",
+        "Camila Allen"
+      ]
+    },
+    {
+      "name": "Growth Team",
+      "department": "Marketing",
+      "members": [
+        "Luna Scott",
+        "Jack Green",
+        "Penelope Baker",
+        "Gabriel Adams",
+        "Riley Nelson"
+      ]
+    }
+  ],
+
+  "departments": [
+    {
+      "name": "Engineering",
+      "teams": ["Frontend Team", "Backend Team"],
+      "members": [
+        "Emma Johnson",
+        "Liam Smith",
+        "Olivia Brown",
+        "Noah Williams",
+        "Ava Jones",
+        "Ethan Garcia",
+        "Sophia Miller",
+        "Mason Davis",
+        "Isabella Rodriguez",
+        "Logan Martinez",
+        "Charlotte Wilson",
+        "Benjamin Anderson",
+        "Amelia Thomas",
+        "Samuel Cooper",
+        "Owen Reed",
+        "John Parker"
+      ]
+    },
+    {
+      "name": "Design",
+      "teams": ["UX Team"],
+      "members": [
+        "James Taylor",
+        "Mia Hernandez",
+        "Alexander Moore",
+        "Harper Jackson",
+        "Elijah Martin",
+        "Evelyn Thompson",
+        "Daniel White",
+        "Abigail Harris",
+        "Joseph Rivera"
+      ]
+    },
+    {
+      "name": "Product",
+      "teams": ["Core Product Team"],
+      "members": [
+        "Michael Clark",
+        "Elizabeth Lewis",
+        "William Lee",
+        "Sofia Walker",
+        "Henry Hall",
+        "Camila Allen",
+        "Sebastian Young",
+        "Victoria King",
+        "Scarlett Murphy",
+        "Claire Bailey"
+      ]
+    },
+    {
+      "name": "Marketing",
+      "teams": ["Growth Team"],
+      "members": [
+        "David Wright",
+        "Luna Scott",
+        "Jack Green",
+        "Penelope Baker",
+        "Gabriel Adams",
+        "Riley Nelson",
+        "Leo Hill",
+        "Zoe Phillips",
+        "Audrey Cook"
+      ]
+    },
+    {
+      "name": "Finance",
+      "teams": [],
+      "members": [
+        "Nora Campbell",
+        "Theodore Mitchell",
+        "Hazel Roberts",
+        "Christopher Carter"
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "name": "Website Redesign",
+      "start_date": "2025-04-01",
+      "end_date": "2025-06-30",
+      "priority": 1,
+      "assigned_resources": ["Frontend Team", "UX Team", "Samuel Cooper"]
+    },
+    {
+      "name": "Backend API Development",
+      "start_date": "2025-03-15",
+      "end_date": "2025-07-15",
+      "priority": 2,
+      "assigned_resources": ["Backend Team", "Scarlett Murphy"]
+    },
+    {
+      "name": "Mobile App Launch",
+      "start_date": "2025-05-01",
+      "end_date": "2025-08-31",
+      "priority": 1,
+      "assigned_resources": [
+        "Frontend Team",
+        "Backend Team",
+        "UX Team",
+        "Joseph Rivera"
+      ]
+    },
+    {
+      "name": "Product Analytics Dashboard",
+      "start_date": "2025-02-15",
+      "end_date": "2025-04-30",
+      "priority": 3,
+      "assigned_resources": ["Core Product Team", "Backend Team", "Audrey Cook"]
+    },
+    {
+      "name": "Enterprise Security Upgrade",
+      "start_date": "2025-04-15",
+      "end_date": "2025-06-15",
+      "priority": 2,
+      "assigned_resources": ["Backend Team", "Owen Reed"]
+    },
+    {
+      "name": "Marketing Campaign Q2",
+      "start_date": "2025-03-01",
+      "end_date": "2025-05-31",
+      "priority": 3,
+      "assigned_resources": ["Growth Team", "Claire Bailey"]
+    },
+    {
+      "name": "Performance Optimization",
+      "start_date": "2025-06-01",
+      "end_date": "2025-07-31",
+      "priority": 4,
+      "assigned_resources": ["Frontend Team", "Backend Team", "John Parker"]
+    }
+  ]
+}
