@@ -192,22 +192,20 @@ def main() -> None:
     """
     st.title("Resource Management App")
 
-    # Navigation sidebar
-    st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox(
-        "Select Page",
+    # Navigation tabs
+    tabs = st.tabs(
         [
             "Home",
             "Manage Resources",
             "Manage Projects",
             "Visualize Data",
-            "Resource Utilization",  # New page for utilization metrics
+            "Resource Utilization",
             "Import/Export Data",
-        ],
+        ]
     )
 
-    # Home page
-    if page == "Home":
+    with tabs[0]:
+        st.subheader("Home")
         st.header("Project Resource Management")
         st.write("""
         Welcome to the Resource Management App. This application helps you manage project resources 
@@ -262,8 +260,8 @@ def main() -> None:
 
             st.plotly_chart(fig, use_container_width=True)
 
-    # Manage Resources page
-    elif page == "Manage Resources":
+    with tabs[1]:
+        st.subheader("Manage Resources")
         resource_type = st.radio(
             "Select resource type", ["People", "Teams", "Departments"]
         )
@@ -283,8 +281,7 @@ def main() -> None:
             display_filtered_resource("departments", "departments")
             department_crud_form()
 
-    # Manage Projects page
-    elif page == "Manage Projects":
+    with tabs[2]:
         st.subheader("Manage Projects")
 
         # Display existing projects with enhanced table
@@ -526,8 +523,7 @@ def main() -> None:
                 st.success(f"Deleted project {delete_project}")
                 st.rerun()
 
-    # Visualize Data page
-    elif page == "Visualize Data":
+    with tabs[3]:
         st.subheader("Resource Allocation Visualization")
 
         if not st.session_state.data["projects"]:
@@ -737,9 +733,8 @@ def main() -> None:
                         use_container_width=True,
                     )
 
-    # NEW: Resource Utilization page
-    elif page == "Resource Utilization":
-        st.header("Resource Utilization Dashboard")
+    with tabs[4]:
+        st.subheader("Resource Utilization Dashboard")
 
         if not st.session_state.data["projects"]:
             st.warning("No projects found. Please add projects first.")
@@ -807,8 +802,7 @@ def main() -> None:
             # Display utilization dashboard with the filtered data
             display_utilization_dashboard(filtered_data, start_date, end_date)
 
-    # Import/Export Data page
-    elif page == "Import/Export Data":
+    with tabs[5]:
         st.subheader("Import/Export Data")
 
         col1, col2 = st.columns(2)
