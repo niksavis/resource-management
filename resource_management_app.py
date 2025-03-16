@@ -137,7 +137,7 @@ def display_manage_resources_tab():
 
     elif resource_type == "Departments":
         st.subheader("Manage Departments")
-        display_filtered_resource("departments", "departments")
+        display_filtered_resource("departments", "departments", distinct_filters=True)
         department_crud_form()
 
 
