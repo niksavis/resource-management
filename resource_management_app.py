@@ -386,8 +386,12 @@ def main() -> None:
                 ]
             )
 
-            filtered_projects_df = filter_dataframe(projects_df, "projects")
-            st.dataframe(filtered_projects_df, use_container_width=True)
+            # Add priority_count column and rename it to Priority
+            projects_df["Priority"] = projects_df.groupby("Priority")[
+                "Priority"
+            ].transform("count")
+
+            st.dataframe(projects_df, use_container_width=True)
 
         if "new_project_people" not in st.session_state:
             st.session_state["new_project_people"] = []
