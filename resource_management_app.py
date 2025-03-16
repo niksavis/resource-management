@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import json
 
 from data_handlers import (
     load_json,
@@ -24,155 +25,16 @@ from utils import display_filtered_resource
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
 
-# Demo data for initial app state
-DEMO_DATA = {
-    "people": [
-        {
-            "name": "John Smith",
-            "role": "Developer",
-            "department": "Engineering",
-            "team": "Frontend Team",
-        },
-        {
-            "name": "Sarah Johnson",
-            "role": "UX/UI Designer",
-            "department": "Design",
-            "team": "UI Team",
-        },
-        {
-            "name": "Michael Chen",
-            "role": "Product Owner",
-            "department": "Product",
-            "team": "Core Product",
-        },
-        {
-            "name": "Emily Davis",
-            "role": "Project Manager",
-            "department": "Project Management",
-            "team": None,
-        },
-        {
-            "name": "David Wilson",
-            "role": "Developer",
-            "department": "Engineering",
-            "team": "Backend Team",
-        },
-        {
-            "name": "Lisa Garcia",
-            "role": "Developer",
-            "department": "Engineering",
-            "team": "Frontend Team",
-        },
-        {
-            "name": "Robert Taylor",
-            "role": "Domain Lead",
-            "department": "Engineering",
-            "team": "Backend Team",
-        },
-        {
-            "name": "Jennifer Lee",
-            "role": "UX/UI Designer",
-            "department": "Design",
-            "team": "UI Team",
-        },
-        {
-            "name": "Mark Thompson",
-            "role": "Head of Department",
-            "department": "Engineering",
-            "team": None,
-        },
-        {
-            "name": "Patricia Rodriguez",
-            "role": "Key Stakeholder",
-            "department": "Executive",
-            "team": None,
-        },
-    ],
-    "teams": [
-        {
-            "name": "Frontend Team",
-            "department": "Engineering",
-            "members": ["John Smith", "Lisa Garcia"],
-        },
-        {
-            "name": "Backend Team",
-            "department": "Engineering",
-            "members": ["David Wilson", "Robert Taylor"],
-        },
-        {
-            "name": "UI Team",
-            "department": "Design",
-            "members": ["Sarah Johnson", "Jennifer Lee"],
-        },
-        {
-            "name": "Core Product",
-            "department": "Product",
-            "members": ["Michael Chen", "Emily Davis"],
-        },
-    ],
-    "departments": [
-        {
-            "name": "Engineering",
-            "teams": ["Frontend Team", "Backend Team"],
-            "members": [
-                "John Smith",
-                "Lisa Garcia",
-                "David Wilson",
-                "Robert Taylor",
-                "Mark Thompson",
-            ],
-        },
-        {
-            "name": "Design",
-            "teams": ["UI Team"],
-            "members": ["Sarah Johnson", "Jennifer Lee"],
-        },
-        {"name": "Product", "teams": ["Core Product"], "members": ["Michael Chen"]},
-        {"name": "Project Management", "teams": [], "members": ["Emily Davis"]},
-        {"name": "Executive", "teams": [], "members": ["Patricia Rodriguez"]},
-    ],
-    "projects": [
-        {
-            "name": "Website Redesign",
-            "start_date": "2025-04-01",
-            "end_date": "2025-06-15",
-            "priority": 1,
-            "assigned_resources": ["Frontend Team", "UI Team", "Emily Davis"],
-        },
-        {
-            "name": "API Development",
-            "start_date": "2025-03-15",
-            "end_date": "2025-05-30",
-            "priority": 2,
-            "assigned_resources": ["Backend Team", "Michael Chen"],
-        },
-        {
-            "name": "Mobile App Phase 1",
-            "start_date": "2025-05-01",
-            "end_date": "2025-07-31",
-            "priority": 1,
-            "assigned_resources": ["Frontend Team", "UI Team", "Backend Team"],
-        },
-        {
-            "name": "Security Audit",
-            "start_date": "2025-04-15",
-            "end_date": "2025-05-15",
-            "priority": 3,
-            "assigned_resources": ["David Wilson", "Mark Thompson"],
-        },
-        {
-            "name": "Product Strategy",
-            "start_date": "2025-03-01",
-            "end_date": "2025-04-15",
-            "priority": 2,
-            "assigned_resources": ["Executive", "Product"],
-        },
-    ],
-}
+
+# Load demo data from JSON file
+def load_demo_data():
+    with open("resource_data.json", "r") as file:
+        return json.load(file)
+
 
 # Initialize session state for data persistence
 if "data" not in st.session_state:
-    st.session_state.data = DEMO_DATA
+    st.session_state.data = load_demo_data()
 
 
 def display_home_tab():
