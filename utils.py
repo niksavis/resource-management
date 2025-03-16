@@ -5,7 +5,10 @@ import math
 
 
 def display_filtered_resource(
-    data_key: str, label: str, distinct_filters: bool = False
+    data_key: str,
+    label: str,
+    distinct_filters: bool = False,
+    filter_by: str = "department",
 ):
     """
     Converts session data to a DataFrame, applies filter_dataframe,
@@ -20,29 +23,28 @@ def display_filtered_resource(
             search_term = st.text_input(f"Search {label}", key=f"search_{label}")
 
             col1, col2 = st.columns(2)
+            team_filter = []
+            dept_filter = []
+            member_filter = []
+
             with col1:
-                if distinct_filters and data_key == "departments":
-                    team_filter = st.multiselect(
-                        "Filter by Team",
-                        options=[t["name"] for t in st.session_state.data["teams"]],
-                        default=[],
-                        key=f"filter_team_{label}",
-                    )
-                else:
-                    team_filter = st.multiselect(
-                        "Filter by Team",
-                        options=[t["name"] for t in st.session_state.data["teams"]],
-                        default=[],
-                        key=f"filter_team_{label}",
-                    )
-            with col2:
-                if distinct_filters and data_key == "departments":
-                    member_filter = st.multiselect(
-                        "Filter by Member",
-                        options=[p["name"] for p in st.session_state.data["people"]],
-                        default=[],
-                        key=f"filter_member_{label}",
-                    )
+                if distinct_filters and data_key in ["departments", "teams"]:
+                    if filter_by == "teams":
+                        team_filter = st.multiselect(
+                            "Filter by Team",
+                            options=[t["name"] for t in st.session_state.data["teams"]],
+                            default=[],
+                            key=f"filter_team_{label}",
+                        )
+                    else:
+                        dept_filter = st.multiselect(
+                            "Filter by Department",
+                            options=[
+                                d["name"] for d in st.session_state.data["departments"]
+                            ],
+                            default=[],
+                            key=f"filter_dept_{label}",
+                        )
                 else:
                     dept_filter = st.multiselect(
                         "Filter by Department",
@@ -51,6 +53,21 @@ def display_filtered_resource(
                         ],
                         default=[],
                         key=f"filter_dept_{label}",
+                    )
+            with col2:
+                if distinct_filters and data_key in ["departments", "teams"]:
+                    member_filter = st.multiselect(
+                        "Filter by Member",
+                        options=[p["name"] for p in st.session_state.data["people"]],
+                        default=[],
+                        key=f"filter_member_{label}",
+                    )
+                else:
+                    team_filter = st.multiselect(
+                        "Filter by Team",
+                        options=[t["name"] for t in st.session_state.data["teams"]],
+                        default=[],
+                        key=f"filter_team_{label}",
                     )
 
             # Apply search term across all columns
@@ -78,7 +95,11 @@ def display_filtered_resource(
                     df = df[df["team"].isin(team_filter)]
 
             # Apply member filter
-            if distinct_filters and data_key == "departments" and member_filter:
+            if (
+                distinct_filters
+                and data_key in ["departments", "teams"]
+                and member_filter
+            ):
                 df = df[
                     df["members"].apply(
                         lambda x: any(member in x for member in member_filter)
@@ -86,7 +107,7 @@ def display_filtered_resource(
                 ]
 
             # Apply department filter
-            if not distinct_filters and dept_filter:
+            if dept_filter:
                 df = df[df["department"].isin(dept_filter)]
 
             # Sorting

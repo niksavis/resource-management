@@ -132,12 +132,14 @@ def display_manage_resources_tab():
 
     elif resource_type == "Teams":
         st.subheader("Manage Teams")
-        display_filtered_resource("teams", "teams")
+        display_filtered_resource("teams", "teams", distinct_filters=True)
         team_crud_form()
 
     elif resource_type == "Departments":
         st.subheader("Manage Departments")
-        display_filtered_resource("departments", "departments", distinct_filters=True)
+        display_filtered_resource(
+            "departments", "departments", distinct_filters=True, filter_by="teams"
+        )
         department_crud_form()
 
 
