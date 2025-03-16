@@ -240,8 +240,6 @@ def main() -> None:
 
         # Add overview visualization to home page
         if st.session_state.data["projects"]:
-            st.subheader("Project Timeline Overview")
-
             # Create a simplified Gantt chart for the home page
             projects_df = pd.DataFrame(
                 [
