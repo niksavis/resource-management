@@ -1,12 +1,32 @@
+"""
+Data Handlers Module
+
+This module contains functions for loading, parsing, and processing
+resource and project data. It serves as the data layer for the
+resource management application.
+
+Expected JSON structure:
+{
+    "people": [...],
+    "teams": [...],
+    "departments": [...],
+    "projects": [...]
+}
+"""
+
 import io
 import json
 import base64
 import pandas as pd
 import numpy as np
-import math
 import streamlit as st
 from datetime import datetime
 from typing import List, Dict, Tuple
+from utils import paginate_dataframe  # Import the new function
+from testable_functions import (
+    calculate_project_duration,
+    is_resource_overallocated,
+)  # Import testable functions
 
 
 def load_json(file: io.TextIOWrapper) -> Dict:
@@ -50,11 +70,10 @@ def create_gantt_data(projects: List[Dict], resources: Dict) -> pd.DataFrame:
                     "Start": pd.to_datetime(project["start_date"]),
                     "Finish": pd.to_datetime(project["end_date"]),
                     "Priority": project["priority"],
-                    "Duration": (
-                        pd.to_datetime(project["end_date"])
-                        - pd.to_datetime(project["start_date"])
-                    ).days
-                    + 1,
+                    "Duration": calculate_project_duration(
+                        pd.to_datetime(project["start_date"]),
+                        pd.to_datetime(project["end_date"]),
+                    ),
                 }
             )
 
@@ -107,24 +126,27 @@ def calculate_date_range(gantt_data: pd.DataFrame, start_date=None, end_date=Non
 
 def calculate_resource_allocation(resource_df: pd.DataFrame, start_date, end_date):
     """Calculates allocation metrics for a single resource."""
-    date_range = pd.date_range(start=start_date, end=end_date)
-    resource_dates = pd.DataFrame(0, index=date_range, columns=["count"])
+    resources_per_day = {}
 
     for _, row in resource_df.iterrows():
         project_start = max(row["Start"], start_date)
         project_end = min(row["Finish"], end_date)
+
+        # Create date range once
         project_dates = pd.date_range(start=project_start, end=project_end)
 
+        # Add dates to dictionary in one go
         for date in project_dates:
-            if date in resource_dates.index:
-                resource_dates.loc[date, "count"] += 1
+            resources_per_day[date] = resources_per_day.get(date, 0) + 1
 
-    days_utilized = (resource_dates["count"] > 0).sum()
-    days_overallocated = (resource_dates["count"] > 1).sum()
+    # Calculate metrics
+    days_utilized = len(resources_per_day)
+    days_overallocated = sum(1 for count in resources_per_day.values() if count > 1)
 
     return days_utilized, days_overallocated
 
 
+@st.cache_data(ttl=3600)
 def calculate_resource_utilization(
     gantt_data: pd.DataFrame, start_date: datetime = None, end_date: datetime = None
 ) -> pd.DataFrame:
@@ -174,6 +196,9 @@ def calculate_resource_utilization(
                 "Days Overallocated": days_overallocated,
                 "Overallocation %": overallocation_percentage,
                 "Projects": len(resource_df),
+                "Overallocated": is_resource_overallocated(
+                    days_overallocated, total_period_days
+                ),  # Use the new function
             }
         )
 
@@ -245,28 +270,7 @@ def filter_dataframe(
                 )
 
         # Pagination
-        if len(df) > 20:
-            page_size = st.slider(
-                "Rows per page",
-                min_value=10,
-                max_value=100,
-                value=20,
-                step=10,
-                key=f"page_size_{key}",
-            )
-            total_pages = math.ceil(len(df) / page_size)
-            page_num = st.number_input(
-                "Page",
-                min_value=1,
-                max_value=total_pages,
-                value=1,
-                step=1,
-                key=f"page_num_{key}",
-            )
-            start_idx = (page_num - 1) * page_size
-            end_idx = min(start_idx + page_size, len(df))
-            st.write(f"Showing {start_idx + 1} to {end_idx} of {len(df)} entries")
-            df = df.iloc[start_idx:end_idx]
+        df = paginate_dataframe(df, key)
 
     return df
 
@@ -308,10 +312,14 @@ def parse_resources(resources_list):
     Parses the assigned resources into people, teams, and departments.
 
     Args:
-        resources_list: List of resource names
+        resources_list: List of resource names (e.g., ["John Smith", "Backend Team"])
 
     Returns:
         Tuple of (assigned_people, assigned_teams, assigned_departments)
+
+    Example:
+        >>> parse_resources(["John Smith", "Backend Team"])
+        (["John Smith"], ["Backend Team"], ["Software Development"])
     """
     people_names = [person["name"] for person in st.session_state.data["people"]]
     team_names = [team["name"] for team in st.session_state.data["teams"]]

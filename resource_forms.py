@@ -1,6 +1,20 @@
+"""
+Resource Forms Module
+
+This module contains Streamlit form functions for managing people,
+teams, departments, and projects. It provides CRUD operations for
+each resource type and integrates validation and state management.
+"""
+
 import streamlit as st
 from typing import List, Dict
 import pandas as pd
+from utils import paginate_dataframe  # Import the new function
+from validation import (
+    validate_name_field,
+    validate_project_dates,
+    validate_project_input,  # Import validation functions
+)
 
 
 def delete_resource(resource_list: List[Dict], resource_name: str) -> bool:
@@ -48,7 +62,7 @@ def person_crud_form() -> None:
                 role = st.text_input("Specify role")
 
             # Select or create department
-            if st.session_state.data["departments"]:
+            if st.session_state.data["departments"] and name:
                 dept_options = [d["name"] for d in st.session_state.data["departments"]]
                 department = st.selectbox("Department", dept_options)
             else:
@@ -68,8 +82,7 @@ def person_crud_form() -> None:
             submit = st.form_submit_button("Add Person")
 
             if submit and name and role and department:
-                if not name.strip():
-                    st.error("Name cannot be empty.")
+                if not validate_name_field(name, "Person"):
                     st.stop()
                 ensure_department_exists(department)
 
@@ -241,6 +254,13 @@ def person_crud_form() -> None:
                                     st.success(f"Updated {selected_name} to {new_name}")
                                     st.rerun()
 
+            # Pagination
+            people_df = pd.DataFrame(st.session_state.data["people"])
+            people_df = paginate_dataframe(
+                people_df, "people_crud"
+            )  # Change from "people" to "people_crud"
+            st.dataframe(people_df, use_container_width=True)
+
 
 def team_crud_form() -> None:
     with st.expander("Add new Team", expanded=False):
@@ -266,8 +286,7 @@ def team_crud_form() -> None:
             submit = st.form_submit_button("Add Team")
 
             if submit and name and department:
-                if not name.strip():
-                    st.error("Team name cannot be empty.")
+                if not validate_name_field(name, "Team"):
                     st.stop()
                 if len(members) < 2:
                     st.error("A team must have at least 2 members.")
@@ -409,6 +428,13 @@ def team_crud_form() -> None:
                                         )
                                         st.rerun()
 
+            # Pagination
+            teams_df = pd.DataFrame(st.session_state.data["teams"])
+            teams_df = paginate_dataframe(
+                teams_df, "teams_crud"
+            )  # Change from "teams" to "teams_crud"
+            st.dataframe(teams_df, use_container_width=True)
+
 
 def department_crud_form() -> None:
     with st.expander("Add new Department", expanded=False):
@@ -418,8 +444,7 @@ def department_crud_form() -> None:
             submit = st.form_submit_button("Add Department")
 
             if submit and name:
-                if not name.strip():
-                    st.error("Department name cannot be empty.")
+                if not validate_name_field(name, "Department"):
                     st.stop()
                 # Check if department already exists
                 if any(d["name"] == name for d in st.session_state.data["departments"]):
@@ -491,6 +516,13 @@ def department_crud_form() -> None:
                                     st.success(f"Updated {selected_dept} to {new_name}")
                                     st.rerun()
 
+            # Pagination
+            departments_df = pd.DataFrame(st.session_state.data["departments"])
+            departments_df = paginate_dataframe(
+                departments_df, "departments_crud"
+            )  # Change from "departments" to "departments_crud"
+            st.dataframe(departments_df, use_container_width=True)
+
 
 def add_project_form():
     """
@@ -514,7 +546,11 @@ def add_project_form():
                 end_date = st.date_input("End Date")
 
             priority = st.number_input(
-                "Priority (lower = higher priority)", min_value=1, value=1, step=1
+                "Priority (lower = higher priority)",
+                min_value=1,
+                value=1,
+                step=1,
+                help="Lower numbers indicate higher priority. Priority 1 is the highest.",
             )
 
             # Resource assignment
@@ -544,7 +580,22 @@ def add_project_form():
 
             submit = st.form_submit_button("Add Project")
 
-            if submit and name and start_date and end_date:
+            if submit:
+                project_data = {
+                    "name": name,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "priority": priority,
+                    "assigned_resources": st.session_state["new_project_people"]
+                    + st.session_state["new_project_teams"],
+                }
+                is_valid, errors = validate_project_input(project_data)
+                if not is_valid:
+                    for error in errors:
+                        st.error(error)
+                    st.stop()
+                if not validate_project_dates(start_date, end_date, name):
+                    st.stop()
                 if start_date > end_date:
                     st.error("End date must be after start date.")
                 else:
@@ -636,6 +687,7 @@ def edit_project_form():
             min_value=1,
             value=selected_project["priority"],
             step=1,
+            help="Lower numbers indicate higher priority. Priority 1 is the highest.",
         )
 
         # Resource assignment
@@ -661,6 +713,21 @@ def edit_project_form():
 
         update_button = st.form_submit_button("Update Project")
         if update_button:
+            project_data = {
+                "name": new_name,
+                "start_date": new_start_date,
+                "end_date": new_end_date,
+                "priority": priority,
+                "assigned_resources": st.session_state["edit_project_people"]
+                + st.session_state["edit_project_teams"],
+            }
+            is_valid, errors = validate_project_input(project_data)
+            if not is_valid:
+                for error in errors:
+                    st.error(error)
+                st.stop()
+            if not validate_project_dates(new_start_date, new_end_date, new_name):
+                st.stop()
             if new_start_date > new_end_date:
                 st.error("End date must be after start date.")
             else:

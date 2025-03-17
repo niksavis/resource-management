@@ -1,3 +1,10 @@
+"""
+Visualizations Module
+
+This module contains functions for creating visualizations using Plotly
+and Streamlit, including Gantt charts and resource utilization dashboards.
+"""
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -5,6 +12,11 @@ import streamlit as st
 from datetime import datetime
 from typing import Optional
 from data_handlers import calculate_resource_utilization, filter_dataframe
+from utils import paginate_dataframe  # Import the new function
+from color_constants import (
+    DEPARTMENT_COLORS,
+    UTILIZATION_COLORSCALE,
+)  # Import color constants
 
 
 def display_gantt_chart(df: pd.DataFrame) -> None:
@@ -71,6 +83,7 @@ def _create_gantt_figure(df: pd.DataFrame) -> go.Figure:
         ],
         labels={"Resource": "Resource Name"},
         height=600,
+        color_discrete_map=DEPARTMENT_COLORS,  # Use standardized department colors
     )
 
     # Improve layout with rangeslider for zooming
@@ -248,7 +261,7 @@ def display_utilization_dashboard(
             z=heatmap_wide[["Utilization %", "Overallocation %"]].values.T,
             x=heatmap_wide["Resource"],
             y=["Utilization %", "Overallocation %"],
-            colorscale="YlOrRd",
+            colorscale=UTILIZATION_COLORSCALE,  # Use standardized utilization colorscale
             showscale=True,
             hoverongaps=False,
             text=[
@@ -294,5 +307,8 @@ def display_utilization_dashboard(
             "Overallocation %",
         ],
     )
+
+    # Pagination
+    filtered_df = paginate_dataframe(filtered_df, "utilization")
 
     st.dataframe(filtered_df, use_container_width=True)

@@ -1,3 +1,11 @@
+"""
+Utilities Module
+
+This module contains utility functions for the resource management
+application, including data pagination, confirmation dialogs, and
+circular dependency checks.
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -55,7 +63,7 @@ def display_filtered_resource(
 
         # Apply sorting and pagination
         df = _apply_sorting(df, label)
-        df = _apply_pagination(df, label)
+        df = paginate_dataframe(df, label)
 
     # Display the filtered dataframe
     st.dataframe(df, use_container_width=True)
@@ -163,8 +171,8 @@ def _apply_sorting(df, label):
     return df
 
 
-def _apply_pagination(df, label):
-    """Helper function to apply pagination to the dataframe."""
+def paginate_dataframe(df, key_prefix):
+    """Apply pagination to any dataframe with consistent controls."""
     if len(df) > 20:
         page_size = st.slider(
             "Rows per page",
@@ -172,7 +180,7 @@ def _apply_pagination(df, label):
             max_value=100,
             value=20,
             step=10,
-            key=f"page_size_{label}",
+            key=f"page_size_{key_prefix}",
         )
         total_pages = math.ceil(len(df) / page_size)
         page_num = st.number_input(
@@ -181,10 +189,63 @@ def _apply_pagination(df, label):
             max_value=total_pages,
             value=1,
             step=1,
-            key=f"page_num_{label}",
+            key=f"page_num_{key_prefix}",
         )
         start_idx = (page_num - 1) * page_size
         end_idx = min(start_idx + page_size, len(df))
         st.write(f"Showing {start_idx + 1} to {end_idx} of {len(df)} entries")
         df = df.iloc[start_idx:end_idx]
     return df
+
+
+def confirm_action(action_name, key_suffix):
+    """Create a standard confirmation dialog."""
+    confirm = st.checkbox(f"Confirm {action_name}", key=f"confirm_{key_suffix}")
+    proceed = st.button(f"Proceed with {action_name}", key=f"proceed_{key_suffix}")
+    if proceed:
+        if confirm:
+            return True
+        else:
+            st.warning(f"Please confirm {action_name} by checking the box")
+    return False
+
+
+def check_circular_dependencies():
+    """Check for circular dependencies between teams and departments."""
+    dependency_graph = {}
+
+    # Build dependency graph
+    for team in st.session_state.data["teams"]:
+        dependency_graph[team["name"]] = set()
+        for other_team in st.session_state.data["teams"]:
+            if team != other_team and any(
+                member in other_team["members"] for member in team["members"]
+            ):
+                dependency_graph[team["name"]].add(other_team["name"])
+
+    # Check for cycles
+    visited = set()
+    path = set()
+
+    def dfs(node):
+        if node in path:
+            return True  # Cycle detected
+        if node in visited:
+            return False
+
+        visited.add(node)
+        path.add(node)
+
+        for neighbor in dependency_graph.get(node, []):
+            if dfs(neighbor):
+                return True
+
+        path.remove(node)
+        return False
+
+    cycles = []
+    for node in dependency_graph:
+        if dfs(node):
+            cycles.append(node)
+
+    return cycles

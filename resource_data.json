@@ -689,6 +689,11 @@
         "Jasper Coleman",
         "Ophelia Gray"
       ]
+    },
+    {
+      "name": "Data Science Team",
+      "department": "Research and Development",
+      "members": ["Oliver Brown"]
     }
   ],
   "departments": [
@@ -821,7 +826,11 @@
     },
     {
       "name": "Research and Development",
-      "teams": ["Innovation Team", "Technology Research Team"],
+      "teams": [
+        "Innovation Team",
+        "Technology Research Team",
+        "Data Science Team"
+      ],
       "members": [
         "Harvey Butler",
         "Lydia Simmons",
@@ -831,7 +840,8 @@
         "Sawyer Barnes",
         "Dahlia Reed",
         "Jasper Coleman",
-        "Ophelia Gray"
+        "Ophelia Gray",
+        "Oliver Brown"
       ]
     }
   ],
@@ -940,11 +950,7 @@
       "start_date": "2025-03-01",
       "end_date": "2026-02-28",
       "priority": 1,
-      "assigned_resources": [
-        "Data Science Team",
-        "Backend Team",
-        "Oliver Brown"
-      ]
+      "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"]
     },
     {
       "name": "Customer Feedback System",
