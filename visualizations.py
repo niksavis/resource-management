@@ -13,10 +13,10 @@ from datetime import datetime
 from typing import Optional
 from data_handlers import calculate_resource_utilization, filter_dataframe
 from utils import paginate_dataframe  # Import the new function
-from color_constants import (
-    DEPARTMENT_COLORS,
-    UTILIZATION_COLORSCALE,
-)  # Import color constants
+from color_management import (
+    manage_visualization_colors,
+)  # Import color management functions
+from color_constants import UTILIZATION_COLORSCALE  # Import color constants
 
 
 def display_gantt_chart(df: pd.DataFrame) -> None:
@@ -31,8 +31,13 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
     # Prepare data for visualization
     df_with_utilization = _prepare_gantt_data(df)
 
+    # Get dynamically managed colors
+    department_colors = manage_visualization_colors(
+        df_with_utilization["Department"].unique()
+    )
+
     # Create the Gantt chart
-    fig = _create_gantt_figure(df_with_utilization)
+    fig = _create_gantt_figure(df_with_utilization, department_colors)
 
     # Add today marker and highlight overallocated resources
     fig = _add_today_marker(fig)
@@ -65,14 +70,14 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _create_gantt_figure(df: pd.DataFrame) -> go.Figure:
+def _create_gantt_figure(df: pd.DataFrame, department_colors: dict) -> go.Figure:
     """Create the Gantt chart figure."""
     fig = px.timeline(
         df,
         x_start="Start",
         x_end="Finish",
         y="Resource",
-        color="Project",
+        color="Department",
         hover_data=[
             "Type",
             "Department",
@@ -83,7 +88,7 @@ def _create_gantt_figure(df: pd.DataFrame) -> go.Figure:
         ],
         labels={"Resource": "Resource Name"},
         height=600,
-        color_discrete_map=DEPARTMENT_COLORS,  # Use standardized department colors
+        color_discrete_map=department_colors,  # Use dynamically managed colors
     )
 
     # Improve layout with rangeslider for zooming

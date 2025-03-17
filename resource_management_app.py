@@ -43,6 +43,7 @@ from utils import (
     confirm_action,
     check_circular_dependencies,  # Import the new function
 )
+from color_management import display_color_settings  # Import color settings function
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
@@ -687,6 +688,14 @@ def display_import_export_data_tab():
             st.success("Click the link above to download the file")
 
 
+def display_settings_tab():
+    """
+    Displays the content for the Settings tab.
+    """
+    st.subheader("Settings")
+    display_color_settings()
+
+
 def initialize_session_state():
     """
     Initialize all session state variables used throughout the application.
@@ -729,6 +738,7 @@ def main():
             "Visualize Data",
             "Resource Utilization",
             "Import/Export Data",
+            "Settings",  # Add Settings tab
         ]
     )
 
@@ -749,6 +759,9 @@ def main():
 
     with tabs[5]:
         display_import_export_data_tab()
+
+    with tabs[6]:
+        display_settings_tab()
 
 
 if __name__ == "__main__":
