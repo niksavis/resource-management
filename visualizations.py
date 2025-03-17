@@ -10,28 +10,51 @@ from data_handlers import calculate_resource_utilization, filter_dataframe
 def display_gantt_chart(df: pd.DataFrame) -> None:
     """
     Displays an interactive Gantt chart using Plotly.
+    Refactored into smaller, focused functions.
     """
     if df.empty:
         st.warning("No data available to visualize.")
         return
 
+    # Prepare data for visualization
+    df_with_utilization = _prepare_gantt_data(df)
+
+    # Create the Gantt chart
+    fig = _create_gantt_figure(df_with_utilization)
+
+    # Add today marker and highlight overallocated resources
+    fig = _add_today_marker(fig)
+    fig = _highlight_overallocated_resources(fig, df_with_utilization)
+
+    # Display the chart
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Add explanation for the visual indicators
+    _display_chart_legend()
+
+
+def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Prepare data for Gantt chart by adding utilization information."""
     # Calculate utilization for coloring
     utilization_df = calculate_resource_utilization(df)
 
-    # Create a mapping of resources to their utilization percentage for coloring
+    # Create utilization mappings
     utilization_map = utilization_df.set_index("Resource")["Utilization %"].to_dict()
     overallocation_map = utilization_df.set_index("Resource")[
         "Overallocation %"
     ].to_dict()
 
     # Add utilization data to the dataframe
+    df = df.copy()
     df["Utilization %"] = df["Resource"].map(utilization_map)
     df["Overallocation %"] = df["Resource"].map(overallocation_map)
-
-    # Enhanced hover data
     df["Duration (days)"] = (df["Finish"] - df["Start"]).dt.days + 1
 
-    # Create the Gantt chart with enhanced hover data
+    return df
+
+
+def _create_gantt_figure(df: pd.DataFrame) -> go.Figure:
+    """Create the Gantt chart figure."""
     fig = px.timeline(
         df,
         x_start="Start",
@@ -49,10 +72,6 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
         labels={"Resource": "Resource Name"},
         height=600,
     )
-
-    # Add a vertical line for today's date
-    today = pd.Timestamp.now()
-    fig.add_vline(x=today, line_width=2, line_dash="dash", line_color="gray")
 
     # Improve layout with rangeslider for zooming
     fig.update_layout(
@@ -78,7 +97,20 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
         ),
     )
 
-    # Highlight overallocated resources
+    return fig
+
+
+def _add_today_marker(fig: go.Figure) -> go.Figure:
+    """Add a vertical line for today's date to the Gantt chart."""
+    today = pd.Timestamp.now()
+    fig.add_vline(x=today, line_width=2, line_dash="dash", line_color="gray")
+    return fig
+
+
+def _highlight_overallocated_resources(fig: go.Figure, df: pd.DataFrame) -> go.Figure:
+    """Highlight overallocated resources in the Gantt chart."""
+    overallocation_map = df.set_index("Resource")["Overallocation %"].to_dict()
+
     for i, resource in enumerate(df["Resource"].unique()):
         overallocation = overallocation_map.get(resource, 0)
         if overallocation > 0:
@@ -93,9 +125,11 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
                 layer="below",
             )
 
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
 
-    # Add explanation for the visual indicators
+
+def _display_chart_legend() -> None:
+    """Display the legend for the Gantt chart."""
     with st.expander("Chart Legend"):
         col1, col2 = st.columns(2)
         with col1:

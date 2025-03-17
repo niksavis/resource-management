@@ -148,182 +148,212 @@ def display_manage_resources_tab():
 def display_manage_projects_tab():
     """
     Displays the content for the Manage Projects tab.
+    Fixed priority handling and improved project management.
     """
     st.subheader("Manage Projects")
 
     # Display existing projects with enhanced table
-    if st.session_state.data["projects"]:
-        projects_df = pd.DataFrame(
-            [
-                {
-                    "Name": p["name"],
-                    "Start Date": pd.to_datetime(p["start_date"]).strftime("%Y-%m-%d"),
-                    "End Date": pd.to_datetime(p["end_date"]).strftime("%Y-%m-%d"),
-                    "Priority": p["priority"],
-                    "Duration (days)": (
-                        pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
-                    ).days
-                    + 1,
-                    # Split assigned resources
-                    "Assigned People": parse_resources(p["assigned_resources"])[0],
-                    "Assigned Teams": parse_resources(p["assigned_resources"])[1],
-                    "Assigned Departments": parse_resources(p["assigned_resources"])[2],
-                }
-                for p in st.session_state.data["projects"]
-            ]
-        )
+    if not st.session_state.data["projects"]:
+        st.warning("No projects found. Please add a project first.")
+        add_project_form()
+        return
 
-        # Add priority_count column and rename it to Priority
-        projects_df["Priority"] = projects_df.groupby("Priority")["Priority"].transform(
-            "count"
-        )
+    # Create the projects DataFrame with proper parsing
+    projects_df = _create_projects_dataframe()
 
-        # Add search and filter section
-        with st.expander("Search and Filter Projects", expanded=False):
-            search_term = st.text_input("Search Projects", key="search_projects")
+    # Add priority count column to identify duplicate priorities
+    projects_df["Priority Count"] = projects_df.groupby("Priority")[
+        "Priority"
+    ].transform("count")
+    projects_df["Priority Label"] = projects_df.apply(
+        lambda row: f"Priority {row['Priority']} (Duplicate)"
+        if row["Priority Count"] > 1
+        else f"Priority {row['Priority']}",
+        axis=1,
+    )
 
-            col1, col2 = st.columns(2)
-            with col1:
-                date_range = st.date_input(
-                    "Filter by Date Range",
-                    value=(
-                        pd.to_datetime(projects_df["Start Date"]).min().date(),
-                        pd.to_datetime(projects_df["End Date"]).max().date(),
-                    ),
-                    min_value=pd.to_datetime(projects_df["Start Date"]).min().date(),
-                    max_value=pd.to_datetime(projects_df["End Date"]).max().date(),
-                )
-            with col2:
-                people_filter = st.multiselect(
-                    "Filter by Assigned People",
-                    options=[p["name"] for p in st.session_state.data["people"]],
-                    default=[],
-                )
+    # Apply search and filtering
+    projects_df = _filter_projects_dataframe(projects_df)
 
-            col3, col4 = st.columns(2)
-            with col3:
-                teams_filter = st.multiselect(
-                    "Filter by Assigned Teams",
-                    options=[t["name"] for t in st.session_state.data["teams"]],
-                    default=[],
-                )
-            with col4:
-                departments_filter = st.multiselect(
-                    "Filter by Assigned Departments",
-                    options=[d["name"] for d in st.session_state.data["departments"]],
-                    default=[],
-                )
+    # Display the filtered dataframe
+    st.dataframe(projects_df, use_container_width=True)
 
-            # Apply search term across all columns
-            if search_term:
-                mask = np.column_stack(
-                    [
-                        projects_df[col]
-                        .fillna("")
-                        .astype(str)
-                        .str.contains(search_term, case=False, na=False)
-                        for col in projects_df.columns
-                    ]
-                )
-                projects_df = projects_df[mask.any(axis=1)]
-
-            # Apply date range filter
-            if len(date_range) == 2:
-                start_date, end_date = date_range
-                projects_df = projects_df[
-                    (
-                        pd.to_datetime(projects_df["Start Date"])
-                        >= pd.to_datetime(start_date)
-                    )
-                    & (
-                        pd.to_datetime(projects_df["End Date"])
-                        <= pd.to_datetime(end_date)
-                    )
-                ]
-
-            # Apply people filter
-            if people_filter:
-                projects_df = projects_df[
-                    projects_df["Assigned People"].apply(
-                        lambda x: any(person in x for person in people_filter)
-                    )
-                ]
-
-            # Apply teams filter
-            if teams_filter:
-                projects_df = projects_df[
-                    projects_df["Assigned Teams"].apply(
-                        lambda x: any(team in x for team in teams_filter)
-                    )
-                ]
-
-            # Apply departments filter
-            if departments_filter:
-                projects_df = projects_df[
-                    projects_df["Assigned Departments"].apply(
-                        lambda x: any(dept in x for dept in departments_filter)
-                    )
-                ]
-
-            # Sorting
-            if not projects_df.empty:
-                sort_options = ["None"] + list(projects_df.columns)
-                sort_col = st.selectbox(
-                    "Sort by", options=sort_options, key="sort_projects"
-                )
-                if sort_col != "None":
-                    ascending = st.checkbox("Ascending", True, key="asc_projects")
-                    projects_df = projects_df.sort_values(
-                        by=sort_col, ascending=ascending, na_position="first"
-                    )
-
-            # Pagination
-            if len(projects_df) > 20:
-                page_size = st.slider(
-                    "Rows per page",
-                    min_value=10,
-                    max_value=100,
-                    value=20,
-                    step=10,
-                    key="page_size_projects",
-                )
-                total_pages = math.ceil(len(projects_df) / page_size)
-                page_num = st.number_input(
-                    "Page",
-                    min_value=1,
-                    max_value=total_pages,
-                    value=1,
-                    step=1,
-                    key="page_num_projects",
-                )
-                start_idx = (page_num - 1) * page_size
-                end_idx = min(start_idx + page_size, len(projects_df))
-                st.write(
-                    f"Showing {start_idx + 1} to {end_idx} of {len(projects_df)} entries"
-                )
-                projects_df = projects_df.iloc[start_idx:end_idx]
-
-        st.dataframe(projects_df, use_container_width=True)
-
-    if "new_project_people" not in st.session_state:
-        st.session_state["new_project_people"] = []
-    if "new_project_teams" not in st.session_state:
-        st.session_state["new_project_teams"] = []
-
+    # Add and edit project forms
     add_project_form()
     edit_project_form()
 
-    # Delete Project functionality
-    if st.session_state.data["projects"]:
-        st.subheader("Delete Project")
-        delete_project = st.selectbox(
-            "Select project to delete",
-            [p["name"] for p in st.session_state.data["projects"]],
-            key="delete_project",
-        )
+    # Delete project functionality
+    _handle_project_deletion()
 
-        if st.button(f"Delete {delete_project}"):
-            # Remove the project
+
+def _create_projects_dataframe():
+    """Helper function to create a DataFrame from project data."""
+    return pd.DataFrame(
+        [
+            {
+                "Name": p["name"],
+                "Start Date": pd.to_datetime(p["start_date"]).strftime("%Y-%m-%d"),
+                "End Date": pd.to_datetime(p["end_date"]).strftime("%Y-%m-%d"),
+                "Priority": p["priority"],
+                "Duration (days)": (
+                    pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
+                ).days
+                + 1,
+                # Parse assigned resources
+                "Assigned People": parse_resources(p["assigned_resources"])[0],
+                "Assigned Teams": parse_resources(p["assigned_resources"])[1],
+                "Assigned Departments": parse_resources(p["assigned_resources"])[2],
+            }
+            for p in st.session_state.data["projects"]
+        ]
+    )
+
+
+def _filter_projects_dataframe(projects_df):
+    """Helper function to apply search and filtering to the projects DataFrame."""
+    with st.expander("Search and Filter Projects", expanded=False):
+        search_term = st.text_input("Search Projects", key="search_projects")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            date_range = st.date_input(
+                "Filter by Date Range",
+                value=(
+                    pd.to_datetime(projects_df["Start Date"]).min().date(),
+                    pd.to_datetime(projects_df["End Date"]).max().date(),
+                ),
+                min_value=pd.to_datetime(projects_df["Start Date"]).min().date(),
+                max_value=pd.to_datetime(projects_df["End Date"]).max().date(),
+            )
+        with col2:
+            people_filter = st.multiselect(
+                "Filter by Assigned People",
+                options=[p["name"] for p in st.session_state.data["people"]],
+                default=[],
+            )
+
+        col3, col4 = st.columns(2)
+        with col3:
+            teams_filter = st.multiselect(
+                "Filter by Assigned Teams",
+                options=[t["name"] for t in st.session_state.data["teams"]],
+                default=[],
+            )
+        with col4:
+            departments_filter = st.multiselect(
+                "Filter by Assigned Departments",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                default=[],
+            )
+
+        # Apply search term across all columns
+        if search_term:
+            mask = np.column_stack(
+                [
+                    projects_df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in projects_df.columns
+                ]
+            )
+            projects_df = projects_df[mask.any(axis=1)]
+
+        # Apply date range filter
+        if len(date_range) == 2:
+            start_date, end_date = date_range
+            projects_df = projects_df[
+                (
+                    pd.to_datetime(projects_df["Start Date"])
+                    >= pd.to_datetime(start_date)
+                )
+                & (pd.to_datetime(projects_df["End Date"]) <= pd.to_datetime(end_date))
+            ]
+
+        # Apply people filter
+        if people_filter:
+            projects_df = projects_df[
+                projects_df["Assigned People"].apply(
+                    lambda x: any(person in x for person in people_filter)
+                )
+            ]
+
+        # Apply teams filter
+        if teams_filter:
+            projects_df = projects_df[
+                projects_df["Assigned Teams"].apply(
+                    lambda x: any(team in x for team in teams_filter)
+                )
+            ]
+
+        # Apply departments filter
+        if departments_filter:
+            projects_df = projects_df[
+                projects_df["Assigned Departments"].apply(
+                    lambda x: any(dept in x for dept in departments_filter)
+                )
+            ]
+
+        # Sorting
+        if not projects_df.empty:
+            sort_options = ["None"] + list(projects_df.columns)
+            sort_col = st.selectbox(
+                "Sort by", options=sort_options, key="sort_projects"
+            )
+            if sort_col != "None":
+                ascending = st.checkbox("Ascending", True, key="asc_projects")
+                projects_df = projects_df.sort_values(
+                    by=sort_col, ascending=ascending, na_position="first"
+                )
+
+        # Pagination
+        if len(projects_df) > 20:
+            page_size = st.slider(
+                "Rows per page",
+                min_value=10,
+                max_value=100,
+                value=20,
+                step=10,
+                key="page_size_projects",
+            )
+            total_pages = math.ceil(len(projects_df) / page_size)
+            page_num = st.number_input(
+                "Page",
+                min_value=1,
+                max_value=total_pages,
+                value=1,
+                step=1,
+                key="page_num_projects",
+            )
+            start_idx = (page_num - 1) * page_size
+            end_idx = min(start_idx + page_size, len(projects_df))
+            st.write(
+                f"Showing {start_idx + 1} to {end_idx} of {len(projects_df)} entries"
+            )
+            projects_df = projects_df.iloc[start_idx:end_idx]
+
+    return projects_df
+
+
+def _handle_project_deletion():
+    """Helper function to handle project deletion."""
+    if not st.session_state.data["projects"]:
+        return
+
+    st.subheader("Delete Project")
+    delete_project = st.selectbox(
+        "Select project to delete",
+        [p["name"] for p in st.session_state.data["projects"]],
+        key="delete_project",
+    )
+
+    # Add confirmation to prevent accidental deletion
+    delete_confirmed = st.checkbox("Confirm deletion", key="confirm_delete")
+
+    # Use a single button with a unique key
+    if st.button(f"Delete {delete_project}", key="delete_project_button"):
+        if delete_confirmed:
+            # Remove the project from the data
             st.session_state.data["projects"] = [
                 p
                 for p in st.session_state.data["projects"]
@@ -332,6 +362,8 @@ def display_manage_projects_tab():
 
             st.success(f"Deleted project {delete_project}")
             st.rerun()
+        else:
+            st.warning("Please confirm deletion by checking the box")
 
 
 def display_visualize_data_tab():
@@ -640,10 +672,37 @@ def display_import_export_data_tab():
             st.success("Click the link above to download the file")
 
 
+def initialize_session_state():
+    """
+    Initialize all session state variables used throughout the application.
+    This ensures all keys exist before they're accessed.
+    """
+    # Load data if not already loaded
+    if "data" not in st.session_state:
+        st.session_state.data = load_demo_data()
+
+    # Project form state variables
+    if "new_project_people" not in st.session_state:
+        st.session_state["new_project_people"] = []
+    if "new_project_teams" not in st.session_state:
+        st.session_state["new_project_teams"] = []
+    if "edit_project_people" not in st.session_state:
+        st.session_state["edit_project_people"] = []
+    if "edit_project_teams" not in st.session_state:
+        st.session_state["edit_project_teams"] = []
+    if "last_edited_project" not in st.session_state:
+        st.session_state["last_edited_project"] = None
+    if "edit_form_initialized" not in st.session_state:
+        st.session_state["edit_form_initialized"] = False
+
+
 def main():
     """
     Orchestrates the Streamlit application flow.
     """
+    # Initialize all session state variables
+    initialize_session_state()
+
     st.title("Resource Management App")
 
     # Navigation tabs

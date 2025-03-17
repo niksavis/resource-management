@@ -64,28 +64,65 @@ def create_gantt_data(projects: List[Dict], resources: Dict) -> pd.DataFrame:
 def _determine_resource_type(resource: str, data: Dict) -> Tuple[str, str]:
     """
     Identifies whether the resource is a person, team, or department.
+    Uses dictionary lookups for better performance.
+
+    Args:
+        resource: Name of the resource
+        data: Dictionary containing people, teams, and departments
+
+    Returns:
+        Tuple of (resource_type, department)
     """
-    # Check if resource is a person
-    if any(person["name"] == resource for person in data["people"]):
-        matched = next(
-            (p for p in data["people"] if p["name"] == resource),
-            None,
-        )
-        return ("Person", matched["department"] if matched else "Unknown")
+    # Create dictionaries for faster lookups
+    people_dict = {p["name"]: p["department"] for p in data["people"]}
+    team_dict = {t["name"]: t["department"] for t in data["teams"]}
+    dept_set = {d["name"] for d in data["departments"]}
 
-    # Check if resource is a team
-    if any(team["name"] == resource for team in data["teams"]):
-        matched = next(
-            (t for t in data["teams"] if t["name"] == resource),
-            None,
-        )
-        return ("Team", matched["department"] if matched else "Unknown")
-
-    # Check if resource is a department
-    if any(dept["name"] == resource for dept in data["departments"]):
+    # Check resource type using dictionary lookups
+    if resource in people_dict:
+        return ("Person", people_dict[resource])
+    elif resource in team_dict:
+        return ("Team", team_dict[resource])
+    elif resource in dept_set:
         return ("Department", resource)
 
     return ("Unknown", "Unknown")
+
+
+def calculate_date_range(gantt_data: pd.DataFrame, start_date=None, end_date=None):
+    """Determines the date range for utilization calculation."""
+    if start_date is None:
+        start_date = gantt_data["Start"].min()
+    if end_date is None:
+        end_date = gantt_data["Finish"].max()
+
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    # Avoid division by zero
+    total_period_days = max(1, (end_date - start_date).days + 1)
+
+    return start_date, end_date, total_period_days
+
+
+def calculate_resource_allocation(resource_df: pd.DataFrame, start_date, end_date):
+    """Calculates allocation metrics for a single resource."""
+    date_range = pd.date_range(start=start_date, end=end_date)
+    resource_dates = pd.DataFrame(0, index=date_range, columns=["count"])
+
+    for _, row in resource_df.iterrows():
+        project_start = max(row["Start"], start_date)
+        project_end = min(row["Finish"], end_date)
+        project_dates = pd.date_range(start=project_start, end=project_end)
+
+        for date in project_dates:
+            if date in resource_dates.index:
+                resource_dates.loc[date, "count"] += 1
+
+    days_utilized = (resource_dates["count"] > 0).sum()
+    days_overallocated = (resource_dates["count"] > 1).sum()
+
+    return days_utilized, days_overallocated
 
 
 def calculate_resource_utilization(
@@ -97,20 +134,10 @@ def calculate_resource_utilization(
     if gantt_data.empty:
         return pd.DataFrame()
 
-    # If no date range provided, use the min and max dates from data
-    if start_date is None:
-        start_date = gantt_data["Start"].min()
-    if end_date is None:
-        end_date = gantt_data["Finish"].max()
-
-    # Convert to pandas datetime if they are Python datetime
-    start_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
-
-    # Calculate total period days with safeguard
-    total_period_days = max(
-        1, (end_date - start_date).days + 1
-    )  # Avoid division by zero
+    # Get date range for calculation
+    start_date, end_date, total_period_days = calculate_date_range(
+        gantt_data, start_date, end_date
+    )
 
     # Calculate utilization for each resource
     resource_utilization = []
@@ -125,24 +152,10 @@ def calculate_resource_utilization(
         resource_type = resource_df["Type"].iloc[0]
         department = resource_df["Department"].iloc[0]
 
-        # Calculate utilization days and overlaps
-        date_range = pd.date_range(start=start_date, end=end_date)
-        resource_dates = pd.DataFrame(0, index=date_range, columns=["count"])
-
-        for _, row in resource_df.iterrows():
-            project_start = max(row["Start"], start_date)
-            project_end = min(row["Finish"], end_date)
-
-            project_dates = pd.date_range(start=project_start, end=project_end)
-            for date in project_dates:
-                if date in resource_dates.index:
-                    resource_dates.loc[date, "count"] += 1
-
-        # Count days with at least one project
-        days_utilized = (resource_dates["count"] > 0).sum()
-
-        # Count days with overlapping projects
-        days_overallocated = (resource_dates["count"] > 1).sum()
+        # Calculate allocation for this resource
+        days_utilized, days_overallocated = calculate_resource_allocation(
+            resource_df, start_date, end_date
+        )
 
         # Calculate metrics with safeguards
         utilization_percentage = (days_utilized / total_period_days) * 100
@@ -291,11 +304,18 @@ def find_resource_conflicts(df: pd.DataFrame) -> List[Dict]:
 
 
 def parse_resources(resources_list):
-    people_names = [person["name"] for person in st.session_state.data["people"]]
-    team_names = [team["name"] for team in st.session_state.data["teams"]]
     """
     Parses the assigned resources into people, teams, and departments.
+
+    Args:
+        resources_list: List of resource names
+
+    Returns:
+        Tuple of (assigned_people, assigned_teams, assigned_departments)
     """
+    people_names = [person["name"] for person in st.session_state.data["people"]]
+    team_names = [team["name"] for team in st.session_state.data["teams"]]
+
     assigned_people = []
     assigned_teams = []
     assigned_departments = set()
