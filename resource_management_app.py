@@ -19,6 +19,7 @@ import pandas as pd
 import plotly.express as px
 import json
 import numpy as np
+import os
 
 from data_handlers import (
     load_json,
@@ -44,6 +45,7 @@ from utils import (
     check_circular_dependencies,  # Import the new function
 )
 from color_management import display_color_settings  # Import color settings function
+from color_management import load_department_colors, save_department_colors
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
@@ -699,11 +701,27 @@ def display_settings_tab():
 def initialize_session_state():
     """
     Initialize all session state variables used throughout the application.
-    This ensures all keys exist before they're accessed.
     """
     # Load data if not already loaded
     if "data" not in st.session_state:
         st.session_state.data = load_demo_data()
+
+    # Ensure department colors JSON file exists
+    if not os.path.exists("department_colors.json"):
+        save_department_colors(
+            {
+                dept: "#000000".lower()
+                for dept in [
+                    "Network Engineering",
+                    "Software Development",
+                    "Information Technology",
+                    "Product Management",
+                    "Customer Experience",
+                    "Operations",
+                    "Research and Development",
+                ]
+            }
+        )  # Initialize with lowercase hex codes
 
     # Project form state variables
     if "new_project_people" not in st.session_state:

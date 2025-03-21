@@ -15,14 +15,13 @@ from data_handlers import calculate_resource_utilization, filter_dataframe
 from utils import paginate_dataframe  # Import the new function
 from color_management import (
     manage_visualization_colors,
-)  # Import color management functions
-from color_constants import UTILIZATION_COLORSCALE  # Import color constants
+    load_utilization_colorscale,  # Import the new function
+)
 
 
 def display_gantt_chart(df: pd.DataFrame) -> None:
     """
     Displays an interactive Gantt chart using Plotly.
-    Refactored into smaller, focused functions.
     """
     if df.empty:
         st.warning("No data available to visualize.")
@@ -32,9 +31,12 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
     df_with_utilization = _prepare_gantt_data(df)
 
     # Get dynamically managed colors
-    department_colors = manage_visualization_colors(
-        df_with_utilization["Department"].unique()
-    )
+    department_colors = {
+        dept: color.lower()
+        for dept, color in manage_visualization_colors(
+            df_with_utilization["Department"].unique()
+        ).items()
+    }  # Ensure lowercase hex codes
 
     # Create the Gantt chart
     fig = _create_gantt_figure(df_with_utilization, department_colors)
@@ -184,6 +186,9 @@ def display_utilization_dashboard(
         st.warning("No utilization data available for the selected period.")
         return
 
+    # Load utilization colorscale dynamically
+    utilization_colorscale = load_utilization_colorscale()
+
     # Display summary metrics
     st.subheader("Resource Utilization Summary")
 
@@ -266,7 +271,7 @@ def display_utilization_dashboard(
             z=heatmap_wide[["Utilization %", "Overallocation %"]].values.T,
             x=heatmap_wide["Resource"],
             y=["Utilization %", "Overallocation %"],
-            colorscale=UTILIZATION_COLORSCALE,  # Use standardized utilization colorscale
+            colorscale=utilization_colorscale,  # Use dynamically loaded colorscale
             showscale=True,
             hoverongaps=False,
             text=[

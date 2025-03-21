@@ -1,0 +1,29 @@
+{
+    "department_colors": {
+        "Network Engineering": "#636efa",
+        "Software Development": "#ef553b",
+        "Customer Experience": "#00cc96",
+        "Information Technology": "#ab63fa",
+        "Product Management": "#ffc627",
+        "Operations": "#19d3f3",
+        "Research and Development": "#ff6692"
+    },
+    "utilization_colorscale": [
+        [
+            0,
+            "#02c502"
+        ],
+        [
+            0.6,
+            "#ffff00"
+        ],
+        [
+            0.8,
+            "#ffa500"
+        ],
+        [
+            1,
+            "#ff0000"
+        ]
+    ]
+}
