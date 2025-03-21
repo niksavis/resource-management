@@ -62,65 +62,70 @@ def person_crud_form() -> None:
     with st.expander("Add new Person", expanded=False):
         with st.form("add_person"):
             st.write("Add new person")
-            name = st.text_input("Name")
-            role = st.selectbox(
-                "Role",
-                [
-                    "Developer",
-                    "UX/UI Designer",
-                    "Domain Lead",
-                    "Product Owner",
-                    "Project Manager",
-                    "Key Stakeholder",
-                    "Head of Department",
-                    "Other",
-                ],
-            )
-            if role == "Other":
-                role = st.text_input("Specify role")
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                name = st.text_input("Name")
+                role = st.selectbox(
+                    "Role",
+                    [
+                        "Developer",
+                        "UX/UI Designer",
+                        "Domain Lead",
+                        "Product Owner",
+                        "Project Manager",
+                        "Key Stakeholder",
+                        "Head of Department",
+                        "Other",
+                    ],
+                )
+                if role == "Other":
+                    role = st.text_input("Specify role")
+            with col2:
+                if st.session_state.data["departments"] and name:
+                    dept_options = [
+                        d["name"] for d in st.session_state.data["departments"]
+                    ]
+                    department = st.selectbox("Department", dept_options)
+                else:
+                    department = st.text_input("Department")
 
-            # Select or create department
-            if st.session_state.data["departments"] and name:
-                dept_options = [d["name"] for d in st.session_state.data["departments"]]
-                department = st.selectbox("Department", dept_options)
-            else:
-                department = st.text_input("Department")
+                team_options = ["None"]
+                if st.session_state.data["teams"] and department:
+                    for team in st.session_state.data["teams"]:
+                        if team["department"] == department:
+                            team_options.append(team["name"])
+                team = st.selectbox("Team (optional)", team_options)
+                if team == "None":
+                    team = None
 
-            # Select team (optional)
-            team_options = ["None"]
-            if st.session_state.data["teams"] and department:
-                for team in st.session_state.data["teams"]:
-                    if team["department"] == department:
-                        team_options.append(team["name"])
+            # Place Daily Work Hours to the left, Daily Cost to the right
+            row1_col1, row1_col2 = st.columns([1, 1])
+            with row1_col1:
+                daily_work_hours = st.number_input(
+                    "Daily Work Hours",
+                    min_value=1,
+                    max_value=24,
+                    value=8,
+                    help="Number of hours this person works per day.",
+                )
+            with row1_col2:
+                daily_cost = st.number_input(
+                    f"Daily Cost ({currency_symbol})",
+                    min_value=0.0,
+                    step=50.0,
+                    value=0.0,
+                    help="Cost per day for this person.",
+                )
 
-            team = st.selectbox("Team (optional)", team_options)
-            if team == "None":
-                team = None
-
-            # Add new fields
-            daily_cost = st.number_input(
-                f"Daily Cost ({currency_symbol})",
-                min_value=0.0,
-                step=50.0,  # Changed step to a float
-                value=0.0,  # Ensure value is a float
-                help="Cost per day for this person.",
-            )
             st.write("Work Days")
-            work_days = {
-                day: st.checkbox(day, value=(day in ["MO", "TU", "WE", "TH", "FR"]))
-                for day in ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
-            }
-            selected_work_days = [
-                day for day, selected in work_days.items() if selected
-            ]
-
-            daily_work_hours = st.number_input(
-                "Daily Work Hours",
-                min_value=1,
-                max_value=24,
-                value=8,
-                help="Number of hours this person works per day.",
-            )
+            col_days = st.columns(7)
+            day_labels = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+            work_days = {}
+            for idx, day in enumerate(day_labels):
+                work_days[day] = col_days[idx].checkbox(
+                    day, value=(day in ["MO", "TU", "WE", "TH", "FR"])
+                )
+            selected_work_days = [d for d, checked in work_days.items() if checked]
 
             submit = st.form_submit_button("Add Person")
 
@@ -188,89 +193,101 @@ def person_crud_form() -> None:
             if selected_person:
                 with st.expander("Edit Person", expanded=False):
                     with st.form("edit_person_form"):
-                        new_name = st.text_input("Name", value=selected_person["name"])
-
-                        roles = [
-                            "Developer",
-                            "UX/UI Designer",
-                            "Domain Lead",
-                            "Product Owner",
-                            "Project Manager",
-                            "Key Stakeholder",
-                            "Head of Department",
-                            "Other",
-                        ]
-                        role_index = (
-                            roles.index(selected_person["role"])
-                            if selected_person["role"] in roles
-                            else roles.index("Other")
-                        )
-                        new_role = st.selectbox("Role", roles, index=role_index)
-
-                        if new_role == "Other":
-                            new_role = st.text_input(
-                                "Specify role", value=selected_person["role"]
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            new_name = st.text_input(
+                                "Name", value=selected_person["name"]
                             )
 
-                        # Select department
-                        dept_options = [
-                            d["name"] for d in st.session_state.data["departments"]
-                        ]
-                        dept_index = (
-                            dept_options.index(selected_person["department"])
-                            if selected_person["department"] in dept_options
-                            else 0
-                        )
-                        new_department = st.selectbox(
-                            "Department", dept_options, index=dept_index
-                        )
+                            roles = [
+                                "Developer",
+                                "UX/UI Designer",
+                                "Domain Lead",
+                                "Product Owner",
+                                "Project Manager",
+                                "Key Stakeholder",
+                                "Head of Department",
+                                "Other",
+                            ]
+                            role_index = (
+                                roles.index(selected_person["role"])
+                                if selected_person["role"] in roles
+                                else roles.index("Other")
+                            )
+                            new_role = st.selectbox("Role", roles, index=role_index)
 
-                        # Select team (optional)
-                        team_options = ["None"]
-                        for team in st.session_state.data["teams"]:
-                            if team["department"] == new_department:
-                                team_options.append(team["name"])
-
-                        current_team_index = 0
-                        if (
-                            selected_person["team"] is not None
-                            and selected_person["team"] in team_options
-                        ):
-                            current_team_index = team_options.index(
-                                selected_person["team"]
+                            if new_role == "Other":
+                                new_role = st.text_input(
+                                    "Specify role", value=selected_person["role"]
+                                )
+                        with col2:
+                            dept_options = [
+                                d["name"] for d in st.session_state.data["departments"]
+                            ]
+                            dept_index = (
+                                dept_options.index(selected_person["department"])
+                                if selected_person["department"] in dept_options
+                                else 0
+                            )
+                            new_department = st.selectbox(
+                                "Department", dept_options, index=dept_index
                             )
 
-                        new_team = st.selectbox(
-                            "Team (optional)", team_options, index=current_team_index
-                        )
-                        if new_team == "None":
-                            new_team = None
+                            # Select team (optional)
+                            team_options = ["None"]
+                            for team in st.session_state.data["teams"]:
+                                if team["department"] == new_department:
+                                    team_options.append(team["name"])
 
-                        # Edit new fields
-                        new_daily_cost = st.number_input(
-                            f"Daily Cost ({currency_symbol})",
-                            min_value=0.0,
-                            step=50.0,  # Changed step to a float
-                            value=float(
-                                selected_person["daily_cost"]
-                            ),  # Ensure value is a float
-                        )
+                            current_team_index = 0
+                            if (
+                                selected_person["team"] is not None
+                                and selected_person["team"] in team_options
+                            ):
+                                current_team_index = team_options.index(
+                                    selected_person["team"]
+                                )
+
+                            new_team = st.selectbox(
+                                "Team (optional)",
+                                team_options,
+                                index=current_team_index,
+                            )
+                            if new_team == "None":
+                                new_team = None
+
+                        # Place Daily Work Hours to the left, Daily Cost to the right
+                        row2_col1, row2_col2 = st.columns([1, 1])
+                        with row2_col1:
+                            new_daily_work_hours = st.number_input(
+                                "Daily Work Hours",
+                                min_value=1,
+                                max_value=24,
+                                value=selected_person["daily_work_hours"],
+                            )
+                        with row2_col2:
+                            new_daily_cost = st.number_input(
+                                f"Daily Cost ({currency_symbol})",
+                                min_value=0.0,
+                                step=50.0,  # Changed step to a float
+                                value=float(
+                                    selected_person["daily_cost"]
+                                ),  # Ensure value is a float
+                            )
+
                         st.write("Work Days")
-                        new_work_days = {
-                            day: st.checkbox(
-                                day, value=(day in selected_person["work_days"])
+                        col_days_edit = st.columns(7)
+                        day_labels = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+                        new_work_days = {}
+                        for idx, day in enumerate(day_labels):
+                            new_work_days[day] = col_days_edit[idx].checkbox(
+                                day,
+                                value=(day in selected_person["work_days"]),
+                                key=f"edit_{day}",
                             )
-                            for day in ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
-                        }
                         selected_new_work_days = [
-                            day for day, selected in new_work_days.items() if selected
+                            d for d, checked in new_work_days.items() if checked
                         ]
-                        new_daily_work_hours = st.number_input(
-                            "Daily Work Hours",
-                            min_value=1,
-                            max_value=24,
-                            value=selected_person["daily_work_hours"],
-                        )
 
                         update_button = st.form_submit_button("Update Person")
 

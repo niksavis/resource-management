@@ -5,7 +5,7 @@
       "role": "Head of Department",
       "department": "Network Engineering",
       "team": null,
-      "daily_cost": 500,
+      "daily_cost": 700,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8
     },
@@ -14,7 +14,7 @@
       "role": "Network Architect",
       "department": "Network Engineering",
       "team": "Network Planning Team",
-      "daily_cost": 400,
+      "daily_cost": 550,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8
     },
@@ -1120,7 +1120,7 @@
         "Network Implementation Team",
         "Mia Jackson"
       ],
-      "allocated_budget": 100000
+      "allocated_budget": 130000.0
     },
     {
       "name": "Customer Self-Service Portal",
@@ -1133,7 +1133,7 @@
         "User Experience Team",
         "Ella Carter"
       ],
-      "allocated_budget": 80000
+      "allocated_budget": 40000.0
     },
     {
       "name": "Enterprise Billing System Upgrade",
@@ -1145,7 +1145,7 @@
         "Enterprise Products Team",
         "Ian Barnes"
       ],
-      "allocated_budget": 120000
+      "allocated_budget": 180000.0
     },
     {
       "name": "Network Security Enhancement",
