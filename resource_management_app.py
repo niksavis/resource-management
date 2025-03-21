@@ -9,9 +9,9 @@ resources, projects, and visualizing data.
 import streamlit as st
 import pandas as pd
 import json
-import plotly.express as px  # Add this import
-import numpy as np  # Add this import
-import os  # Add this import
+import plotly.express as px
+import numpy as np
+import os
 from data_handlers import (
     load_json,
     save_json,
