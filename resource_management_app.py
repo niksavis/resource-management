@@ -45,7 +45,7 @@ from utils import (
     check_circular_dependencies,  # Import the new function
 )
 from color_management import display_color_settings  # Import color settings function
-from color_management import load_department_colors, save_department_colors
+from color_management import save_department_colors
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
