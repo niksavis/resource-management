@@ -158,24 +158,14 @@ def _apply_sorting(df, label):
 
 
 def paginate_dataframe(df, key_prefix):
-    """Apply pagination to any dataframe."""
+    """Paginate a dataframe for display."""
     if len(df) > 20:
         page_size = st.slider(
-            "Rows per page",
-            min_value=10,
-            max_value=100,
-            value=20,
-            step=10,
-            key=f"page_size_{key_prefix}",
+            "Rows per page", 10, 100, 20, 10, key=f"page_size_{key_prefix}"
         )
         total_pages = math.ceil(len(df) / page_size)
         page_num = st.number_input(
-            "Page",
-            min_value=1,
-            max_value=total_pages,
-            value=1,
-            step=1,
-            key=f"page_num_{key_prefix}",
+            "Page", 1, total_pages, 1, 1, key=f"page_num_{key_prefix}"
         )
         start_idx = (page_num - 1) * page_size
         end_idx = min(start_idx + page_size, len(df))

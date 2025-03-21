@@ -21,71 +21,38 @@ def ensure_settings_directory():
 
 
 def load_settings():
-    """Load settings from a JSON file."""
-    settings_file = SETTINGS_FILE
-
-    if not os.path.exists(settings_file):
-        # Get departments from the data
+    """Load settings from a JSON file or create default settings if missing."""
+    if not os.path.exists(SETTINGS_FILE):
         departments = [d["name"] for d in st.session_state.data["departments"]]
-
-        # Create default settings structure
         default_settings = {
-            "department_colors": {},
+            "department_colors": {
+                dept: px.colors.qualitative.Plotly[
+                    i % len(px.colors.qualitative.Plotly)
+                ]
+                for i, dept in enumerate(departments)
+            },
             "utilization_colorscale": [
-                [0, "#00FF00"],  # Green for 0% utilization
-                [0.5, "#FFFF00"],  # Yellow for 50% utilization
-                [1, "#FF0000"],  # Red for 100% or over-utilization
+                [0, "#00FF00"],
+                [0.5, "#FFFF00"],
+                [1, "#FF0000"],
             ],
         }
-
-        # Generate colors for departments
-        colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
-        for i, dept in enumerate(departments):
-            default_settings["department_colors"][dept] = colorscale[
-                i % len(colorscale)
-            ].lower()
-
-        # Save the settings file
-        with open(settings_file, "w") as file:
-            json.dump(default_settings, file, indent=4)
-
+        save_settings(default_settings)
         return default_settings
 
     try:
-        with open(settings_file, "r") as file:
-            settings = json.load(file)
-
-            # Ensure utilization_colorscale exists
-            if (
-                "utilization_colorscale" not in settings
-                or not settings["utilization_colorscale"]
-            ):
-                settings["utilization_colorscale"] = [
-                    [0, "#00FF00"],  # Green for 0% utilization
-                    [0.5, "#FFFF00"],  # Yellow for 50% utilization
-                    [1, "#FF0000"],  # Red for 100% or over-utilization
-                ]
-                save_settings(settings)
-
-            return settings
-    except json.JSONDecodeError as e:
-        st.error(
-            f"Error decoding settings file: {e}. Please check the file format and fix any issues."
-        )
-    except Exception as e:
-        st.error(
-            f"Unexpected error loading settings file: {e}. Please ensure the file is accessible and properly formatted."
-        )
-
-    # Return default settings if there's an error
-    return {
-        "department_colors": {},
-        "utilization_colorscale": [
-            [0, "#00FF00"],
-            [0.5, "#FFFF00"],
-            [1, "#FF0000"],
-        ],
-    }
+        with open(SETTINGS_FILE, "r") as file:
+            return json.load(file)
+    except (json.JSONDecodeError, FileNotFoundError):
+        st.error("Error loading settings. Using default settings.")
+        return {
+            "department_colors": {},
+            "utilization_colorscale": [
+                [0, "#00FF00"],
+                [0.5, "#FFFF00"],
+                [1, "#FF0000"],
+            ],
+        }
 
 
 def save_settings(settings):

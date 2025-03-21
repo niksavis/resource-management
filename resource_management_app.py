@@ -57,26 +57,17 @@ if "data" not in st.session_state:
 
 
 def display_home_tab():
-    """
-    Displays the content for the Home tab.
-    """
+    """Displays the content for the Home tab."""
     st.subheader("Home")
-    # Introduction section
     st.subheader("Introduction")
-    st.write("""
-    This application helps you manage project resources and visualize
-    their allocation across multiple projects.
-
-    Use the sidebar to navigate through different sections of the app.
-    """)
-
-    # Resource summary section
-    st.subheader("Resource Summary")
-    st.markdown(
-        "Below is the total number of each resource type currently available in the system:"
+    st.write(
+        "This application helps you manage project resources and visualize "
+        "their allocation across multiple projects."
     )
 
-    # Display resource summary
+    st.subheader("Resource Summary")
+    st.markdown("Below is the total number of each resource type:")
+
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("People", len(st.session_state.data["people"]))
@@ -87,15 +78,12 @@ def display_home_tab():
     with col4:
         st.metric("Projects", len(st.session_state.data["projects"]))
 
-    # Project timeline section
     st.subheader("Project Timeline Overview")
     st.write(
         "A snapshot of ongoing projects, their priorities, and assigned resources."
     )
 
-    # Add overview visualization to home page
     if st.session_state.data["projects"]:
-        # Create a simplified Gantt chart for the home page
         projects_df = pd.DataFrame(
             [
                 {
@@ -108,13 +96,9 @@ def display_home_tab():
                 for p in st.session_state.data["projects"]
             ]
         )
-        # Mark duplicate priorities
-        projects_df["priority_count"] = projects_df.groupby("Priority")[
-            "Priority"
-        ].transform("count")
         projects_df["Priority Label"] = projects_df.apply(
             lambda row: f"Priority {row['Priority']} (Duplicate)"
-            if row["priority_count"] > 1
+            if projects_df["Priority"].duplicated().any()
             else f"Priority {row['Priority']}",
             axis=1,
         )
@@ -126,14 +110,12 @@ def display_home_tab():
             y="Project",
             color="Priority Label",
             hover_data=["Resources"],
-            color_continuous_scale="Viridis_r",  # Lower numbers (higher priority) are darker
+            color_continuous_scale="Viridis_r",
             title="Project Timeline",
         )
-
-        # Add today marker
-        today = pd.Timestamp.now()
-        fig.add_vline(x=today, line_width=1, line_dash="dash", line_color="red")
-
+        fig.add_vline(
+            x=pd.Timestamp.now(), line_width=1, line_dash="dash", line_color="red"
+        )
         st.plotly_chart(fig, use_container_width=True)
 
 

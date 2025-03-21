@@ -10,28 +10,16 @@ import streamlit as st
 
 
 def validate_name_field(name: str, entity_type: str = "resource") -> bool:
-    """
-    Validates the name field for a given entity type.
-
-    Args:
-        name (str): The name to validate.
-        entity_type (str): The type of entity (e.g., "Person", "Team", "Department").
-
-    Returns:
-        bool: True if the name is valid, False otherwise.
-    """
+    """Validate the name field for a given entity type."""
     if not name.strip():
         st.error(f"{entity_type} name cannot be empty.")
         return False
-
     if len(name) < 3:
         st.error(f"{entity_type} name must be at least 3 characters long.")
         return False
-
     if not name.replace(" ", "").isalpha():
         st.error(f"{entity_type} name must contain only alphabetic characters.")
         return False
-
     return True
 
 
