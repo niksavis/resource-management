@@ -188,6 +188,9 @@ def display_utilization_dashboard(
 
     # Load utilization colorscale dynamically
     utilization_colorscale = load_utilization_colorscale()
+    if not utilization_colorscale:
+        st.warning("Utilization colorscale is not defined. Using default colorscale.")
+        utilization_colorscale = px.colors.sequential.Viridis  # Default colorscale
 
     # Display summary metrics
     st.subheader("Resource Utilization Summary")
@@ -271,7 +274,7 @@ def display_utilization_dashboard(
             z=heatmap_wide[["Utilization %", "Overallocation %"]].values.T,
             x=heatmap_wide["Resource"],
             y=["Utilization %", "Overallocation %"],
-            colorscale=utilization_colorscale,  # Use dynamically loaded colorscale
+            colorscale=utilization_colorscale,  # Use dynamically loaded or default colorscale
             showscale=True,
             hoverongaps=False,
             text=[

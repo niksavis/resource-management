@@ -15,6 +15,7 @@ from validation import (
     validate_project_dates,
     validate_project_input,  # Import validation functions
 )
+from color_management import add_department_color, delete_department_color
 
 
 def delete_resource(resource_list: List[Dict], resource_name: str) -> bool:
@@ -454,6 +455,7 @@ def department_crud_form() -> None:
                     st.session_state.data["departments"].append(
                         {"name": name, "teams": [], "members": []}
                     )
+                    add_department_color(name)  # Add color for the new department
                     st.success(f"Added department {name}")
                     st.rerun()
 
@@ -469,6 +471,9 @@ def department_crud_form() -> None:
                     st.session_state.data["departments"], selected_dept
                 )
                 if success:
+                    delete_department_color(
+                        selected_dept
+                    )  # Remove the department color
                     st.success(f"Deleted department: {selected_dept}")
                     st.rerun()
                 else:

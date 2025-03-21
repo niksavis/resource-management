@@ -1,29 +1,25 @@
 {
     "department_colors": {
-        "Network Engineering": "#000000",
-        "Software Development": "#000000",
-        "Information Technology": "#000000",
-        "Product Management": "#000000",
-        "Customer Experience": "#000000",
-        "Operations": "#000000",
-        "Research and Development": "#000000"
+        "Network Engineering": "#636efa",
+        "Software Development": "#ef553b",
+        "Information Technology": "#00cc96",
+        "Product Management": "#ab63fa",
+        "Customer Experience": "#ffa15a",
+        "Operations": "#19d3f3",
+        "Research and Development": "#ff6692"
     },
     "utilization_colorscale": [
         [
             0,
-            "#02c502"
+            "#00FF00"
         ],
         [
-            0.6,
-            "#ffff00"
-        ],
-        [
-            0.8,
-            "#ffa500"
+            0.5,
+            "#FFFF00"
         ],
         [
             1,
-            "#ff0000"
+            "#FF0000"
         ]
     ]
 }

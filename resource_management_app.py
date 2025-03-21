@@ -45,7 +45,7 @@ from utils import (
     check_circular_dependencies,  # Import the new function
 )
 from color_management import display_color_settings  # Import color settings function
-from color_management import save_department_colors
+from color_management import regenerate_department_colors
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
@@ -676,6 +676,9 @@ def display_import_export_data_tab():
             if data:
                 if st.button("Import Data"):
                     st.session_state.data = data
+                    # Regenerate department colors based on the imported data
+                    departments = [d["name"] for d in data.get("departments", [])]
+                    regenerate_department_colors(departments)
                     st.success("Data imported successfully")
                     st.rerun()
 
@@ -706,22 +709,32 @@ def initialize_session_state():
     if "data" not in st.session_state:
         st.session_state.data = load_demo_data()
 
-    # Ensure department colors JSON file exists
-    if not os.path.exists("department_colors.json"):
-        save_department_colors(
-            {
-                dept: "#000000".lower()
-                for dept in [
-                    "Network Engineering",
-                    "Software Development",
-                    "Information Technology",
-                    "Product Management",
-                    "Customer Experience",
-                    "Operations",
-                    "Research and Development",
-                ]
-            }
-        )  # Initialize with lowercase hex codes
+    # Initialize settings.json with proper values
+    settings_file = "settings.json"
+    if not os.path.exists(settings_file):
+        # Get departments from the data
+        departments = [d["name"] for d in st.session_state.data["departments"]]
+
+        # Create default settings structure
+        default_settings = {
+            "department_colors": {},
+            "utilization_colorscale": [
+                [0, "#00FF00"],  # Green for 0% utilization
+                [0.5, "#FFFF00"],  # Yellow for 50% utilization
+                [1, "#FF0000"],  # Red for 100% or over-utilization
+            ],
+        }
+
+        # Generate colors for departments
+        colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
+        for i, dept in enumerate(departments):
+            default_settings["department_colors"][dept] = colorscale[
+                i % len(colorscale)
+            ].lower()
+
+        # Save the settings file
+        with open(settings_file, "w") as file:
+            json.dump(default_settings, file, indent=4)
 
     # Project form state variables
     if "new_project_people" not in st.session_state:
