@@ -4,23 +4,14 @@ Resource Management Application
 This module orchestrates the Streamlit application flow, including
 navigation, data loading, and rendering of various tabs for managing
 resources, projects, and visualizing data.
-
-Tabs:
-- Home
-- Manage Resources
-- Manage Projects
-- Visualize Data
-- Resource Utilization
-- Import/Export Data
 """
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import json
-import numpy as np
-import os
-
+import plotly.express as px  # Add this import
+import numpy as np  # Add this import
+import os  # Add this import
 from data_handlers import (
     load_json,
     save_json,
@@ -28,7 +19,6 @@ from data_handlers import (
     calculate_resource_utilization,
     filter_dataframe,
     find_resource_conflicts,
-    # Removed unused import parse_resources
 )
 from visualizations import display_gantt_chart, display_utilization_dashboard
 from resource_forms import (
@@ -42,14 +32,14 @@ from utils import (
     display_filtered_resource,
     paginate_dataframe,
     confirm_action,
-    check_circular_dependencies,  # Import the new function
+    check_circular_dependencies,
 )
 from color_management import (
     display_color_settings,
     load_currency_settings,
     save_currency_settings,
+    regenerate_department_colors,
 )
-from color_management import regenerate_department_colors
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
@@ -807,15 +797,9 @@ def initialize_session_state():
 
 
 def main():
-    """
-    Orchestrates the Streamlit application flow.
-    """
-    # Initialize all session state variables
-    initialize_session_state()
-
+    """Orchestrates the Streamlit application flow."""
     st.title("Resource Management App")
 
-    # Navigation tabs
     tabs = st.tabs(
         [
             "Home",
@@ -824,28 +808,22 @@ def main():
             "Visualize Data",
             "Resource Utilization",
             "Import/Export Data",
-            "Settings",  # Add Settings tab
+            "Settings",
         ]
     )
 
     with tabs[0]:
         display_home_tab()
-
     with tabs[1]:
         display_manage_resources_tab()
-
     with tabs[2]:
         display_manage_projects_tab()
-
     with tabs[3]:
         display_visualize_data_tab()
-
     with tabs[4]:
         display_resource_utilization_tab()
-
     with tabs[5]:
         display_import_export_data_tab()
-
     with tabs[6]:
         display_settings_tab()
 
