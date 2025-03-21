@@ -10,8 +10,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from datetime import datetime
-from typing import Optional
-from data_handlers import calculate_resource_utilization, filter_dataframe
+from typing import Optional, List, Dict
+from data_handlers import (
+    calculate_resource_utilization,
+    filter_dataframe,
+    calculate_project_cost,
+)
 from utils import paginate_dataframe  # Import the new function
 from color_management import (
     manage_visualization_colors,
@@ -39,7 +43,25 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
     }  # Ensure lowercase hex codes
 
     # Create the Gantt chart
-    fig = _create_gantt_figure(df_with_utilization, department_colors)
+    fig = px.timeline(
+        df_with_utilization,
+        x_start="Start",
+        x_end="Finish",
+        y="Resource",
+        color="Department",
+        hover_data=[
+            "Type",
+            "Department",
+            "Priority",
+            "Duration (days)",
+            "Utilization %",
+            "Overallocation %",
+            "Cost (€)",  # Add cost information to hover data
+        ],
+        labels={"Resource": "Resource Name"},
+        height=600,
+        color_discrete_map=department_colors,  # Use dynamically managed colors
+    )
 
     # Add today marker and highlight overallocated resources
     fig = _add_today_marker(fig)
@@ -53,7 +75,7 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
 
 
 def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Prepare data for Gantt chart by adding utilization information."""
+    """Prepare data for Gantt chart by adding utilization and cost information."""
     # Calculate utilization for coloring
     utilization_df = calculate_resource_utilization(df)
 
@@ -68,6 +90,23 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
     df["Utilization %"] = df["Resource"].map(utilization_map)
     df["Overallocation %"] = df["Resource"].map(overallocation_map)
     df["Duration (days)"] = (df["Finish"] - df["Start"]).dt.days + 1
+
+    # Ensure the Cost (€) column is calculated
+    if "Cost (€)" not in df.columns:
+        df["Cost (€)"] = df.apply(
+            lambda row: calculate_project_cost(
+                {
+                    "start_date": row["Start"].strftime(
+                        "%Y-%m-%d"
+                    ),  # Convert to string
+                    "end_date": row["Finish"].strftime("%Y-%m-%d"),  # Convert to string
+                    "assigned_resources": [row["Resource"]],
+                },
+                st.session_state.data["people"],
+                st.session_state.data["teams"],
+            ),
+            axis=1,
+        )
 
     return df
 
@@ -186,6 +225,11 @@ def display_utilization_dashboard(
         st.warning("No utilization data available for the selected period.")
         return
 
+    # Ensure "Cost (€)" is numeric for calculations
+    utilization_df["Cost (€)"] = (
+        utilization_df["Cost (€)"].replace(",", "", regex=True).astype(float)
+    )
+
     # Load utilization colorscale dynamically
     utilization_colorscale = load_utilization_colorscale()
     if not utilization_colorscale:
@@ -199,14 +243,16 @@ def display_utilization_dashboard(
     avg_overallocation = utilization_df["Overallocation %"].mean()
     total_resources = len(utilization_df)
     overallocated_resources = (utilization_df["Overallocation %"] > 0).sum()
+    total_cost = utilization_df["Cost (€)"].sum()  # Ensure numeric sum
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Average Utilization", f"{avg_utilization:.1f}%")
     col2.metric(
         "Overallocated Resources", f"{overallocated_resources}/{total_resources}"
     )
     col3.metric("Average Overallocation", f"{avg_overallocation:.1f}%")
     col4.metric("Total Resources", total_resources)
+    col5.metric("Total Cost (€)", f"{total_cost:,.2f}")  # Format with commas
 
     # Add utilization charts
     st.subheader("Resource Utilization Breakdown")
@@ -306,6 +352,9 @@ def display_utilization_dashboard(
     display_df["Overallocation %"] = (
         display_df["Overallocation %"].round(1).astype(str) + "%"
     )
+    display_df["Cost (€)"] = display_df["Cost (€)"].apply(
+        lambda x: f"{x:,.2f}"  # Format with commas
+    )
 
     # Apply search and filtering
     filtered_df = filter_dataframe(
@@ -318,6 +367,7 @@ def display_utilization_dashboard(
             "Projects",
             "Utilization %",
             "Overallocation %",
+            "Cost (€)",  # Include cost in the table
         ],
     )
 
@@ -325,3 +375,50 @@ def display_utilization_dashboard(
     filtered_df = paginate_dataframe(filtered_df, "utilization")
 
     st.dataframe(filtered_df, use_container_width=True)
+
+
+def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
+    """
+    Displays a budget vs. actual cost visualization for all projects.
+    """
+    st.subheader("Budget vs. Actual Cost")
+
+    # Prepare data for visualization
+    data = []
+    for project in projects:
+        actual_cost = calculate_project_cost(
+            project, st.session_state.data["people"], st.session_state.data["teams"]
+        )
+        data.append(
+            {
+                "Project": project["name"],
+                "Allocated Budget (€)": project["allocated_budget"],
+                "Actual Cost (€)": actual_cost,
+            }
+        )
+
+    df = pd.DataFrame(data)
+
+    # Create bar chart for budget vs. actual cost
+    fig = px.bar(
+        df,
+        x="Project",
+        y=["Allocated Budget (€)", "Actual Cost (€)"],
+        barmode="group",
+        title="Budget vs. Actual Cost by Project",
+        labels={"value": "Cost (€)", "variable": "Cost Type"},
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Highlight projects with cost overruns
+    overruns = df[df["Actual Cost (€)"] > df["Allocated Budget (€)"]]
+    if not overruns.empty:
+        overruns["Allocated Budget (€)"] = overruns["Allocated Budget (€)"].apply(
+            lambda x: f"{x:,.2f}"  # Format with commas
+        )
+        overruns["Actual Cost (€)"] = overruns["Actual Cost (€)"].apply(
+            lambda x: f"{x:,.2f}"  # Format with commas
+        )
+        st.warning("The following projects have cost overruns:")
+        st.dataframe(overruns, use_container_width=True)

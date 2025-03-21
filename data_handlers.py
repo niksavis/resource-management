@@ -27,6 +27,7 @@ from testable_functions import (
     calculate_project_duration,
     is_resource_overallocated,
 )  # Import testable functions
+# Removed redundant import of datetime
 
 
 def load_json(file: io.TextIOWrapper) -> Dict:
@@ -185,6 +186,26 @@ def calculate_resource_utilization(
             (days_overallocated / total_period_days) * 100 if days_utilized > 0 else 0
         )
 
+        # Calculate cost for the resource
+        if resource_type == "Person":
+            person = next(
+                (p for p in st.session_state.data["people"] if p["name"] == resource),
+                None,
+            )
+            cost = calculate_person_cost(person) if person else 0.0
+        elif resource_type == "Team":
+            team = next(
+                (t for t in st.session_state.data["teams"] if t["name"] == resource),
+                None,
+            )
+            cost = (
+                calculate_team_cost(team, st.session_state.data["people"])
+                if team
+                else 0.0
+            )
+        else:
+            cost = 0.0
+
         resource_utilization.append(
             {
                 "Resource": resource,
@@ -199,6 +220,7 @@ def calculate_resource_utilization(
                 "Overallocated": is_resource_overallocated(
                     days_overallocated, total_period_days
                 ),  # Use the new function
+                "Cost (€)": f"{cost:,.2f}",  # Format with commas
             }
         )
 
@@ -359,3 +381,95 @@ def parse_resources(resources_list):
                         assigned_departments.add(person_data["department"])
 
     return assigned_people, assigned_teams, list(assigned_departments)
+
+
+@st.cache_data
+def calculate_person_cost(person: Dict) -> float:
+    """
+    Calculate the cost of a person based on their daily cost, work days, and daily work hours.
+    """
+    if not person.get("daily_cost") or not person.get("work_days"):
+        return 0.0
+
+    # Assume 5 workdays per week (MO-FR) and 4.33 weeks per month
+    work_days_per_week = len(person["work_days"])
+    daily_cost = person["daily_cost"]
+    return daily_cost * work_days_per_week * 4.33
+
+
+@st.cache_data
+def calculate_team_cost(team: Dict, people: List[Dict]) -> float:
+    """
+    Calculate the cost of a team by summing the costs of its members.
+    """
+    member_costs = [
+        calculate_person_cost(person)
+        for person in people
+        if person["name"] in team["members"]
+    ]
+    return sum(member_costs)
+
+
+@st.cache_data
+def calculate_department_cost(
+    department: Dict, people: List[Dict], teams: List[Dict]
+) -> float:
+    """
+    Calculate the cost of a department by summing the costs of its people and teams.
+    """
+    # Calculate cost of all people in the department
+    people_cost = sum(
+        calculate_person_cost(person)
+        for person in people
+        if person["department"] == department["name"]
+    )
+
+    # Calculate cost of all teams in the department
+    team_cost = sum(
+        calculate_team_cost(team, people)
+        for team in teams
+        if team["department"] == department["name"]
+    )
+
+    return people_cost + team_cost
+
+
+@st.cache_data
+def calculate_project_cost(
+    project: Dict, people: List[Dict], teams: List[Dict]
+) -> float:
+    """
+    Calculate the cost of a project based on its assigned resources and duration.
+    """
+    # Ensure start_date and end_date are strings
+    start_date = (
+        project["start_date"].strftime("%Y-%m-%d")
+        if isinstance(project["start_date"], pd.Timestamp)
+        else project["start_date"]
+    )
+    end_date = (
+        project["end_date"].strftime("%Y-%m-%d")
+        if isinstance(project["end_date"], pd.Timestamp)
+        else project["end_date"]
+    )
+
+    # Calculate the duration of the project in days
+    start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    end_date = datetime.strptime(end_date, "%Y-%m-%d")
+    duration_days = (end_date - start_date).days + 1
+
+    # Calculate the cost of assigned resources
+    resource_costs = 0.0
+    for resource in project["assigned_resources"]:
+        # Check if the resource is a person
+        person = next((p for p in people if p["name"] == resource), None)
+        if person:
+            resource_costs += calculate_person_cost(person)
+
+        # Check if the resource is a team
+        team = next((t for t in teams if t["name"] == resource), None)
+        if team:
+            resource_costs += calculate_team_cost(team, people)
+
+    # Multiply resource costs by project duration
+    return resource_costs * duration_days

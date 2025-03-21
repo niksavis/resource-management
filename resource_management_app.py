@@ -28,7 +28,7 @@ from data_handlers import (
     calculate_resource_utilization,
     filter_dataframe,
     find_resource_conflicts,
-    parse_resources,  # Corrected import
+    # Removed unused import parse_resources
 )
 from visualizations import display_gantt_chart, display_utilization_dashboard
 from resource_forms import (
@@ -44,7 +44,11 @@ from utils import (
     confirm_action,
     check_circular_dependencies,  # Import the new function
 )
-from color_management import display_color_settings  # Import color settings function
+from color_management import (
+    display_color_settings,
+    load_currency_settings,
+    save_currency_settings,
+)
 from color_management import regenerate_department_colors
 
 # Set up basic page configuration
@@ -216,6 +220,9 @@ def display_manage_projects_tab():
 
 def _create_projects_dataframe():
     """Helper function to create a DataFrame from project data."""
+    # Fix undefined function `parse_resources`
+    from data_handlers import parse_resources
+
     return pd.DataFrame(
         [
             {
@@ -699,6 +706,54 @@ def display_settings_tab():
     """
     st.subheader("Settings")
     display_color_settings()
+
+    st.subheader("Currency Settings")
+    currency, currency_format = load_currency_settings()
+
+    # Define a list of common currencies with both code and name
+    currency_options = [
+        "USD - United States Dollar",
+        "EUR - Euro",
+        "GBP - British Pound",
+        "JPY - Japanese Yen",
+        "AUD - Australian Dollar",
+        "CAD - Canadian Dollar",
+        "CHF - Swiss Franc",
+        "CNY - Chinese Yuan",
+        "SEK - Swedish Krona",
+        "NZD - New Zealand Dollar",
+    ]
+    currency_codes = [option.split(" - ")[0] for option in currency_options]
+
+    with st.form("currency_settings_form"):
+        # Display currency dropdown with code and name
+        selected_currency = st.selectbox(
+            "Select Currency",
+            options=currency_options,
+            index=currency_codes.index(currency) if currency in currency_codes else 0,
+        )
+        currency_code = selected_currency.split(" - ")[0]
+
+        symbol_position = st.radio(
+            "Currency Symbol Position",
+            options=["prefix", "suffix"],
+            index=["prefix", "suffix"].index(currency_format["symbol_position"]),
+        )
+        decimal_places = st.number_input(
+            "Decimal Places",
+            min_value=0,
+            max_value=4,
+            value=currency_format["decimal_places"],
+            step=1,
+        )
+
+        submit = st.form_submit_button("Save Currency Settings")
+        if submit:
+            save_currency_settings(
+                currency_code,
+                {"symbol_position": symbol_position, "decimal_places": decimal_places},
+            )
+            st.success("Currency settings updated.")
 
 
 def initialize_session_state():

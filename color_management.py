@@ -235,3 +235,20 @@ def regenerate_department_colors(departments):
         department_colors[department] = colorscale[i % len(colorscale)].lower()
     settings["department_colors"] = department_colors
     save_settings(settings)
+
+
+def load_currency_settings():
+    """Load currency settings from the settings file."""
+    settings = load_settings()
+    return settings.get("currency", "USD"), settings.get(
+        "currency_format",
+        {"symbol_position": "prefix", "decimal_places": 2},
+    )
+
+
+def save_currency_settings(currency, currency_format):
+    """Save currency settings to the settings file."""
+    settings = load_settings()
+    settings["currency"] = currency
+    settings["currency_format"] = currency_format
+    save_settings(settings)

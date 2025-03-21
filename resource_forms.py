@@ -14,8 +14,21 @@ from validation import (
     validate_name_field,
     validate_project_dates,
     validate_project_input,  # Import validation functions
+    validate_daily_cost,  # Import new validation functions
+    validate_budget,
+    validate_work_days,
+    validate_work_hours,
+    detect_budget_overrun,
 )
 from color_management import add_department_color, delete_department_color
+from color_management import load_currency_settings  # Import currency settings
+from data_handlers import (
+    calculate_department_cost,
+    calculate_team_cost,
+    calculate_person_cost,
+    calculate_project_cost,  # Import the missing function
+)  # Import the function
+import plotly.express as px  # Import Plotly Express for visualizations
 
 
 def delete_resource(resource_list: List[Dict], resource_name: str) -> bool:
@@ -42,6 +55,10 @@ def ensure_department_exists(department_name: str) -> None:
 
 
 def person_crud_form() -> None:
+    # Load currency settings
+    currency, currency_format = load_currency_settings()
+    currency_symbol = "€" if currency == "EUR" else "$"  # Example fallback
+
     with st.expander("Add new Person", expanded=False):
         with st.form("add_person"):
             st.write("Add new person")
@@ -80,9 +97,42 @@ def person_crud_form() -> None:
             if team == "None":
                 team = None
 
+            # Add new fields
+            daily_cost = st.number_input(
+                f"Daily Cost ({currency_symbol})",
+                min_value=0.0,
+                step=50.0,  # Changed step to a float
+                value=0.0,  # Ensure value is a float
+                help="Cost per day for this person.",
+            )
+            st.write("Work Days")
+            work_days = {
+                day: st.checkbox(day, value=(day in ["MO", "TU", "WE", "TH", "FR"]))
+                for day in ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+            }
+            selected_work_days = [
+                day for day, selected in work_days.items() if selected
+            ]
+
+            daily_work_hours = st.number_input(
+                "Daily Work Hours",
+                min_value=1,
+                max_value=24,
+                value=8,
+                help="Number of hours this person works per day.",
+            )
+
             submit = st.form_submit_button("Add Person")
 
             if submit and name and role and department:
+                # Validation for new fields
+                if not validate_daily_cost(daily_cost):
+                    st.stop()
+                if not validate_work_days(selected_work_days):
+                    st.stop()
+                if not validate_work_hours(daily_work_hours):
+                    st.stop()
+
                 if not validate_name_field(name, "Person"):
                     st.stop()
                 ensure_department_exists(department)
@@ -94,6 +144,9 @@ def person_crud_form() -> None:
                         "role": role,
                         "department": department,
                         "team": team,
+                        "daily_cost": daily_cost,
+                        "work_days": selected_work_days,
+                        "daily_work_hours": daily_work_hours,
                     }
                 )
 
@@ -193,9 +246,46 @@ def person_crud_form() -> None:
                         if new_team == "None":
                             new_team = None
 
+                        # Edit new fields
+                        new_daily_cost = st.number_input(
+                            f"Daily Cost ({currency_symbol})",
+                            min_value=0.0,
+                            step=50.0,  # Changed step to a float
+                            value=float(
+                                selected_person["daily_cost"]
+                            ),  # Ensure value is a float
+                        )
+                        st.write("Work Days")
+                        new_work_days = {
+                            day: st.checkbox(
+                                day, value=(day in selected_person["work_days"])
+                            )
+                            for day in ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+                        }
+                        selected_new_work_days = [
+                            day for day, selected in new_work_days.items() if selected
+                        ]
+                        new_daily_work_hours = st.number_input(
+                            "Daily Work Hours",
+                            min_value=1,
+                            max_value=24,
+                            value=selected_person["daily_work_hours"],
+                        )
+
                         update_button = st.form_submit_button("Update Person")
 
                         if update_button:
+                            # Validation for updated fields
+                            if new_daily_cost <= 0:
+                                st.error("Daily cost must be greater than 0.")
+                                st.stop()
+                            if not selected_new_work_days:
+                                st.error("At least one work day must be selected.")
+                                st.stop()
+                            if new_daily_work_hours < 1 or new_daily_work_hours > 24:
+                                st.error("Daily work hours must be between 1 and 24.")
+                                st.stop()
+
                             # Update person info and related references
                             for i, person in enumerate(st.session_state.data["people"]):
                                 if person["name"] == selected_name:
@@ -250,17 +340,25 @@ def person_crud_form() -> None:
                                         "role": new_role,
                                         "department": new_department,
                                         "team": new_team,
+                                        "daily_cost": new_daily_cost,
+                                        "work_days": selected_new_work_days,
+                                        "daily_work_hours": new_daily_work_hours,
                                     }
 
                                     st.success(f"Updated {selected_name} to {new_name}")
                                     st.rerun()
 
-            # Pagination
-            people_df = pd.DataFrame(st.session_state.data["people"])
-            people_df = paginate_dataframe(
-                people_df, "people_crud"
-            )  # Change from "people" to "people_crud"
-            st.dataframe(people_df, use_container_width=True)
+    # Display people with cost information
+    if st.session_state.data["people"]:
+        st.subheader("People Overview")
+        people_df = pd.DataFrame(st.session_state.data["people"])
+        people_df["Daily Cost"] = people_df["daily_cost"].apply(
+            lambda x: f"{currency_symbol}{x:,.2f}"  # Format with commas
+        )
+        st.dataframe(
+            people_df[["name", "role", "department", "team", "Daily Cost"]],
+            use_container_width=True,
+        )
 
 
 def team_crud_form() -> None:
@@ -277,12 +375,20 @@ def team_crud_form() -> None:
                 department = st.text_input("Department")
 
             # Select team members
-            member_options = []
-            for person in st.session_state.data["people"]:
-                if person["department"] == department:
-                    member_options.append(person["name"])
-
+            member_options = [
+                person["name"]
+                for person in st.session_state.data["people"]
+                if person["department"] == department
+            ]
             members = st.multiselect("Team Members", member_options)
+
+            # Calculate team daily cost
+            team_daily_cost = sum(
+                person["daily_cost"]
+                for person in st.session_state.data["people"]
+                if person["name"] in members
+            )
+            st.write(f"Calculated Team Daily Cost: {team_daily_cost:,.2f}")
 
             submit = st.form_submit_button("Add Team")
 
@@ -296,7 +402,11 @@ def team_crud_form() -> None:
 
                     # Add team
                     st.session_state.data["teams"].append(
-                        {"name": name, "department": department, "members": members}
+                        {
+                            "name": name,
+                            "department": department,
+                            "members": members,
+                        }
                     )
 
                     # Update department teams
@@ -353,11 +463,11 @@ def team_crud_form() -> None:
                         )
 
                         # Select team members
-                        member_options = []
-                        for person in st.session_state.data["people"]:
-                            if person["department"] == new_department:
-                                member_options.append(person["name"])
-
+                        member_options = [
+                            person["name"]
+                            for person in st.session_state.data["people"]
+                            if person["department"] == new_department
+                        ]
                         current_members = [
                             m
                             for m in selected_team_data["members"]
@@ -366,6 +476,14 @@ def team_crud_form() -> None:
                         new_members = st.multiselect(
                             "Team Members", member_options, default=current_members
                         )
+
+                        # Calculate team daily cost
+                        calculated_cost = sum(
+                            person["daily_cost"]
+                            for person in st.session_state.data["people"]
+                            if person["name"] in new_members
+                        )
+                        st.write(f"Calculated Team Daily Cost: {calculated_cost:,.2f}")
 
                         update_button = st.form_submit_button("Update Team")
 
@@ -400,23 +518,6 @@ def team_crud_form() -> None:
                                                 ):
                                                     dept["teams"].append(new_name)
 
-                                        # Update member references
-                                        # Remove team assignment from members no longer in the team
-                                        for person in st.session_state.data["people"]:
-                                            if (
-                                                person["team"] == team["name"]
-                                                and person["name"] not in new_members
-                                            ):
-                                                person["team"] = None
-
-                                        # Add team assignment to new members
-                                        for person in st.session_state.data["people"]:
-                                            if (
-                                                person["name"] in new_members
-                                                and person["team"] != team["name"]
-                                            ):
-                                                person["team"] = new_name
-
                                         # Update team record
                                         st.session_state.data["teams"][i] = {
                                             "name": new_name,
@@ -431,10 +532,21 @@ def team_crud_form() -> None:
 
             # Pagination
             teams_df = pd.DataFrame(st.session_state.data["teams"])
-            teams_df = paginate_dataframe(
-                teams_df, "teams_crud"
-            )  # Change from "teams" to "teams_crud"
-            st.dataframe(teams_df, use_container_width=True)
+            teams_df["Daily Cost"] = teams_df.apply(
+                lambda row: sum(
+                    person["daily_cost"]
+                    for person in st.session_state.data["people"]
+                    if person["name"] in row["members"]
+                ),
+                axis=1,
+            )
+            teams_df["Daily Cost"] = teams_df["Daily Cost"].apply(
+                lambda x: f"{x:,.2f}"  # Format with commas
+            )
+            st.dataframe(
+                teams_df[["name", "department", "members", "Daily Cost"]],
+                use_container_width=True,
+            )
 
 
 def department_crud_form() -> None:
@@ -521,11 +633,86 @@ def department_crud_form() -> None:
                                     st.success(f"Updated {selected_dept} to {new_name}")
                                     st.rerun()
 
+            # Display department cost information
+            st.subheader("Department Cost Overview")
+            people = st.session_state.data["people"]
+            teams = st.session_state.data["teams"]
+
+            # Calculate department cost
+            department_cost = calculate_department_cost(
+                selected_dept_data, people, teams
+            )
+            st.write(f"**Total Department Cost:** {department_cost:,.2f}")
+
+            # Summary Section
+            st.markdown("### Cost Summary")
+            total_team_cost = sum(
+                calculate_team_cost(team, people)
+                for team in teams
+                if team["department"] == selected_dept
+            )
+            total_individual_cost = sum(
+                calculate_person_cost(person)
+                for person in people
+                if person["department"] == selected_dept
+            )
+            col1, col2 = st.columns(2)
+            col1.metric("Total Team Cost", f"{total_team_cost:,.2f}")
+            col2.metric("Total Individual Cost", f"{total_individual_cost:,.2f}")
+
+            # Pie Chart for Cost Breakdown
+            st.markdown("### Cost Breakdown (Pie Chart)")
+            pie_data = {
+                "Category": ["Teams", "Individuals"],
+                "Cost": [total_team_cost, total_individual_cost],
+            }
+            pie_df = pd.DataFrame(pie_data)
+            pie_chart = px.pie(
+                pie_df,
+                names="Category",
+                values="Cost",
+                title="Cost Breakdown by Category",
+                color_discrete_sequence=px.colors.qualitative.Set2,
+            )
+            st.plotly_chart(pie_chart, use_container_width=True)
+
+            # Bar Chart for Team Costs
+            st.markdown("### Team Cost Breakdown (Bar Chart)")
+            team_costs = [
+                {"Team": team["name"], "Cost": calculate_team_cost(team, people)}
+                for team in teams
+                if team["department"] == selected_dept
+            ]
+            team_cost_df = pd.DataFrame(team_costs)
+            if not team_cost_df.empty:
+                bar_chart = px.bar(
+                    team_cost_df,
+                    x="Team",
+                    y="Cost",
+                    title="Cost Breakdown by Teams",
+                    color="Team",
+                    text="Cost",
+                    color_discrete_sequence=px.colors.qualitative.Set3,
+                )
+                st.plotly_chart(bar_chart, use_container_width=True)
+
+            # Interactive Table for Individual Costs
+            st.markdown("### Individual Cost Breakdown (Table)")
+            individual_costs = [
+                {"Name": person["name"], "Cost": calculate_person_cost(person)}
+                for person in people
+                if person["department"] == selected_dept
+            ]
+            individual_cost_df = pd.DataFrame(individual_costs)
+            if not individual_cost_df.empty:
+                individual_cost_df = individual_cost_df.sort_values(
+                    by="Cost", ascending=False
+                )
+                st.dataframe(individual_cost_df, use_container_width=True)
+
             # Pagination
             departments_df = pd.DataFrame(st.session_state.data["departments"])
-            departments_df = paginate_dataframe(
-                departments_df, "departments_crud"
-            )  # Change from "departments" to "departments_crud"
+            departments_df = paginate_dataframe(departments_df, "departments_crud")
             st.dataframe(departments_df, use_container_width=True)
 
 
@@ -554,8 +741,16 @@ def add_project_form():
                 "Priority (lower = higher priority)",
                 min_value=1,
                 value=1,
-                step=1,
+                step=1,  # Ensure consistent type (int)
                 help="Lower numbers indicate higher priority. Priority 1 is the highest.",
+            )
+
+            allocated_budget = st.number_input(
+                "Allocated Budget (€)",
+                min_value=0.0,
+                step=1000.0,  # Ensure consistent type (float)
+                value=0.0,  # Ensure consistent type (float)
+                help="Budget allocated for this project.",
             )
 
             # Resource assignment
@@ -583,14 +778,18 @@ def add_project_form():
             )
             st.session_state["new_project_teams"] = selected_teams
 
-            submit = st.form_submit_button("Add Project")
+            submit = st.form_submit_button("Add Project")  # Add missing submit button
 
             if submit:
+                # Validation for budget
+                if not validate_budget(allocated_budget):
+                    st.stop()
                 project_data = {
                     "name": name,
                     "start_date": start_date,
                     "end_date": end_date,
                     "priority": priority,
+                    "allocated_budget": allocated_budget,
                     "assigned_resources": st.session_state["new_project_people"]
                     + st.session_state["new_project_teams"],
                 }
@@ -615,6 +814,7 @@ def add_project_form():
                             "start_date": start_date.strftime("%Y-%m-%d"),
                             "end_date": end_date.strftime("%Y-%m-%d"),
                             "priority": priority,
+                            "allocated_budget": allocated_budget,
                             "assigned_resources": combined_resources,
                         }
                     )
@@ -627,7 +827,6 @@ def add_project_form():
 def edit_project_form():
     """
     Form for editing an existing project.
-    Fixed date handling and improved code structure.
     """
     # Ensure session state variables exist
     if "edit_project_people" not in st.session_state:
@@ -657,29 +856,20 @@ def edit_project_form():
         return
 
     # Reset initialization if a different project is chosen
-    if "last_edited_project" not in st.session_state:
-        st.session_state["last_edited_project"] = None
-
     if st.session_state["last_edited_project"] != project_to_edit:
         st.session_state["edit_form_initialized"] = False
         st.session_state["last_edited_project"] = project_to_edit
 
     with st.form("edit_project_form"):
         # Initialize form state
-        if "edit_form_initialized" not in st.session_state:
-            st.session_state["edit_form_initialized"] = False
-
-        # Populate session lists only once
         if not st.session_state["edit_form_initialized"]:
             _initialize_edit_project_form(selected_project)
 
         new_name = st.text_input("Project Name", value=selected_project["name"])
 
         # Properly handle date conversion
-        start_str = selected_project["start_date"]
-        end_str = selected_project["end_date"]
-        start_date = pd.to_datetime(start_str).date()
-        end_date = pd.to_datetime(end_str).date()
+        start_date = pd.to_datetime(selected_project["start_date"]).date()
+        end_date = pd.to_datetime(selected_project["end_date"]).date()
 
         col1, col2 = st.columns(2)
         with col1:
@@ -687,12 +877,18 @@ def edit_project_form():
         with col2:
             new_end_date = st.date_input("End Date", value=end_date)
 
-        priority = st.number_input(
+        new_priority = st.number_input(
             "Priority (lower = higher priority)",
             min_value=1,
             value=selected_project["priority"],
-            step=1,
-            help="Lower numbers indicate higher priority. Priority 1 is the highest.",
+            step=1,  # Ensure consistent type (int)
+        )
+
+        new_allocated_budget = st.number_input(
+            "Allocated Budget (€)",
+            min_value=0.0,
+            step=1000.0,  # Ensure consistent type (float)
+            value=float(selected_project.get("allocated_budget", 0.0)),  # Ensure float
         )
 
         # Resource assignment
@@ -716,13 +912,62 @@ def edit_project_form():
         )
         st.session_state["edit_project_teams"] = selected_teams
 
-        update_button = st.form_submit_button("Update Project")
-        if update_button:
+        # Calculate project cost
+        project_cost = calculate_project_cost(
+            selected_project,
+            st.session_state.data["people"],
+            st.session_state.data["teams"],
+        )
+
+        # Budget vs. Cost Comparison
+        st.markdown("### Budget vs. Cost Comparison")
+        col1, col2 = st.columns(2)
+        col1.metric(
+            "Allocated Budget (€)", f"{new_allocated_budget:,.2f}"
+        )  # Format with commas
+        col2.metric("Calculated Cost (€)", f"{project_cost:,.2f}")  # Format with commas
+
+        if project_cost > new_allocated_budget:
+            st.warning("Warning: Project cost exceeds the allocated budget!")
+
+        # Cost Breakdown by Resource Type
+        st.markdown("### Cost Breakdown by Resource Type")
+        resource_costs = {
+            "People": sum(
+                calculate_person_cost(p)
+                for p in st.session_state.data["people"]
+                if p["name"] in selected_people
+            ),
+            "Teams": sum(
+                calculate_team_cost(t, st.session_state.data["people"])
+                for t in st.session_state.data["teams"]
+                if t["name"] in selected_teams
+            ),
+        }
+        resource_cost_df = pd.DataFrame(
+            {
+                "Resource Type": resource_costs.keys(),
+                "Cost (€)": [
+                    f"{cost:,.2f}" for cost in resource_costs.values()
+                ],  # Format with commas
+            }
+        )
+        st.bar_chart(resource_cost_df.set_index("Resource Type"))
+
+        submit = st.form_submit_button("Update Project")  # Add missing submit button
+
+        if submit:
+            # Validation for budget
+            if not validate_budget(new_allocated_budget):
+                st.stop()
+            # Detect budget overrun
+            detect_budget_overrun(project_cost, new_allocated_budget)
             project_data = {
                 "name": new_name,
                 "start_date": new_start_date,
                 "end_date": new_end_date,
-                "priority": priority,
+                "priority": new_priority,
+                "allocated_budget": new_allocated_budget,
                 "assigned_resources": st.session_state["edit_project_people"]
                 + st.session_state["edit_project_teams"],
             }
@@ -742,28 +987,13 @@ def edit_project_form():
                 )
                 for i, project in enumerate(st.session_state.data["projects"]):
                     if project["name"] == project_to_edit:
-                        # Keep unhandled resource types (departments, etc.)
-                        preserved_resources = [
-                            r
-                            for r in project["assigned_resources"]
-                            if (
-                                r
-                                not in [
-                                    p["name"] for p in st.session_state.data["people"]
-                                ]
-                                and r
-                                not in [
-                                    t["name"] for t in st.session_state.data["teams"]
-                                ]
-                            )
-                        ]
-                        updated_resources = preserved_resources + combined_resources
                         st.session_state.data["projects"][i] = {
                             "name": new_name,
                             "start_date": new_start_date.strftime("%Y-%m-%d"),
                             "end_date": new_end_date.strftime("%Y-%m-%d"),
-                            "priority": priority,
-                            "assigned_resources": updated_resources,
+                            "priority": new_priority,
+                            "allocated_budget": new_allocated_budget,
+                            "assigned_resources": combined_resources,
                         }
                 st.success(f"Updated project {project_to_edit} to {new_name}")
                 st.rerun()

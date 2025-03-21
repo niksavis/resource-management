@@ -2,9 +2,9 @@
     "department_colors": {
         "Network Engineering": "#636efa",
         "Software Development": "#ef553b",
-        "Information Technology": "#00cc96",
-        "Product Management": "#ab63fa",
-        "Customer Experience": "#ffa15a",
+        "Customer Experience": "#00cc96",
+        "Information Technology": "#ab63fa",
+        "Product Management": "#ffa15a",
         "Operations": "#19d3f3",
         "Research and Development": "#ff6692"
     },
@@ -21,5 +21,10 @@
             1,
             "#FF0000"
         ]
-    ]
+    ],
+    "currency": "EUR",
+    "currency_format": {
+        "symbol_position": "prefix",
+        "decimal_places": 2
+    }
 }

@@ -4,529 +4,793 @@
       "name": "Thomas Wilson",
       "role": "Head of Department",
       "department": "Network Engineering",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Sarah Johnson",
       "role": "Network Architect",
       "department": "Network Engineering",
-      "team": "Network Planning Team"
+      "team": "Network Planning Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Michael Chen",
       "role": "Network Engineer",
       "department": "Network Engineering",
-      "team": "Network Planning Team"
+      "team": "Network Planning Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Emma Rodriguez",
       "role": "Network Engineer",
       "department": "Network Engineering",
-      "team": "Network Planning Team"
+      "team": "Network Planning Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "David Thompson",
       "role": "Team Leader",
       "department": "Network Engineering",
-      "team": "Network Planning Team"
+      "team": "Network Planning Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "James Williams",
       "role": "Network Engineer",
       "department": "Network Engineering",
-      "team": "Network Implementation Team"
+      "team": "Network Implementation Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Olivia Garcia",
       "role": "Field Technician",
       "department": "Network Engineering",
-      "team": "Network Implementation Team"
+      "team": "Network Implementation Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ethan Martinez",
       "role": "Field Technician",
       "department": "Network Engineering",
-      "team": "Network Implementation Team"
+      "team": "Network Implementation Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Sophia Anderson",
       "role": "Team Leader",
       "department": "Network Engineering",
-      "team": "Network Implementation Team"
+      "team": "Network Implementation Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Benjamin Taylor",
       "role": "Network Operations Specialist",
       "department": "Network Engineering",
-      "team": "Network Operations Team"
+      "team": "Network Operations Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Isabella Thomas",
       "role": "Network Operations Specialist",
       "department": "Network Engineering",
-      "team": "Network Operations Team"
+      "team": "Network Operations Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Alexander Hernandez",
       "role": "Team Leader",
       "department": "Network Engineering",
-      "team": "Network Operations Team"
+      "team": "Network Operations Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Mia Jackson",
       "role": "Project Manager",
       "department": "Network Engineering",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "William Davis",
       "role": "Head of Department",
       "department": "Software Development",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Charlotte White",
       "role": "Software Developer",
       "department": "Software Development",
-      "team": "Frontend Team"
+      "team": "Frontend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Jacob Harris",
       "role": "Software Developer",
       "department": "Software Development",
-      "team": "Frontend Team"
+      "team": "Frontend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Amelia Clark",
       "role": "UX/UI Designer",
       "department": "Software Development",
-      "team": "Frontend Team"
+      "team": "Frontend Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Daniel Lewis",
       "role": "Team Leader",
       "department": "Software Development",
-      "team": "Frontend Team"
+      "team": "Frontend Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Harper Young",
       "role": "Software Developer",
       "department": "Software Development",
-      "team": "Backend Team"
+      "team": "Backend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Matthew Walker",
       "role": "Software Developer",
       "department": "Software Development",
-      "team": "Backend Team"
+      "team": "Backend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Abigail Allen",
       "role": "Database Administrator",
       "department": "Software Development",
-      "team": "Backend Team"
+      "team": "Backend Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Joseph King",
       "role": "Team Leader",
       "department": "Software Development",
-      "team": "Backend Team"
+      "team": "Backend Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Elizabeth Wright",
       "role": "Software Developer",
       "department": "Software Development",
-      "team": "Mobile App Team"
+      "team": "Mobile App Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Samuel Lopez",
       "role": "Software Developer",
       "department": "Software Development",
-      "team": "Mobile App Team"
+      "team": "Mobile App Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Grace Hill",
       "role": "UX/UI Designer",
       "department": "Software Development",
-      "team": "Mobile App Team"
+      "team": "Mobile App Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Christopher Scott",
       "role": "Team Leader",
       "department": "Software Development",
-      "team": "Mobile App Team"
+      "team": "Mobile App Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Victoria Green",
       "role": "Tester",
       "department": "Software Development",
-      "team": "QA Team"
+      "team": "QA Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Andrew Adams",
       "role": "Tester",
       "department": "Software Development",
-      "team": "QA Team"
+      "team": "QA Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Scarlett Baker",
       "role": "Tester",
       "department": "Software Development",
-      "team": "QA Team"
+      "team": "QA Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Joshua Nelson",
       "role": "Team Leader",
       "department": "Software Development",
-      "team": "QA Team"
+      "team": "QA Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ella Carter",
       "role": "Project Manager",
       "department": "Software Development",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "John Mitchell",
       "role": "Agile Coach",
       "department": "Software Development",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Oliver Brown",
       "role": "Software Architect",
       "department": "Software Development",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ryan Phillips",
       "role": "Head of Department",
       "department": "Information Technology",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Chloe Evans",
       "role": "System Administrator",
       "department": "Information Technology",
-      "team": "Infrastructure Team"
+      "team": "Infrastructure Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Nathan Turner",
       "role": "System Administrator",
       "department": "Information Technology",
-      "team": "Infrastructure Team"
+      "team": "Infrastructure Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Lily Torres",
       "role": "DevOps Engineer",
       "department": "Information Technology",
-      "team": "Infrastructure Team"
+      "team": "Infrastructure Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Caleb Morgan",
       "role": "Team Leader",
       "department": "Information Technology",
-      "team": "Infrastructure Team"
+      "team": "Infrastructure Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Nora Cooper",
       "role": "Security Specialist",
       "department": "Information Technology",
-      "team": "Security Team"
+      "team": "Security Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Isaac Rivera",
       "role": "Security Specialist",
       "department": "Information Technology",
-      "team": "Security Team"
+      "team": "Security Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Leah Reed",
       "role": "Security Analyst",
       "department": "Information Technology",
-      "team": "Security Team"
+      "team": "Security Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Owen Bailey",
       "role": "Team Leader",
       "department": "Information Technology",
-      "team": "Security Team"
+      "team": "Security Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Hannah Peterson",
       "role": "Enterprise Systems Specialist",
       "department": "Information Technology",
-      "team": "Enterprise Systems Team"
+      "team": "Enterprise Systems Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Luke Kelly",
       "role": "Enterprise Systems Specialist",
       "department": "Information Technology",
-      "team": "Enterprise Systems Team"
+      "team": "Enterprise Systems Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Zoe Howard",
       "role": "Database Administrator",
       "department": "Information Technology",
-      "team": "Enterprise Systems Team"
+      "team": "Enterprise Systems Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Gabriel Cox",
       "role": "Team Leader",
       "department": "Information Technology",
-      "team": "Enterprise Systems Team"
+      "team": "Enterprise Systems Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Audrey Ward",
       "role": "Head of Department",
       "department": "Product Management",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Theodore Brooks",
       "role": "Product Owner",
       "department": "Product Management",
-      "team": "Consumer Products Team"
+      "team": "Consumer Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Claire Richardson",
       "role": "Business Analyst",
       "department": "Product Management",
-      "team": "Consumer Products Team"
+      "team": "Consumer Products Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Julian Watson",
       "role": "Business Analyst",
       "department": "Product Management",
-      "team": "Consumer Products Team"
+      "team": "Consumer Products Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Skylar Price",
       "role": "Team Leader",
       "department": "Product Management",
-      "team": "Consumer Products Team"
+      "team": "Consumer Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Elias Jenkins",
       "role": "Product Owner",
       "department": "Product Management",
-      "team": "Enterprise Products Team"
+      "team": "Enterprise Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Naomi Powell",
       "role": "Business Analyst",
       "department": "Product Management",
-      "team": "Enterprise Products Team"
+      "team": "Enterprise Products Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Adrian Long",
       "role": "Business Analyst",
       "department": "Product Management",
-      "team": "Enterprise Products Team"
+      "team": "Enterprise Products Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Madeline Russell",
       "role": "Team Leader",
       "department": "Product Management",
-      "team": "Enterprise Products Team"
+      "team": "Enterprise Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ian Barnes",
       "role": "Project Manager",
       "department": "Product Management",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Willow Simmons",
       "role": "Scrum Master",
       "department": "Product Management",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Jason Ross",
       "role": "Head of Department",
       "department": "Customer Experience",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Jade Foster",
       "role": "UX/UI Designer",
       "department": "Customer Experience",
-      "team": "User Experience Team"
+      "team": "User Experience Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Wyatt Butler",
       "role": "UX/UI Designer",
       "department": "Customer Experience",
-      "team": "User Experience Team"
+      "team": "User Experience Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Isabelle Simmons",
       "role": "UX Researcher",
       "department": "Customer Experience",
-      "team": "User Experience Team"
+      "team": "User Experience Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Levi Griffin",
       "role": "Team Leader",
       "department": "Customer Experience",
-      "team": "User Experience Team"
+      "team": "User Experience Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Violet Hayes",
       "role": "Service Designer",
       "department": "Customer Experience",
-      "team": "Service Design Team"
+      "team": "Service Design Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Grayson Fisher",
       "role": "Service Designer",
       "department": "Customer Experience",
-      "team": "Service Design Team"
+      "team": "Service Design Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Aurora Diaz",
       "role": "Customer Journey Specialist",
       "department": "Customer Experience",
-      "team": "Service Design Team"
+      "team": "Service Design Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Lincoln Wood",
       "role": "Team Leader",
       "department": "Customer Experience",
-      "team": "Service Design Team"
+      "team": "Service Design Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Stella Rogers",
       "role": "Head of Department",
       "department": "Operations",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Hudson Reed",
       "role": "Field Operations Manager",
       "department": "Operations",
-      "team": "Field Operations Team"
+      "team": "Field Operations Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Nova Coleman",
       "role": "Field Technician",
       "department": "Operations",
-      "team": "Field Operations Team"
+      "team": "Field Operations Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ezra Perry",
       "role": "Field Technician",
       "department": "Operations",
-      "team": "Field Operations Team"
+      "team": "Field Operations Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Autumn Bryant",
       "role": "Team Leader",
       "department": "Operations",
-      "team": "Field Operations Team"
+      "team": "Field Operations Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Kai Russell",
       "role": "Customer Support Specialist",
       "department": "Operations",
-      "team": "Customer Support Team"
+      "team": "Customer Support Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Iris Gray",
       "role": "Customer Support Specialist",
       "department": "Operations",
-      "team": "Customer Support Team"
+      "team": "Customer Support Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Oscar Sullivan",
       "role": "Customer Support Specialist",
       "department": "Operations",
-      "team": "Customer Support Team"
+      "team": "Customer Support Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ruby Price",
       "role": "Team Leader",
       "department": "Operations",
-      "team": "Customer Support Team"
+      "team": "Customer Support Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Miles Patterson",
       "role": "Technical Support Specialist",
       "department": "Operations",
-      "team": "Technical Support Team"
+      "team": "Technical Support Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Eden Campbell",
       "role": "Technical Support Specialist",
       "department": "Operations",
-      "team": "Technical Support Team"
+      "team": "Technical Support Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Felix Hughes",
       "role": "Technical Support Specialist",
       "department": "Operations",
-      "team": "Technical Support Team"
+      "team": "Technical Support Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ivy Washington",
       "role": "Team Leader",
       "department": "Operations",
-      "team": "Technical Support Team"
+      "team": "Technical Support Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Harvey Butler",
       "role": "Head of Department",
       "department": "Research and Development",
-      "team": null
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Lydia Simmons",
       "role": "Data Scientist",
       "department": "Research and Development",
-      "team": "Innovation Team"
+      "team": "Innovation Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Rowan Foster",
       "role": "Research Engineer",
       "department": "Research and Development",
-      "team": "Innovation Team"
+      "team": "Innovation Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Emery Ross",
       "role": "AI Specialist",
       "department": "Research and Development",
-      "team": "Innovation Team"
+      "team": "Innovation Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Rosalie Sanders",
       "role": "Team Leader",
       "department": "Research and Development",
-      "team": "Innovation Team"
+      "team": "Innovation Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Sawyer Barnes",
       "role": "Research Engineer",
       "department": "Research and Development",
-      "team": "Technology Research Team"
+      "team": "Technology Research Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Dahlia Reed",
       "role": "Research Engineer",
       "department": "Research and Development",
-      "team": "Technology Research Team"
+      "team": "Technology Research Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Jasper Coleman",
       "role": "Technology Analyst",
       "department": "Research and Development",
-      "team": "Technology Research Team"
+      "team": "Technology Research Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     },
     {
       "name": "Ophelia Gray",
       "role": "Team Leader",
       "department": "Research and Development",
-      "team": "Technology Research Team"
+      "team": "Technology Research Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8
     }
   ],
   "teams": [
@@ -855,7 +1119,8 @@
         "Network Planning Team",
         "Network Implementation Team",
         "Mia Jackson"
-      ]
+      ],
+      "allocated_budget": 100000
     },
     {
       "name": "Customer Self-Service Portal",
@@ -867,7 +1132,8 @@
         "Backend Team",
         "User Experience Team",
         "Ella Carter"
-      ]
+      ],
+      "allocated_budget": 80000
     },
     {
       "name": "Enterprise Billing System Upgrade",
@@ -878,7 +1144,8 @@
         "Enterprise Systems Team",
         "Enterprise Products Team",
         "Ian Barnes"
-      ]
+      ],
+      "allocated_budget": 120000
     },
     {
       "name": "Network Security Enhancement",
@@ -889,7 +1156,8 @@
         "Security Team",
         "Network Operations Team",
         "Thomas Wilson"
-      ]
+      ],
+      "allocated_budget": 90000
     },
     {
       "name": "Mobile App Redesign",
@@ -901,7 +1169,8 @@
         "User Experience Team",
         "Customer Support Team",
         "John Mitchell"
-      ]
+      ],
+      "allocated_budget": 70000
     },
     {
       "name": "AI-Powered Customer Support",
@@ -913,7 +1182,8 @@
         "Technical Support Team",
         "Consumer Products Team",
         "Willow Simmons"
-      ]
+      ],
+      "allocated_budget": 110000
     },
     {
       "name": "IoT Service Platform",
@@ -925,7 +1195,8 @@
         "Backend Team",
         "QA Team",
         "Product Management"
-      ]
+      ],
+      "allocated_budget": 150000
     },
     {
       "name": "Cloud Migration",
@@ -936,21 +1207,24 @@
         "Backend Team",
         "Infrastructure Team",
         "Oliver Brown"
-      ]
+      ],
+      "allocated_budget": 200000
     },
     {
       "name": "E-commerce Platform Upgrade",
       "start_date": "2025-06-01",
       "end_date": "2025-09-30",
       "priority": 4,
-      "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"]
+      "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"],
+      "allocated_budget": 100000
     },
     {
       "name": "Data Analytics Platform",
       "start_date": "2025-03-01",
       "end_date": "2026-02-28",
       "priority": 1,
-      "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"]
+      "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"],
+      "allocated_budget": 250000
     },
     {
       "name": "Customer Feedback System",
@@ -961,7 +1235,8 @@
         "Frontend Team",
         "User Experience Team",
         "Ella Carter"
-      ]
+      ],
+      "allocated_budget": 60000
     },
     {
       "name": "AI Research Initiative",
@@ -972,7 +1247,8 @@
         "Innovation Team",
         "Technology Research Team",
         "Oliver Brown"
-      ]
+      ],
+      "allocated_budget": 300000
     }
   ]
 }
