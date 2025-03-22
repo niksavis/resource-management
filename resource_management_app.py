@@ -290,66 +290,75 @@ def display_consolidated_resources():
 
 
 def _display_resource_cards(people, teams, departments, type_filter):
-    """Display resources as visual cards with consistent sizing."""
+    """Display resources as visual cards organized by type."""
     # Load currency settings
     currency, _ = load_currency_settings()
 
-    # Calculate columns based on screen width (responsive design)
+    # Display resources by type in separate sections
+    if "Person" in type_filter and people:
+        st.markdown("### People")
+        _display_person_cards(people, currency)
+
+    if "Team" in type_filter and teams:
+        st.markdown("### Teams")
+        _display_team_cards(teams, people, currency)
+
+    if "Department" in type_filter and departments:
+        st.markdown("### Departments")
+        _display_department_cards(departments, people, currency)
+
+
+def _display_person_cards(people, currency):
+    """Display person cards in a consistent grid."""
     cols = st.columns(3)
-
-    # Track index for distributing cards across columns
-    idx = 0
-
-    # Display people cards
-    if "Person" in type_filter:
-        for person in people:
-            with cols[idx % 3]:
-                st.markdown(
-                    f"""
-                    <div class="card">
-                        <h3>👤 {person["name"]}</h3>
-                        <div style="background-color: {"rgba(255,215,0,0.2)" if person["team"] else "rgba(100,100,100,0.1)"}; padding: 5px; border-radius: 4px; margin-bottom: 10px; display: inline-block;">
-                            <span style="font-weight: bold;">{"👥 " + person["team"] if person["team"] else "Individual Contributor"}</span>
-                        </div>
-                        <p><strong>Role:</strong> {person["role"]}</p>
-                        <p><strong>Department:</strong> {person["department"]}</p>
-                        <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
-                        <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
-                        <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
-                        <div style="height: 10px;"></div>
+    for idx, person in enumerate(people):
+        with cols[idx % 3]:
+            st.markdown(
+                f"""
+                <div class="card">
+                    <h3>👤 {person["name"]}</h3>
+                    <div style="background-color: {"rgba(255,215,0,0.2)" if person["team"] else "rgba(100,100,100,0.1)"}; padding: 5px; border-radius: 4px; margin-bottom: 10px;">
+                        <span style="font-weight: bold;">{"👥 " + person["team"] if person["team"] else "Individual Contributor"}</span>
                     </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            idx += 1
+                    <p><strong>Role:</strong> {person["role"]}</p>
+                    <p><strong>Department:</strong> {person["department"]}</p>
+                    <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
+                    <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
+                    <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-    # Display team cards
-    if "Team" in type_filter:
-        for team in teams:
-            with cols[idx % 3]:
-                team_cost = sum(
-                    person["daily_cost"]
-                    for person in people
-                    if person["name"] in team["members"]
-                )
-                st.markdown(
-                    f"""
-                    <div class="card">
-                        <h3>👥 {team["name"]}</h3>
-                        <div style="height: 40px;"></div> <!-- Placeholder for consistent height -->
-                        <p><strong>Department:</strong> {team["department"]}</p>
-                        <p><strong>Members:</strong> {len(team["members"])}</p>
-                        <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
-                        <div style="height: 30px;"></div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            idx += 1
 
-    # Display department cards
-    if "Department" in type_filter:
-        for dept in departments:
+def _display_team_cards(teams, people, currency):
+    """Display team cards in a consistent grid."""
+    cols = st.columns(3)
+    for idx, team in enumerate(teams):
+        with cols[idx % 3]:
+            team_cost = sum(
+                person["daily_cost"]
+                for person in people
+                if person["name"] in team["members"]
+            )
+            st.markdown(
+                f"""
+                <div class="card">
+                    <h3>👥 {team["name"]}</h3>
+                    <p><strong>Department:</strong> {team["department"]}</p>
+                    <p><strong>Members:</strong> {len(team["members"])}</p>
+                    <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+
+def _display_department_cards(departments, people, currency):
+    """Display department cards in a consistent grid."""
+    cols = st.columns(3)
+    for idx, dept in enumerate(departments):
+        with cols[idx % 3]:
             dept_cost = sum(
                 person["daily_cost"]
                 for person in people
@@ -359,16 +368,13 @@ def _display_resource_cards(people, teams, departments, type_filter):
                 f"""
                 <div class="card">
                     <h3>🏢 {dept["name"]}</h3>
-                    <div style="height: 40px;"></div> <!-- Placeholder for consistent height -->
                     <p><strong>Teams:</strong> {len(dept["teams"])}</p>
                     <p><strong>Members:</strong> {len(dept["members"])}</p>
                     <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
-                    <div style="height: 30px;"></div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            idx += 1
 
 
 def _display_resource_visual_map(people, teams, departments, type_filter):
