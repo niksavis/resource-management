@@ -239,109 +239,251 @@ def display_manage_resources_tab():
 
 
 def display_consolidated_resources():
-    """Display a consolidated view of all resources."""
-    # Create a combined dataframe of all resources
-    people_df = pd.DataFrame(st.session_state.data["people"])
-    if not people_df.empty:
-        people_df["Type"] = "Person"
-        people_df["Members/Teams"] = None
+    """Display a consolidated view of all resources using cards."""
+    # Create filtered collections of resources
+    people = st.session_state.data["people"]
+    teams = st.session_state.data["teams"]
+    departments = st.session_state.data["departments"]
 
-    teams_df = pd.DataFrame(st.session_state.data["teams"])
-    if not teams_df.empty:
-        teams_df["Type"] = "Team"
-        teams_df["role"] = None
-        teams_df["Members/Teams"] = teams_df["members"]
-
-    departments_df = pd.DataFrame(st.session_state.data["departments"])
-    if not departments_df.empty:
-        departments_df["Type"] = "Department"
-        departments_df["role"] = None
-        departments_df["department"] = None
-        departments_df["team"] = None
-        departments_df["Members/Teams"] = departments_df.apply(
-            lambda x: x["members"] + x["teams"], axis=1
-        )
-
-    # Combine dataframes
-    combined_df = pd.concat(
-        [df for df in [people_df, teams_df, departments_df] if not df.empty],
-        ignore_index=True,
-    )
-
-    if combined_df.empty:
-        st.warning("No resources found. Please add some first.")
-        return
-
-    # Add filter for resource type
+    # Add filter controls
     with st.expander("Search and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
-        col1, _ = st.columns(2)
+        col1, col2 = st.columns(2)
         with col1:
             type_filter = st.multiselect(
                 "Filter by Type",
                 options=["Person", "Team", "Department"],
-                default=[],
+                default=["Person", "Team", "Department"],
                 key="filter_type_all",
             )
 
+        with col2:
             dept_filter = st.multiselect(
                 "Filter by Department",
-                options=[d["name"] for d in st.session_state.data["departments"]],
+                options=[d["name"] for d in departments],
                 default=[],
                 key="filter_dept_all",
             )
 
-        # Apply filters
-        if search_term:
-            mask = np.column_stack(
-                [
-                    combined_df[col]
-                    .fillna("")
-                    .astype(str)
-                    .str.contains(search_term, case=False, na=False)
-                    for col in combined_df.columns
-                ]
+    # Apply filters
+    if search_term:
+        people = [p for p in people if search_term.lower() in str(p).lower()]
+        teams = [t for t in teams if search_term.lower() in str(t).lower()]
+        departments = [d for d in departments if search_term.lower() in str(d).lower()]
+
+    if dept_filter:
+        people = [p for p in people if p["department"] in dept_filter]
+        teams = [t for t in teams if t["department"] in dept_filter]
+        departments = [d for d in departments if d["name"] in dept_filter]
+
+    # Display resources as cards
+    st.write("### Resources Overview")
+
+    # Create tabs for different view options
+    view_option = st.radio("View As:", ["Cards", "Visual Map"], horizontal=True)
+
+    if view_option == "Cards":
+        _display_resource_cards(people, teams, departments, type_filter)
+    else:
+        _display_resource_visual_map(people, teams, departments, type_filter)
+
+
+def _display_resource_cards(people, teams, departments, type_filter):
+    """Display resources as visual cards."""
+    # Load currency settings
+    currency, _ = load_currency_settings()
+
+    # Calculate columns based on screen width (responsive design)
+    cols = st.columns(3)
+
+    # Track index for distributing cards across columns
+    idx = 0
+
+    # Display people cards
+    if "Person" in type_filter:
+        for person in people:
+            with cols[idx % 3]:
+                # Determine the visual indicator
+                icon = "👤+" if person["team"] else "👤"
+                team_info = (
+                    f"Team: {person['team']}"
+                    if person["team"]
+                    else "Individual Contributor"
+                )
+                st.markdown(
+                    f"""
+                    ### {icon} {person["name"]}
+                    - **Role:** {person["role"]}
+                    - **Department:** {person["department"]}
+                    - **{team_info}**
+                    - **Daily Cost:** {currency} {person["daily_cost"]:,.2f}
+                    - **Work Days:** {", ".join(person["work_days"])}
+                    - **Hours:** {person["daily_work_hours"]} per day
+                    """,
+                    unsafe_allow_html=True,
+                )
+            idx += 1
+
+    # Display team cards
+    if "Team" in type_filter:
+        for team in teams:
+            with cols[idx % 3]:
+                team_cost = sum(
+                    person["daily_cost"]
+                    for person in people
+                    if person["name"] in team["members"]
+                )
+                st.markdown(
+                    f"""
+                    ### 👥 {team["name"]}
+                    - **Department:** {team["department"]}
+                    - **Members:** {len(team["members"])}
+                    - **Daily Cost:** {currency} {team_cost:,.2f}
+                    """,
+                    unsafe_allow_html=True,
+                )
+            idx += 1
+
+    # Display department cards
+    if "Department" in type_filter:
+        for dept in departments:
+            with cols[idx % 3]:
+                st.markdown(
+                    f"""
+                    ### 🏢 {dept["name"]}
+                    - **Teams:** {len(dept["teams"])}
+                    - **Members:** {len(dept["members"])}
+                    """,
+                    unsafe_allow_html=True,
+                )
+            idx += 1
+
+
+def _display_resource_visual_map(people, teams, departments, type_filter):
+    """Display resources as an organizational chart or network graph."""
+    import networkx as nx
+    import plotly.graph_objects as go
+
+    st.write("### Organizational Structure")
+
+    nodes = []
+    edges = []
+
+    if "Department" in type_filter:
+        for dept in departments:
+            nodes.append(
+                {
+                    "id": f"dept_{dept['name']}",
+                    "label": dept["name"],
+                    "group": "department",
+                }
             )
-            combined_df = combined_df[mask.any(axis=1)]
 
-        if type_filter:
-            combined_df = combined_df[combined_df["Type"].isin(type_filter)]
-
-        if dept_filter:
-            dept_mask = (
-                (combined_df["Type"] == "Department")
-                & combined_df["name"].isin(dept_filter)
-            ) | (
-                (combined_df["Type"] != "Department")
-                & combined_df["department"].isin(dept_filter)
+    if "Team" in type_filter:
+        for team in teams:
+            nodes.append(
+                {"id": f"team_{team['name']}", "label": team["name"], "group": "team"}
             )
-            combined_df = combined_df[dept_mask]
+            edges.append(
+                {"from": f"dept_{team['department']}", "to": f"team_{team['name']}"}
+            )
 
-        # Apply sorting and pagination
-        combined_df = _apply_sorting(combined_df, "all_resources")
-        combined_df = paginate_dataframe(combined_df, "all_resources")
+    if "Person" in type_filter:
+        for person in people:
+            nodes.append(
+                {
+                    "id": f"person_{person['name']}",
+                    "label": person["name"],
+                    "group": "person",
+                }
+            )
+            if person["team"]:
+                edges.append(
+                    {"from": f"team_{person['team']}", "to": f"person_{person['name']}"}
+                )
+            else:
+                edges.append(
+                    {
+                        "from": f"dept_{person['department']}",
+                        "to": f"person_{person['name']}",
+                    }
+                )
 
-    # Display the consolidated dataframe
-    st.dataframe(
-        combined_df,
-        column_config={
-            "name": "Name",
-            "Type": "Resource Type",
-            "role": "Role",
-            "department": "Department",
-            "team": "Team",
-            "Members/Teams": "Members/Teams",
-            "daily_cost": st.column_config.NumberColumn(
-                "Daily Cost (€)", format="€%.2f"
-            ),
-            "work_days": "Work Days",
-            "daily_work_hours": "Daily Work Hours",
-            "members": "Members",
-            "teams": "Teams",
-        },
-        use_container_width=True,
+    G = nx.Graph()
+
+    for node in nodes:
+        G.add_node(node["id"], label=node["label"], group=node["group"])
+
+    for edge in edges:
+        G.add_edge(edge["from"], edge["to"])
+
+    pos = nx.spring_layout(G)
+
+    node_x = []
+    node_y = []
+    node_text = []
+    node_color = []
+
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(G.nodes[node]["label"])
+
+        if G.nodes[node]["group"] == "department":
+            node_color.append("blue")
+        elif G.nodes[node]["group"] == "team":
+            node_color.append("green")
+        else:
+            node_color.append("red")
+
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode="markers+text",
+        text=node_text,
+        hoverinfo="text",
+        marker=dict(color=node_color, size=15, line=dict(width=2)),
     )
+
+    edge_x = []
+    edge_y = []
+
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+
+    edge_trace = go.Scatter(
+        x=edge_x,
+        y=edge_y,
+        line=dict(width=1, color="#888"),
+        hoverinfo="none",
+        mode="lines",
+    )
+
+    fig = go.Figure(
+        data=[edge_trace, node_trace],
+        layout=go.Layout(
+            showlegend=False,
+            hovermode="closest",
+            margin=dict(b=20, l=5, r=5, t=40),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        ),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("🔵 Department")
+    with col2:
+        st.markdown("🟢 Team")
+    with col3:
+        st.markdown("🔴 Person")
 
 
 def display_manage_projects_tab():
