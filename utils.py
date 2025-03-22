@@ -60,7 +60,25 @@ def display_filtered_resource(
         df = _apply_sorting(df, label)
         df = paginate_dataframe(df, label)
 
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(
+        df,
+        column_config={
+            "name": "Name",
+            "role": "Role",
+            "department": "Department",
+            "team": "Team",
+            "teams": "Teams",
+            "members": "Members",
+            "daily_cost": st.column_config.NumberColumn(
+                "Daily Cost (€)", format="€%.2f"
+            ),
+            "work_days": "Work Days",
+            "daily_work_hours": st.column_config.NumberColumn(
+                "Daily Work Hours", format="%.1f hours"
+            ),
+        },
+        use_container_width=True,
+    )
 
 
 def _display_primary_filters(data_key, label, distinct_filters, filter_by):

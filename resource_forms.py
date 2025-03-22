@@ -374,6 +374,15 @@ def person_crud_form() -> None:
         )
         st.dataframe(
             people_df[["name", "role", "department", "team", "Daily Cost"]],
+            column_config={
+                "name": "Name",
+                "role": "Role",
+                "department": "Department",
+                "team": "Team",
+                "Daily Cost": st.column_config.NumberColumn(
+                    "Daily Cost (€)", format="€%.2f"
+                ),
+            },
             use_container_width=True,
         )
 
@@ -562,6 +571,14 @@ def team_crud_form() -> None:
             )
             st.dataframe(
                 teams_df[["name", "department", "members", "Daily Cost"]],
+                column_config={
+                    "name": "Team Name",
+                    "department": "Department",
+                    "members": "Members",
+                    "Daily Cost": st.column_config.NumberColumn(
+                        "Daily Cost (€)", format="€%.2f"
+                    ),
+                },
                 use_container_width=True,
             )
 
@@ -730,7 +747,15 @@ def department_crud_form() -> None:
             # Pagination
             departments_df = pd.DataFrame(st.session_state.data["departments"])
             departments_df = paginate_dataframe(departments_df, "departments_crud")
-            st.dataframe(departments_df, use_container_width=True)
+            st.dataframe(
+                departments_df,
+                column_config={
+                    "name": "Department Name",
+                    "teams": "Teams",
+                    "members": "Members",
+                },
+                use_container_width=True,
+            )
 
 
 def add_project_form():
