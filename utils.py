@@ -6,10 +6,14 @@ application, including data pagination, confirmation dialogs, and
 circular dependency checks.
 """
 
-import streamlit as st
-import pandas as pd
-import numpy as np
+# Standard library imports
 import math
+
+# Third-party imports
+import numpy as np
+import pandas as pd
+import streamlit as st
+from typing import List
 
 
 def display_filtered_resource(
@@ -17,7 +21,7 @@ def display_filtered_resource(
     label: str,
     distinct_filters: bool = False,
     filter_by: str = "department",
-):
+) -> None:
     """
     Converts session data to a DataFrame, applies filtering, and displays the results.
     Refactored to improve readability and maintainability.
@@ -29,8 +33,12 @@ def display_filtered_resource(
 
     df = pd.DataFrame(data)
 
-    with st.expander(f"Search and Filter {label}", expanded=False):
-        search_term = st.text_input(f"Search {label}", key=f"search_{label}")
+    with st.expander(
+        f"Search and Filter {label.title()}", expanded=False
+    ):  # Corrected name
+        search_term = st.text_input(
+            f"Search {label.title()}", key=f"search_{label}"
+        )  # Corrected name
 
         col1, col2 = st.columns(2)
         team_filter = []
@@ -38,13 +46,8 @@ def display_filtered_resource(
         member_filter = []
 
         with col1:
-            dept_filter, team_filter = _display_primary_filters(
+            dept_filter, team_filter, member_filter = _display_filters(
                 data_key, label, distinct_filters, filter_by
-            )
-
-        with col2:
-            member_filter, team_filter = _display_secondary_filters(
-                data_key, label, distinct_filters
             )
 
         df = _apply_all_filters(
@@ -81,9 +84,15 @@ def display_filtered_resource(
     )
 
 
-def _display_primary_filters(data_key, label, distinct_filters, filter_by):
+def _display_filters(
+    data_key: str, label: str, distinct_filters: bool, filter_by: str
+) -> tuple[List[str], List[str], List[str]]:
+    """
+    Displays filters for resources, combining primary and secondary filters.
+    """
     dept_filter = []
     team_filter = []
+    member_filter = []
 
     if distinct_filters and data_key in ["departments", "teams"]:
         if filter_by == "teams":
@@ -100,22 +109,6 @@ def _display_primary_filters(data_key, label, distinct_filters, filter_by):
                 default=[],
                 key=f"filter_dept_{label}",
             )
-    else:
-        dept_filter = st.multiselect(
-            "Filter by Department",
-            options=[d["name"] for d in st.session_state.data["departments"]],
-            default=[],
-            key=f"filter_dept_{label}",
-        )
-
-    return dept_filter, team_filter
-
-
-def _display_secondary_filters(data_key, label, distinct_filters):
-    member_filter = []
-    team_filter = []
-
-    if distinct_filters and data_key in ["departments", "teams"]:
         member_filter = st.multiselect(
             "Filter by Member",
             options=[p["name"] for p in st.session_state.data["people"]],
@@ -123,6 +116,12 @@ def _display_secondary_filters(data_key, label, distinct_filters):
             key=f"filter_member_{label}",
         )
     else:
+        dept_filter = st.multiselect(
+            "Filter by Department",
+            options=[d["name"] for d in st.session_state.data["departments"]],
+            default=[],
+            key=f"filter_dept_{label}",
+        )
         team_filter = st.multiselect(
             "Filter by Team",
             options=[t["name"] for t in st.session_state.data["teams"]],
@@ -130,12 +129,18 @@ def _display_secondary_filters(data_key, label, distinct_filters):
             key=f"filter_team_{label}",
         )
 
-    return member_filter, team_filter
+    return dept_filter, team_filter, member_filter
 
 
 def _apply_all_filters(
-    df, search_term, team_filter, dept_filter, member_filter, distinct_filters, data_key
-):
+    df: pd.DataFrame,
+    search_term: str,
+    team_filter: List[str],
+    dept_filter: List[str],
+    member_filter: List[str],
+    distinct_filters: bool,
+    data_key: str,
+) -> pd.DataFrame:
     if search_term:
         mask = np.column_stack(
             [
@@ -165,7 +170,7 @@ def _apply_all_filters(
     return df
 
 
-def _apply_sorting(df, label):
+def _apply_sorting(df: pd.DataFrame, label: str) -> pd.DataFrame:
     if not df.empty:
         sort_options = ["None"] + list(df.columns)
         sort_col = st.selectbox("Sort by", options=sort_options, key=f"sort_{label}")
@@ -175,7 +180,7 @@ def _apply_sorting(df, label):
     return df
 
 
-def paginate_dataframe(df, key_prefix):
+def paginate_dataframe(df: pd.DataFrame, key_prefix: str) -> pd.DataFrame:
     """Paginate a dataframe for display."""
     if len(df) > 20:
         page_size = st.slider(
@@ -192,7 +197,8 @@ def paginate_dataframe(df, key_prefix):
     return df
 
 
-def confirm_action(action_name, key_suffix):
+def confirm_action(action_name: str, key_suffix: str) -> bool:
+    """Displays a confirmation dialog for an action."""
     confirm = st.checkbox(f"Confirm {action_name}", key=f"confirm_{key_suffix}")
     proceed = st.button(f"Proceed with {action_name}", key=f"proceed_{key_suffix}")
     if proceed:
@@ -203,9 +209,11 @@ def confirm_action(action_name, key_suffix):
     return False
 
 
-def check_circular_dependencies():
+def check_circular_dependencies() -> List[str]:
+    """Check for circular dependencies between teams with detailed path information."""
     dependency_graph = {}
 
+    # Build dependency graph
     for team in st.session_state.data["teams"]:
         dependency_graph[team["name"]] = set()
         for other_team in st.session_state.data["teams"]:
@@ -214,28 +222,37 @@ def check_circular_dependencies():
             ):
                 dependency_graph[team["name"]].add(other_team["name"])
 
+    # Check for cycles
     visited = set()
     path = set()
+    cycle_paths = []
 
-    def dfs(node):
+    def dfs(node, current_path=None):
+        if current_path is None:
+            current_path = []
+
         if node in path:
+            # Cycle detected - capture the full path
+            cycle_path = current_path + [node]
+            cycle_paths.append(" → ".join(cycle_path))
             return True
+
         if node in visited:
             return False
 
         visited.add(node)
         path.add(node)
+        current_path.append(node)
 
         for neighbor in dependency_graph.get(node, []):
-            if dfs(neighbor):
+            if dfs(neighbor, current_path):
                 return True
 
         path.remove(node)
+        current_path.pop()
         return False
 
-    cycles = []
     for node in dependency_graph:
-        if dfs(node):
-            cycles.append(node)
+        dfs(node, [])
 
-    return cycles
+    return cycle_paths

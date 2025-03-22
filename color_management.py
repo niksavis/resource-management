@@ -1,13 +1,14 @@
 """
 Color Management Module
 
-This module contains functions for dynamically managing and customizing
-colors for visualizations in the resource management application.
+This module contains functions for managing colors used in visualizations,
+including department colors and utilization colorscales.
 """
 
 import json
 import os
 import streamlit as st
+from typing import Dict, List
 import plotly.express as px
 
 SETTINGS_FILE = "settings.json"
@@ -20,98 +21,126 @@ def ensure_settings_directory():
         os.makedirs(directory)
 
 
-def load_settings():
-    """Load settings from a JSON file or create default settings if missing."""
-    if not os.path.exists(SETTINGS_FILE):
-        departments = [d["name"] for d in st.session_state.data["departments"]]
-        default_settings = {
-            "department_colors": {
-                dept: px.colors.qualitative.Plotly[
-                    i % len(px.colors.qualitative.Plotly)
-                ]
-                for i, dept in enumerate(departments)
-            },
-            "utilization_colorscale": [
-                [0, "#00FF00"],
-                [0.5, "#FFFF00"],
-                [1, "#FF0000"],
-            ],
-        }
-        save_settings(default_settings)
-        return default_settings
-
-    try:
+def load_settings() -> Dict:
+    """Loads the settings from the settings file."""
+    if os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, "r") as file:
             return json.load(file)
-    except (json.JSONDecodeError, FileNotFoundError):
-        st.error("Error loading settings. Using default settings.")
-        return {
-            "department_colors": {},
-            "utilization_colorscale": [
-                [0, "#00FF00"],
-                [0.5, "#FFFF00"],
-                [1, "#FF0000"],
-            ],
-        }
+    return {}
 
 
-def save_settings(settings):
-    """Save settings to a JSON file."""
+def save_settings(settings: Dict) -> None:
+    """Saves the settings to the settings file."""
     ensure_settings_directory()
     with open(SETTINGS_FILE, "w") as file:
         json.dump(settings, file, indent=4)
 
 
-def load_department_colors():
-    """Load department colors from settings."""
+def load_department_colors() -> Dict[str, str]:
+    """Loads department colors from the settings file."""
     settings = load_settings()
     return settings.get("department_colors", {})
 
 
-def save_department_colors(colors):
+def save_department_colors(colors: Dict[str, str]) -> None:
     """Save department colors to settings."""
     settings = load_settings()
     settings["department_colors"] = colors
     save_settings(settings)
 
 
-def load_utilization_colorscale():
-    """Load utilization colorscale from settings."""
+def regenerate_department_colors(departments: List[str]) -> None:
+    """Regenerates colors for all departments."""
+    settings = load_settings()
+    department_colors = settings.get("department_colors", {})
+
+    # Generate new colors for missing departments
+    colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
+    for i, department in enumerate(departments):
+        if department not in department_colors:
+            department_colors[department] = colorscale[i % len(colorscale)].lower()
+
+    settings["department_colors"] = department_colors
+    save_settings(settings)
+
+
+def add_department_color(department: str) -> None:
+    """Adds a color for a new department."""
+    settings = load_settings()
+    department_colors = settings.get("department_colors", {})
+
+    if department not in department_colors:
+        colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
+        department_colors[department] = colorscale[
+            len(department_colors) % len(colorscale)
+        ].lower()
+
+    settings["department_colors"] = department_colors
+    save_settings(settings)
+
+
+def delete_department_color(department: str) -> None:
+    """Deletes the color associated with a department."""
+    settings = load_settings()
+    department_colors = settings.get("department_colors", {})
+
+    if department in department_colors:
+        del department_colors[department]
+
+    settings["department_colors"] = department_colors
+    save_settings(settings)
+
+
+def load_utilization_colorscale() -> List:
+    """Loads the utilization colorscale from the settings file."""
     settings = load_settings()
     return settings.get("utilization_colorscale", [])
 
 
-def save_utilization_colorscale(colorscale):
+def save_utilization_colorscale(colorscale: List) -> None:
     """Save utilization colorscale to settings."""
     settings = load_settings()
     settings["utilization_colorscale"] = colorscale
     save_settings(settings)
 
 
-def manage_visualization_colors(departments):
-    """Dynamically assign and manage colors for visualizations."""
-    # Load existing colors
-    department_colors = load_department_colors()
+def manage_visualization_colors(departments: List[str]) -> Dict[str, str]:
+    """
+    Ensures all departments have assigned colors and returns the updated color mapping.
+    """
+    regenerate_department_colors(departments)
+    return load_department_colors()
 
-    # Generate new colors for departments not in the file
-    colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
-    for dept in departments:
-        if dept not in department_colors:
-            department_colors[dept] = colorscale[
-                len(department_colors) % len(colorscale)
-            ].lower()
 
-    # Remove departments that no longer exist
-    departments_to_remove = [
-        dept for dept in department_colors if dept not in departments
-    ]
-    for dept in departments_to_remove:
-        del department_colors[dept]
+def load_currency_settings() -> tuple[str, Dict]:
+    """Loads the currency settings from the settings file."""
+    settings = load_settings()
+    currency = settings.get("currency", "EUR")
+    currency_format = settings.get(
+        "currency_format", {"symbol_position": "prefix", "decimal_places": 2}
+    )
+    return currency, currency_format
 
-    # Save updated colors
-    save_department_colors(department_colors)
 
-    return department_colors
+def save_currency_settings(currency: str, currency_format: Dict) -> None:
+    """Saves the currency settings to the settings file."""
+    settings = load_settings()
+    settings["currency"] = currency
+    settings["currency_format"] = currency_format
+    save_settings(settings)
+
+
+def load_daily_cost_settings() -> float:
+    """Loads the maximum daily cost setting from the settings file."""
+    settings = load_settings()
+    return settings.get("max_daily_cost", 2000.0)
+
+
+def save_daily_cost_settings(max_daily_cost: float) -> None:
+    """Saves the maximum daily cost setting to the settings file."""
+    settings = load_settings()
+    settings["max_daily_cost"] = max_daily_cost
+    save_settings(settings)
 
 
 def display_color_settings():
@@ -161,61 +190,3 @@ def display_color_settings():
             if submit and modified:
                 save_utilization_colorscale(new_utilization_colorscale)
                 st.success("Utilization colors updated")
-
-
-def add_department_color(department_name):
-    """Add a color for a new department."""
-    settings = load_settings()
-    department_colors = settings.get("department_colors", {})
-    if department_name not in department_colors:
-        # Choose a color from a predefined palette
-        colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
-        available_colors = [
-            color.lower()
-            for color in colorscale
-            if color.lower() not in department_colors.values()
-        ]
-        if available_colors:
-            department_colors[department_name] = available_colors[0]
-        else:
-            department_colors[department_name] = "#808080"  # Default gray
-        settings["department_colors"] = department_colors
-        save_settings(settings)
-
-
-def delete_department_color(department_name):
-    """Remove a department's color when it is deleted."""
-    settings = load_settings()
-    department_colors = settings.get("department_colors", {})
-    if department_name in department_colors:
-        del department_colors[department_name]
-        settings["department_colors"] = department_colors
-        save_settings(settings)
-
-
-def regenerate_department_colors(departments):
-    """Regenerate department colors based on the current departments."""
-    settings = load_settings()
-    department_colors = {}
-    colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
-    for i, department in enumerate(departments):
-        department_colors[department] = colorscale[i % len(colorscale)].lower()
-    settings["department_colors"] = department_colors
-    save_settings(settings)
-
-
-def load_currency_settings():
-    """Load currency settings from the settings file."""
-    settings = load_settings()
-    return settings.get("currency", "USD"), settings.get(
-        "currency_format",
-        {"symbol_position": "prefix", "decimal_places": 2},
-    )
-
-
-def save_currency_settings(currency, currency_format):
-    """Save currency settings to the settings file."""
-    settings = load_settings()
-    settings["currency"] = currency
-    settings["currency_format"] = currency_format
-    save_settings(settings)

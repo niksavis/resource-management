@@ -6,62 +6,87 @@ resource and project data. It serves as the data layer for the
 resource management application.
 """
 
+# Standard library imports
+import base64
 import io
 import json
-import base64
-import pandas as pd
-import numpy as np
-import streamlit as st
+import uuid
 from datetime import datetime
-from typing import List, Dict, Tuple
+from typing import Dict, List, Tuple, Optional
+
+# Third-party imports
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+# Local module imports
+from calculation_helpers import calculate_project_duration, is_resource_overallocated
 from utils import paginate_dataframe
-from calculation_helpers import (
-    calculate_project_duration,
-    is_resource_overallocated,
-)
 
 
-def load_json(file: io.TextIOWrapper) -> Dict:
+def load_json(file: io.TextIOWrapper) -> Dict[str, any]:
     """Loads and returns JSON data from a file safely."""
     try:
         return json.load(file)
+    except json.JSONDecodeError as e:
+        st.error(f"Invalid JSON format: {e}")
+        return None
+    except IOError as e:
+        st.error(f"File I/O error: {e}")
+        return None
     except Exception as e:
-        st.error(f"Error loading JSON file: {e}")
+        st.error(f"Unexpected error while loading JSON: {e}")
         return None
 
 
-def save_json(data: Dict, filename: str) -> str:
+def save_json(data: Dict[str, any], filename: str) -> str:
     """Generates a download link for JSON data."""
-    json_str = json.dumps(data, indent=4)
-    b64 = base64.b64encode(json_str.encode()).decode()
-    return f'<a href="data:application/json;base64,{b64}" download="{filename}">Download JSON file</a>'
+    try:
+        json_str = json.dumps(data, indent=4)
+        b64 = base64.b64encode(json_str.encode()).decode()
+        return f'<a href="data:application/json;base64,{b64}" download="{filename}">Download JSON file</a>'
+    except (TypeError, ValueError) as e:
+        st.error(f"Error serializing JSON data: {e}")
+        return ""
+    except Exception as e:
+        st.error(f"Unexpected error while saving JSON: {e}")
+        return ""
 
 
-def create_gantt_data(projects: List[Dict], resources: Dict) -> pd.DataFrame:
+def create_gantt_data(
+    projects: List[Dict[str, any]], resources: Dict[str, any]
+) -> pd.DataFrame:
     """Converts project and resource data into a DataFrame for Gantt chart visualization."""
-    df_data = []
-    for project in projects:
-        for resource in project["assigned_resources"]:
-            r_type, department = _determine_resource_type(resource, resources)
-            df_data.append(
-                {
-                    "Resource": resource,
-                    "Type": r_type,
-                    "Department": department,
-                    "Project": project["name"],
-                    "Start": pd.to_datetime(project["start_date"]),
-                    "Finish": pd.to_datetime(project["end_date"]),
-                    "Priority": project["priority"],
-                    "Duration": calculate_project_duration(
-                        pd.to_datetime(project["start_date"]),
-                        pd.to_datetime(project["end_date"]),
-                    ),
-                }
-            )
-    return pd.DataFrame(df_data)
+    try:
+        df_data = []
+        for project in projects:
+            for resource in project["assigned_resources"]:
+                r_type, department = _determine_resource_type(resource, resources)
+                df_data.append(
+                    {
+                        "Resource": resource,
+                        "Type": r_type,
+                        "Department": department,
+                        "Project": project["name"],
+                        "Start": pd.to_datetime(project["start_date"]),
+                        "Finish": pd.to_datetime(project["end_date"]),
+                        "Priority": project["priority"],
+                        "Duration": calculate_project_duration(
+                            pd.to_datetime(project["start_date"]),
+                            pd.to_datetime(project["end_date"]),
+                        ),
+                    }
+                )
+        return pd.DataFrame(df_data)
+    except KeyError as e:
+        st.error(f"Missing key in project or resource data: {e}")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Unexpected error while creating Gantt data: {e}")
+        return pd.DataFrame()
 
 
-def _determine_resource_type(resource: str, data: Dict) -> Tuple[str, str]:
+def _determine_resource_type(resource: str, data: Dict[str, any]) -> Tuple[str, str]:
     """Identifies whether the resource is a person, team, or department."""
     people_dict = {p["name"]: p["department"] for p in data["people"]}
     team_dict = {t["name"]: t["department"] for t in data["teams"]}
@@ -76,7 +101,11 @@ def _determine_resource_type(resource: str, data: Dict) -> Tuple[str, str]:
     return "Unknown", "Unknown"
 
 
-def calculate_date_range(gantt_data: pd.DataFrame, start_date=None, end_date=None):
+def calculate_date_range(
+    gantt_data: pd.DataFrame,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+) -> Tuple[datetime, datetime, int]:
     """Determines the date range for utilization calculation."""
     if start_date is None:
         start_date = gantt_data["Start"].min()
@@ -91,7 +120,9 @@ def calculate_date_range(gantt_data: pd.DataFrame, start_date=None, end_date=Non
     return start_date, end_date, total_period_days
 
 
-def calculate_resource_allocation(resource_df: pd.DataFrame, start_date, end_date):
+def calculate_resource_allocation(
+    resource_df: pd.DataFrame, start_date: datetime, end_date: datetime
+) -> Tuple[int, int]:
     """Calculates allocation metrics for a single resource."""
     resources_per_day = {}
 
@@ -112,7 +143,9 @@ def calculate_resource_allocation(resource_df: pd.DataFrame, start_date, end_dat
 
 @st.cache_data(ttl=3600)
 def calculate_resource_utilization(
-    gantt_data: pd.DataFrame, start_date: datetime = None, end_date: datetime = None
+    gantt_data: pd.DataFrame,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
 ) -> pd.DataFrame:
     """Computes utilization metrics for each resource."""
     if gantt_data.empty:
@@ -183,11 +216,14 @@ def calculate_resource_utilization(
 
 
 def filter_dataframe(
-    df: pd.DataFrame, key: str, columns: List[str] = None
+    df: pd.DataFrame, key: str, columns: Optional[List[str]] = None
 ) -> pd.DataFrame:
     """Enhances a DataFrame with search, sort, and pagination capabilities."""
     if columns is None:
         columns = df.columns
+
+    # Generate a unique prefix for this instance of filter_dataframe
+    unique_prefix = f"{key}_{uuid.uuid4().hex[:8]}"
 
     for col in df.columns:
         if df[col].apply(lambda v: isinstance(v, list)).any():
@@ -195,8 +231,12 @@ def filter_dataframe(
                 lambda v: ", ".join(map(str, v)) if isinstance(v, list) else str(v)
             )
 
-    with st.expander(f"Search and Filter {key}", expanded=False):
-        search_term = st.text_input(f"Search {key}", key=f"search_{key}")
+    with st.expander(
+        f"Search and Filter {key.replace('_', ' ').title()}", expanded=False
+    ):
+        search_term = st.text_input(
+            f"Search {key.replace('_', ' ').title()}", key=f"search_{unique_prefix}"
+        )
 
         col_filters = st.columns(min(4, len(columns)))
         active_filters = {}
@@ -204,13 +244,14 @@ def filter_dataframe(
         for i, col in enumerate(columns):
             with col_filters[i % 4]:
                 if df[col].dtype == "object" or df[col].dtype == "string":
+                    unique_col_key = f"filter_{unique_prefix}_{col}"  # Unique key for each column filter
                     unique_values = sorted(df[col].dropna().unique())
                     if len(unique_values) < 15:
                         selected = st.multiselect(
                             f"Filter {col}",
                             options=unique_values,
                             default=[],
-                            key=f"filter_{key}_{col}",
+                            key=unique_col_key,
                         )
                         if selected:
                             active_filters[col] = selected
@@ -232,19 +273,21 @@ def filter_dataframe(
 
         if not df.empty:
             sort_options = ["None"] + list(df.columns)
-            sort_col = st.selectbox("Sort by", options=sort_options, key=f"sort_{key}")
+            sort_col = st.selectbox(
+                "Sort by", options=sort_options, key=f"sort_{unique_prefix}"
+            )
             if sort_col != "None":
-                ascending = st.checkbox("Ascending", True, key=f"asc_{key}")
+                ascending = st.checkbox("Ascending", True, key=f"asc_{unique_prefix}")
                 df = df.sort_values(
                     by=sort_col, ascending=ascending, na_position="first"
                 )
 
-        df = paginate_dataframe(df, key)
+        df = paginate_dataframe(df, unique_prefix)  # Use unique prefix for pagination
 
     return df
 
 
-def find_resource_conflicts(df: pd.DataFrame) -> List[Dict]:
+def find_resource_conflicts(df: pd.DataFrame) -> List[Dict[str, any]]:
     """Identifies and returns a list of resource conflicts in the data."""
     conflicts = []
     for resource in df["Resource"].unique():
@@ -273,7 +316,9 @@ def find_resource_conflicts(df: pd.DataFrame) -> List[Dict]:
     return conflicts
 
 
-def parse_resources(resources_list):
+def parse_resources(
+    resources_list: List[str],
+) -> Tuple[List[str], List[str], List[str]]:
     """Parses the assigned resources into people, teams, and departments."""
     people_names = [person["name"] for person in st.session_state.data["people"]]
     team_names = [team["name"] for team in st.session_state.data["teams"]]
@@ -314,7 +359,7 @@ def parse_resources(resources_list):
 
 
 @st.cache_data
-def calculate_person_cost(person: Dict) -> float:
+def calculate_person_cost(person: Dict[str, any]) -> float:
     """Calculate the cost of a person based on their daily cost, work days, and daily work hours."""
     if not person.get("daily_cost") or not person.get("work_days"):
         return 0.0
@@ -325,7 +370,7 @@ def calculate_person_cost(person: Dict) -> float:
 
 
 @st.cache_data
-def calculate_team_cost(team: Dict, people: List[Dict]) -> float:
+def calculate_team_cost(team: Dict[str, any], people: List[Dict[str, any]]) -> float:
     """Calculate the cost of a team by summing the costs of its members."""
     member_costs = [
         calculate_person_cost(person)
@@ -337,7 +382,9 @@ def calculate_team_cost(team: Dict, people: List[Dict]) -> float:
 
 @st.cache_data
 def calculate_department_cost(
-    department: Dict, people: List[Dict], teams: List[Dict]
+    department: Dict[str, any],
+    people: List[Dict[str, any]],
+    teams: List[Dict[str, any]],
 ) -> float:
     """Calculate the cost of a department by summing the costs of its people and teams."""
     people_cost = sum(
@@ -357,32 +404,42 @@ def calculate_department_cost(
 
 @st.cache_data
 def calculate_project_cost(
-    project: Dict, people: List[Dict], teams: List[Dict]
+    project: Dict[str, any], people: List[Dict[str, any]], teams: List[Dict[str, any]]
 ) -> float:
     """Calculate the cost of a project based on its assigned resources and duration."""
-    start_date = (
-        project["start_date"].strftime("%Y-%m-%d")
-        if isinstance(project["start_date"], pd.Timestamp)
-        else project["start_date"]
-    )
-    end_date = (
-        project["end_date"].strftime("%Y-%m-%d")
-        if isinstance(project["end_date"], pd.Timestamp)
-        else project["end_date"]
-    )
+    try:
+        start_date = (
+            project["start_date"].strftime("%Y-%m-%d")
+            if isinstance(project["start_date"], pd.Timestamp)
+            else project["start_date"]
+        )
+        end_date = (
+            project["end_date"].strftime("%Y-%m-%d")
+            if isinstance(project["end_date"], pd.Timestamp)
+            else project["end_date"]
+        )
 
-    start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    end_date = datetime.strptime(end_date, "%Y-%m-%d")
-    duration_days = (end_date - start_date).days + 1
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        duration_days = (end_date - start_date).days + 1
 
-    resource_costs = 0.0
-    for resource in project["assigned_resources"]:
-        person = next((p for p in people if p["name"] == resource), None)
-        if person:
-            resource_costs += calculate_person_cost(person)
+        resource_costs = 0.0
+        for resource in project["assigned_resources"]:
+            person = next((p for p in people if p["name"] == resource), None)
+            if person:
+                resource_costs += calculate_person_cost(person)
 
-        team = next((t for t in teams if t["name"] == resource), None)
-        if team:
-            resource_costs += calculate_team_cost(team, people)
+            team = next((t for t in teams if t["name"] == resource), None)
+            if team:
+                resource_costs += calculate_team_cost(team, people)
 
-    return resource_costs * duration_days
+        return resource_costs * duration_days
+    except KeyError as e:
+        st.error(f"Missing key in project data: {e}")
+        return 0.0
+    except ValueError as e:
+        st.error(f"Invalid date format in project data: {e}")
+        return 0.0
+    except Exception as e:
+        st.error(f"Unexpected error while calculating project cost: {e}")
+        return 0.0

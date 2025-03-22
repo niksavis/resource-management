@@ -5,7 +5,7 @@
       "role": "Head of Department",
       "department": "Network Engineering",
       "team": null,
-      "daily_cost": 700,
+      "daily_cost": 600,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8
     },
@@ -14,7 +14,7 @@
       "role": "Network Architect",
       "department": "Network Engineering",
       "team": "Network Planning Team",
-      "daily_cost": 550,
+      "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8
     },
@@ -577,15 +577,6 @@
       "daily_work_hours": 8
     },
     {
-      "name": "Aurora Diaz",
-      "role": "Customer Journey Specialist",
-      "department": "Customer Experience",
-      "team": "Service Design Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
-    },
-    {
       "name": "Lincoln Wood",
       "role": "Team Leader",
       "department": "Customer Experience",
@@ -907,12 +898,7 @@
     {
       "name": "Service Design Team",
       "department": "Customer Experience",
-      "members": [
-        "Violet Hayes",
-        "Grayson Fisher",
-        "Aurora Diaz",
-        "Lincoln Wood"
-      ]
+      "members": ["Violet Hayes", "Grayson Fisher", "Lincoln Wood"]
     },
     {
       "name": "Field Operations Team",
@@ -1113,27 +1099,22 @@
     {
       "name": "5G Network Expansion",
       "start_date": "2025-04-01",
-      "end_date": "2025-08-31",
+      "end_date": "2025-05-15",
       "priority": 1,
-      "assigned_resources": [
-        "Network Planning Team",
-        "Network Implementation Team",
-        "Mia Jackson"
-      ],
-      "allocated_budget": 130000.0
+      "assigned_resources": ["Network Planning Team", "Mia Jackson"],
+      "allocated_budget": 13000000.0
     },
     {
       "name": "Customer Self-Service Portal",
       "start_date": "2025-03-15",
-      "end_date": "2025-07-15",
+      "end_date": "2025-04-15",
       "priority": 2,
       "assigned_resources": [
         "Frontend Team",
         "Backend Team",
-        "User Experience Team",
-        "Ella Carter"
+        "User Experience Team"
       ],
-      "allocated_budget": 40000.0
+      "allocated_budget": 4000000.0
     },
     {
       "name": "Enterprise Billing System Upgrade",
@@ -1145,7 +1126,7 @@
         "Enterprise Products Team",
         "Ian Barnes"
       ],
-      "allocated_budget": 180000.0
+      "allocated_budget": 18000000.0
     },
     {
       "name": "Network Security Enhancement",
@@ -1157,7 +1138,7 @@
         "Network Operations Team",
         "Thomas Wilson"
       ],
-      "allocated_budget": 90000
+      "allocated_budget": 9000000.0
     },
     {
       "name": "Mobile App Redesign",
@@ -1170,33 +1151,23 @@
         "Customer Support Team",
         "John Mitchell"
       ],
-      "allocated_budget": 70000
+      "allocated_budget": 7000000.0
     },
     {
       "name": "AI-Powered Customer Support",
       "start_date": "2025-03-01",
-      "end_date": "2025-08-15",
+      "end_date": "2025-04-15",
       "priority": 2,
-      "assigned_resources": [
-        "Innovation Team",
-        "Technical Support Team",
-        "Consumer Products Team",
-        "Willow Simmons"
-      ],
-      "allocated_budget": 110000
+      "assigned_resources": ["Innovation Team", "Technical Support Team"],
+      "allocated_budget": 11000000.0
     },
     {
       "name": "IoT Service Platform",
       "start_date": "2025-05-15",
-      "end_date": "2025-10-31",
+      "end_date": "2025-06-15",
       "priority": 1,
-      "assigned_resources": [
-        "Technology Research Team",
-        "Backend Team",
-        "QA Team",
-        "Product Management"
-      ],
-      "allocated_budget": 150000
+      "assigned_resources": ["Technology Research Team", "Backend Team"],
+      "allocated_budget": 15000000.0
     },
     {
       "name": "Cloud Migration",
@@ -1208,7 +1179,7 @@
         "Infrastructure Team",
         "Oliver Brown"
       ],
-      "allocated_budget": 200000
+      "allocated_budget": 20000000.0
     },
     {
       "name": "E-commerce Platform Upgrade",
@@ -1216,7 +1187,7 @@
       "end_date": "2025-09-30",
       "priority": 4,
       "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"],
-      "allocated_budget": 100000
+      "allocated_budget": 10000000.0
     },
     {
       "name": "Data Analytics Platform",
@@ -1224,7 +1195,7 @@
       "end_date": "2026-02-28",
       "priority": 1,
       "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"],
-      "allocated_budget": 250000
+      "allocated_budget": 25000000.0
     },
     {
       "name": "Customer Feedback System",
@@ -1236,7 +1207,7 @@
         "User Experience Team",
         "Ella Carter"
       ],
-      "allocated_budget": 60000
+      "allocated_budget": 6000000.0
     },
     {
       "name": "AI Research Initiative",
@@ -1248,7 +1219,7 @@
         "Technology Research Team",
         "Oliver Brown"
       ],
-      "allocated_budget": 300000
+      "allocated_budget": 30000000.0
     }
   ]
 }

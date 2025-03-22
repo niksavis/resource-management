@@ -5,22 +5,25 @@ This module contains functions for creating visualizations using Plotly
 and Streamlit, including Gantt charts and resource utilization dashboards.
 """
 
+# Standard library imports
+from datetime import datetime
+from typing import Dict, List, Optional
+
+# Third-party imports
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from datetime import datetime
-from typing import Optional, List, Dict
+
+# Local module imports
+from color_management import load_utilization_colorscale, manage_visualization_colors
 from data_handlers import (
+    calculate_project_cost,
     calculate_resource_utilization,
     filter_dataframe,
-    calculate_project_cost,
+    find_resource_conflicts,  # Added missing import
 )
-from utils import paginate_dataframe  # Import the new function
-from color_management import (
-    manage_visualization_colors,
-    load_utilization_colorscale,  # Import the new function
-)
+from utils import paginate_dataframe
 
 
 def display_gantt_chart(df: pd.DataFrame) -> None:
@@ -109,54 +112,6 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
         )
 
     return df
-
-
-def _create_gantt_figure(df: pd.DataFrame, department_colors: dict) -> go.Figure:
-    """Create the Gantt chart figure."""
-    fig = px.timeline(
-        df,
-        x_start="Start",
-        x_end="Finish",
-        y="Resource",
-        color="Department",
-        hover_data=[
-            "Type",
-            "Department",
-            "Priority",
-            "Duration (days)",
-            "Utilization %",
-            "Overallocation %",
-        ],
-        labels={"Resource": "Resource Name"},
-        height=600,
-        color_discrete_map=department_colors,  # Use dynamically managed colors
-    )
-
-    # Improve layout with rangeslider for zooming
-    fig.update_layout(
-        title="Resource Allocation Timeline",
-        xaxis_title="Timeline",
-        yaxis_title="Resources",
-        legend_title="Projects",
-        xaxis=dict(
-            rangeselector=dict(
-                buttons=list(
-                    [
-                        dict(count=1, label="1m", step="month", stepmode="backward"),
-                        dict(count=3, label="3m", step="month", stepmode="backward"),
-                        dict(count=6, label="6m", step="month", stepmode="backward"),
-                        dict(count=1, label="YTD", step="year", stepmode="todate"),
-                        dict(count=1, label="1y", step="year", stepmode="backward"),
-                        dict(step="all"),
-                    ]
-                )
-            ),
-            rangeslider=dict(visible=True),
-            type="date",
-        ),
-    )
-
-    return fig
 
 
 def _add_today_marker(fig: go.Figure) -> go.Figure:
@@ -359,8 +314,8 @@ def display_utilization_dashboard(
     # Apply search and filtering
     filtered_df = filter_dataframe(
         display_df,
-        "utilization",
-        [
+        key="Utilization",  # Corrected name
+        columns=[
             "Resource",
             "Type",
             "Department",
@@ -372,7 +327,10 @@ def display_utilization_dashboard(
     )
 
     # Pagination
-    filtered_df = paginate_dataframe(filtered_df, "utilization")
+    filtered_df = paginate_dataframe(
+        filtered_df,
+        "Utilization",  # Corrected name
+    )
 
     st.dataframe(filtered_df, use_container_width=True)
 
@@ -422,3 +380,48 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
         )
         st.warning("The following projects have cost overruns:")
         st.dataframe(overruns, use_container_width=True)
+
+
+def _display_resource_conflicts(gantt_data):
+    """Check and display resource conflicts."""
+    conflicts = find_resource_conflicts(gantt_data)  # Now correctly defined
+    if conflicts:
+        st.subheader("Resource Conflicts")
+
+        conflict_summary = {}
+        for conflict in conflicts:
+            resource = conflict["resource"]
+            if resource not in conflict_summary:
+                conflict_summary[resource] = 0
+            conflict_summary[resource] += 1
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Total Conflicts", len(conflicts))
+        with col2:
+            st.metric("Affected Resources", len(conflict_summary))
+
+        conflicts_df = pd.DataFrame(conflicts)
+        conflicts_df["overlap_start"] = pd.to_datetime(conflicts_df["overlap_start"])
+        conflicts_df["overlap_end"] = pd.to_datetime(conflicts_df["overlap_end"])
+
+        fig = px.timeline(
+            conflicts_df,
+            x_start="overlap_start",
+            x_end="overlap_end",
+            y="resource",
+            color="overlap_days",
+            hover_data=["project1", "project2", "overlap_days"],
+            color_continuous_scale="Reds",
+            title="Resource Conflict Timeline",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("Conflict Details")
+        filtered_conflicts = filter_dataframe(
+            conflicts_df[["resource", "project1", "project2", "overlap_days"]],
+            key="Conflicts",  # Corrected name
+        )
+        st.dataframe(filtered_conflicts, use_container_width=True)
+    else:
+        st.success("No resource conflicts detected")

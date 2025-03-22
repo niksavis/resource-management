@@ -6,32 +6,38 @@ teams, departments, and projects. It provides CRUD operations for
 each resource type and integrates validation and state management.
 """
 
-import streamlit as st
-from typing import List, Dict
+# Third-party imports
 import pandas as pd
-from utils import paginate_dataframe  # Import the new function
-from validation import (
-    validate_name_field,
-    validate_project_dates,
-    validate_project_input,  # Import validation functions
-    validate_daily_cost,  # Import new validation functions
-    validate_budget,
-    validate_work_days,
-    validate_work_hours,
-    detect_budget_overrun,
+import plotly.express as px
+import streamlit as st
+from typing import Dict, List
+
+# Local module imports
+from color_management import (
+    add_department_color,
+    delete_department_color,
+    load_currency_settings,
 )
-from color_management import add_department_color, delete_department_color
-from color_management import load_currency_settings  # Import currency settings
 from data_handlers import (
     calculate_department_cost,
-    calculate_team_cost,
     calculate_person_cost,
-    calculate_project_cost,  # Import the missing function
-)  # Import the function
-import plotly.express as px  # Import Plotly Express for visualizations
+    calculate_project_cost,
+    calculate_team_cost,
+)
+from utils import paginate_dataframe
+from validation import (
+    detect_budget_overrun,
+    validate_budget,
+    validate_daily_cost,
+    validate_name_field,
+    validate_project_dates,
+    validate_project_input,  # Ensure this is imported only once
+    validate_work_days,
+    validate_work_hours,
+)
 
 
-def delete_resource(resource_list: List[Dict], resource_name: str) -> bool:
+def delete_resource(resource_list: List[Dict[str, any]], resource_name: str) -> bool:
     """
     Removes a resource from the provided list based on the resource_name.
     """
@@ -55,15 +61,25 @@ def ensure_department_exists(department_name: str) -> None:
 
 
 def person_crud_form() -> None:
+    """Form for managing people with improved layout."""
     # Load currency settings
     currency, currency_format = load_currency_settings()
-    currency_symbol = "€" if currency == "EUR" else "$"  # Example fallback
+    currency_symbol = currency
 
-    with st.expander("Add new Person", expanded=False):
+    # Create tabs for Add/Edit/Delete operations
+    person_tabs = st.tabs(["Add Person", "Edit Person", "Delete Person"])
+
+    # Add Person Tab
+    with person_tabs[0]:
         with st.form("add_person"):
-            st.write("Add new person")
+            st.subheader("Add New Person")
+
+            # Create two columns for better layout
             col1, col2 = st.columns([1, 1])
+
+            # Personal Information Section
             with col1:
+                st.markdown("#### Personal Information")
                 name = st.text_input("Name")
                 role = st.selectbox(
                     "Role",
@@ -80,7 +96,10 @@ def person_crud_form() -> None:
                 )
                 if role == "Other":
                     role = st.text_input("Specify role")
+
+            # Department and Team Section
             with col2:
+                st.markdown("#### Department and Team")
                 if st.session_state.data["departments"] and name:
                     dept_options = [
                         d["name"] for d in st.session_state.data["departments"]
@@ -91,16 +110,18 @@ def person_crud_form() -> None:
 
                 team_options = ["None"]
                 if st.session_state.data["teams"] and department:
-                    for team in st.session_state.data["teams"]:
-                        if team["department"] == department:
-                            team_options.append(team["name"])
+                    for team_obj in st.session_state.data["teams"]:
+                        if team_obj["department"] == department:
+                            team_options.append(team_obj["name"])
                 team = st.selectbox("Team (optional)", team_options)
                 if team == "None":
                     team = None
 
-            # Place Daily Work Hours to the left, Daily Cost to the right
-            row1_col1, row1_col2 = st.columns([1, 1])
-            with row1_col1:
+            # Work Details Section
+            st.markdown("#### Work Details")
+            col3, col4 = st.columns([1, 1])
+
+            with col3:
                 daily_work_hours = st.number_input(
                     "Daily Work Hours",
                     min_value=1,
@@ -108,7 +129,7 @@ def person_crud_form() -> None:
                     value=8,
                     help="Number of hours this person works per day.",
                 )
-            with row1_col2:
+
                 daily_cost = st.number_input(
                     f"Daily Cost ({currency_symbol})",
                     min_value=0.0,
@@ -117,19 +138,27 @@ def person_crud_form() -> None:
                     help="Cost per day for this person.",
                 )
 
-            st.write("Work Days")
-            col_days = st.columns(7)
-            day_labels = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
-            work_days = {}
-            for idx, day in enumerate(day_labels):
-                work_days[day] = col_days[idx].checkbox(
-                    day, value=(day in ["MO", "TU", "WE", "TH", "FR"])
-                )
-            selected_work_days = [d for d, checked in work_days.items() if checked]
+            with col4:
+                st.write("Work Days")
+                day_labels = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+                work_days = {}
 
-            submit = st.form_submit_button("Add Person")
+                # Organize days in two rows for better layout
+                days_row1 = st.columns(5)
+                days_row2 = st.columns(5)
 
-            if submit and name and role and department:
+                for idx, day in enumerate(day_labels[:5]):
+                    work_days[day] = days_row1[idx].checkbox(
+                        day, value=(day in ["MO", "TU", "WE", "TH", "FR"])
+                    )
+
+                for idx, day in enumerate(day_labels[5:]):
+                    work_days[day] = days_row2[idx].checkbox(day, value=False)
+
+                selected_work_days = [d for d, checked in work_days.items() if checked]
+
+            submit = st.form_submit_button("Add Person", use_container_width=True)
+            if submit:
                 # Validation for new fields
                 if not validate_daily_cost(daily_cost):
                     st.stop()
@@ -302,6 +331,8 @@ def person_crud_form() -> None:
                             if new_daily_work_hours < 1 or new_daily_work_hours > 24:
                                 st.error("Daily work hours must be between 1 and 24.")
                                 st.stop()
+                            if not validate_daily_cost(new_daily_cost):
+                                st.stop()
 
                             # Update person info and related references
                             for i, person in enumerate(st.session_state.data["people"]):
@@ -369,18 +400,19 @@ def person_crud_form() -> None:
     if st.session_state.data["people"]:
         st.subheader("People Overview")
         people_df = pd.DataFrame(st.session_state.data["people"])
-        people_df["Daily Cost"] = people_df["daily_cost"].apply(
-            lambda x: f"{currency_symbol}{x:,.2f}"  # Format with commas
-        )
         st.dataframe(
-            people_df[["name", "role", "department", "team", "Daily Cost"]],
+            people_df,
             column_config={
                 "name": "Name",
                 "role": "Role",
                 "department": "Department",
                 "team": "Team",
-                "Daily Cost": st.column_config.NumberColumn(
+                "daily_cost": st.column_config.NumberColumn(
                     "Daily Cost (€)", format="€%.2f"
+                ),
+                "work_days": "Work Days",
+                "daily_work_hours": st.column_config.NumberColumn(
+                    "Daily Work Hours", format="%.1f hours"
                 ),
             },
             use_container_width=True,
@@ -388,37 +420,48 @@ def person_crud_form() -> None:
 
 
 def team_crud_form() -> None:
-    with st.expander("Add new Team", expanded=False):
+    """Form for managing teams with improved layout."""
+    # Create tabs for Add/Edit/Delete operations
+    team_tabs = st.tabs(["Add Team", "Edit Team", "Delete Team"])
+
+    # Add Team Tab
+    with team_tabs[0]:
         with st.form("add_team"):
-            st.write("Add new team")
-            name = st.text_input("Team Name")
+            st.subheader("Add New Team")
 
-            # Select or create department
-            if st.session_state.data["departments"] and name:
-                dept_options = [d["name"] for d in st.session_state.data["departments"]]
-                department = st.selectbox("Department", dept_options)
-            else:
-                department = st.text_input("Department")
+            # Team Information Section
+            col1, col2 = st.columns([1, 1])
 
-            # Select team members
-            member_options = [
-                person["name"]
-                for person in st.session_state.data["people"]
-                if person["department"] == department
-            ]
-            members = st.multiselect("Team Members", member_options)
+            with col1:
+                st.markdown("#### Team Information")
+                name = st.text_input("Team Name")
 
-            # Calculate team daily cost
-            team_daily_cost = sum(
-                person["daily_cost"]
-                for person in st.session_state.data["people"]
-                if person["name"] in members
-            )
-            st.write(f"Calculated Team Daily Cost: {team_daily_cost:,.2f}")
+                # Select or create department
+                if st.session_state.data["departments"] and name:
+                    dept_options = [
+                        d["name"] for d in st.session_state.data["departments"]
+                    ]
+                    department = st.selectbox("Department", dept_options)
+                else:
+                    department = st.text_input("Department")
 
-            submit = st.form_submit_button("Add Team")
+            with col2:
+                st.markdown("#### Team Members")
+                member_options = [
+                    person["name"]
+                    for person in st.session_state.data["people"]
+                    if person["department"] == department
+                ]
+                members = st.multiselect("Team Members", member_options)
+                team_daily_cost = sum(
+                    person["daily_cost"]
+                    for person in st.session_state.data["people"]
+                    if person["name"] in members
+                )
+                st.metric("Calculated Team Daily Cost", f"€{team_daily_cost:,.2f}")
 
-            if submit and name and department:
+            submit = st.form_submit_button("Add Team", use_container_width=True)
+            if submit:
                 if not validate_name_field(name, "Team"):
                     st.stop()
                 if len(members) < 2:
@@ -582,8 +625,22 @@ def team_crud_form() -> None:
                 use_container_width=True,
             )
 
+    if st.session_state.data["teams"]:
+        st.subheader("Teams Overview")
+        teams_df = pd.DataFrame(st.session_state.data["teams"])
+        st.dataframe(
+            teams_df,
+            column_config={
+                "name": "Team Name",
+                "department": "Department",
+                "members": "Members",
+            },
+            use_container_width=True,
+        )
+
 
 def department_crud_form() -> None:
+    """Form for managing departments."""
     with st.expander("Add new Department", expanded=False):
         with st.form("add_department"):
             st.write("Add new department")
@@ -757,8 +814,21 @@ def department_crud_form() -> None:
                 use_container_width=True,
             )
 
+    if st.session_state.data["departments"]:
+        st.subheader("Departments Overview")
+        departments_df = pd.DataFrame(st.session_state.data["departments"])
+        st.dataframe(
+            departments_df,
+            column_config={
+                "name": "Department Name",
+                "teams": "Teams",
+                "members": "Members",
+            },
+            use_container_width=True,
+        )
 
-def add_project_form():
+
+def add_project_form() -> None:
     """
     Form for adding a new project.
     """
@@ -866,7 +936,7 @@ def add_project_form():
                     st.rerun()
 
 
-def edit_project_form():
+def edit_project_form() -> None:
     """
     Form for editing an existing project.
     """
@@ -1041,7 +1111,7 @@ def edit_project_form():
                 st.rerun()
 
 
-def _initialize_edit_project_form(selected_project):
+def _initialize_edit_project_form(selected_project: Dict[str, any]) -> None:
     """Helper function to initialize the edit project form state."""
     st.session_state["edit_project_people"] = [
         r

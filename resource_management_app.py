@@ -6,40 +6,47 @@ navigation, data loading, and rendering of various tabs for managing
 resources, projects, and visualizing data.
 """
 
-import streamlit as st
-import pandas as pd
+# Standard library imports
 import json
-import plotly.express as px
-import numpy as np
 import os
-from data_handlers import (
-    load_json,
-    save_json,
-    create_gantt_data,
-    calculate_resource_utilization,
-    filter_dataframe,
-    find_resource_conflicts,
-)
-from visualizations import display_gantt_chart, display_utilization_dashboard
-from resource_forms import (
-    person_crud_form,
-    team_crud_form,
-    department_crud_form,
-    add_project_form,
-    edit_project_form,
-)
-from utils import (
-    display_filtered_resource,
-    paginate_dataframe,
-    confirm_action,
-    check_circular_dependencies,
-)
+
+# Third-party imports
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# Local module imports
 from color_management import (
     display_color_settings,
     load_currency_settings,
-    save_currency_settings,
     regenerate_department_colors,
+    save_currency_settings,
 )
+from data_handlers import (
+    calculate_project_cost,
+    calculate_resource_utilization,
+    create_gantt_data,
+    filter_dataframe,
+    find_resource_conflicts,
+    load_json,
+    save_json,
+)
+from resource_forms import (
+    add_project_form,
+    department_crud_form,
+    edit_project_form,
+    person_crud_form,
+    team_crud_form,
+)
+from utils import (
+    _apply_sorting,
+    check_circular_dependencies,
+    confirm_action,
+    display_filtered_resource,
+    paginate_dataframe,
+)
+from visualizations import display_gantt_chart, display_utilization_dashboard
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
@@ -57,18 +64,13 @@ if "data" not in st.session_state:
 
 
 def display_home_tab():
-    """Displays the content for the Home tab."""
-    st.subheader("Home")
-    st.subheader("Introduction")
-    st.write(
-        "This application helps you manage project resources and visualize "
-        "their allocation across multiple projects."
-    )
+    """Displays an enhanced home dashboard with key metrics and charts."""
+    st.subheader("Resource Management Dashboard")
 
-    st.subheader("Resource Summary")
-    st.markdown("Below is the total number of each resource type:")
-
+    # Resource Summary Cards
+    st.markdown("### Resource Summary")
     col1, col2, col3, col4 = st.columns(4)
+
     with col1:
         st.metric("People", len(st.session_state.data["people"]))
     with col2:
@@ -78,11 +80,8 @@ def display_home_tab():
     with col4:
         st.metric("Projects", len(st.session_state.data["projects"]))
 
-    st.subheader("Project Timeline Overview")
-    st.write(
-        "A snapshot of ongoing projects, their priorities, and assigned resources."
-    )
-
+    # Project Timeline Overview
+    st.markdown("### Project Timeline")
     if st.session_state.data["projects"]:
         projects_df = pd.DataFrame(
             [
@@ -92,51 +91,132 @@ def display_home_tab():
                     "Finish": pd.to_datetime(p["end_date"]),
                     "Priority": p["priority"],
                     "Resources": len(p["assigned_resources"]),
+                    "Budget": p.get("allocated_budget", 0),
                 }
                 for p in st.session_state.data["projects"]
             ]
         )
-        projects_df["Priority Label"] = projects_df.apply(
-            lambda row: f"Priority {row['Priority']} (Duplicate)"
-            if projects_df["Priority"].duplicated().any()
-            else f"Priority {row['Priority']}",
-            axis=1,
-        )
 
+        today = pd.Timestamp.now()
         fig = px.timeline(
             projects_df,
             x_start="Start",
             x_end="Finish",
             y="Project",
-            color="Priority Label",
-            hover_data=["Resources"],
+            color="Priority",
+            hover_data=["Resources", "Budget"],
             color_continuous_scale="Viridis_r",
             title="Project Timeline",
         )
-        fig.add_vline(
-            x=pd.Timestamp.now(), line_width=1, line_dash="dash", line_color="red"
+        fig.add_vline(x=today, line_width=2, line_dash="dash", line_color="red")
+        fig.update_layout(
+            xaxis_title="Timeline",
+            yaxis_title="Projects",
+            legend_title="Priority",
+            height=300,
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    # Resource Allocation Summary
+    st.markdown("### Resource Allocation")
+    summary_tabs = st.tabs(
+        ["Department Allocation", "Resource Utilization", "Budget Overview"]
+    )
+
+    with summary_tabs[0]:
+        if st.session_state.data["people"]:
+            dept_counts = {}
+            for person in st.session_state.data["people"]:
+                dept = person["department"]
+                dept_counts[dept] = dept_counts.get(dept, 0) + 1
+
+            dept_df = pd.DataFrame(
+                {
+                    "Department": list(dept_counts.keys()),
+                    "People": list(dept_counts.values()),
+                }
+            )
+
+            fig = px.pie(
+                dept_df,
+                values="People",
+                names="Department",
+                title="People by Department",
+                hole=0.4,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    with summary_tabs[1]:
+        if st.session_state.data["projects"]:
+            gantt_data = create_gantt_data(
+                st.session_state.data["projects"], st.session_state.data
+            )
+            utilization_df = calculate_resource_utilization(gantt_data)
+
+            if not utilization_df.empty:
+                type_util = (
+                    utilization_df.groupby("Type")["Utilization %"].mean().reset_index()
+                )
+                fig = px.bar(
+                    type_util,
+                    x="Type",
+                    y="Utilization %",
+                    color="Type",
+                    title="Average Utilization by Resource Type",
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+    with summary_tabs[2]:
+        if st.session_state.data["projects"]:
+            budget_data = []
+            for project in st.session_state.data["projects"]:
+                if "allocated_budget" in project:
+                    actual_cost = calculate_project_cost(
+                        project,
+                        st.session_state.data["people"],
+                        st.session_state.data["teams"],
+                    )
+                    budget_data.append(
+                        {
+                            "Project": project["name"],
+                            "Allocated Budget": project["allocated_budget"],
+                            "Actual Cost": actual_cost,
+                            "Variance": project["allocated_budget"] - actual_cost,
+                        }
+                    )
+
+            if budget_data:
+                budget_df = pd.DataFrame(budget_data)
+                fig = px.bar(
+                    budget_df,
+                    x="Project",
+                    y=["Allocated Budget", "Actual Cost"],
+                    barmode="group",
+                    title="Budget vs. Actual Cost by Project",
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
 
 def display_manage_resources_tab():
-    """
-    Displays the content for the Manage Resources tab.
-    """
+    """Displays a consolidated view of all resources with type filtering."""
     st.subheader("Manage Resources")
-    resource_type = st.radio("Select resource type", ["People", "Teams", "Departments"])
 
-    if resource_type == "People":
+    # Add tabs for different resource views
+    view_type = st.radio(
+        "View", ["All Resources", "People", "Teams", "Departments"], horizontal=True
+    )
+
+    if view_type == "All Resources":
+        display_consolidated_resources()
+    elif view_type == "People":
         st.subheader("Manage People")
         display_filtered_resource("people", "people")
         person_crud_form()
-
-    elif resource_type == "Teams":
+    elif view_type == "Teams":
         st.subheader("Manage Teams")
         display_filtered_resource("teams", "teams", distinct_filters=True)
         team_crud_form()
-
-    elif resource_type == "Departments":
+    elif view_type == "Departments":
         st.subheader("Manage Departments")
         display_filtered_resource(
             "departments", "departments", distinct_filters=True, filter_by="teams"
@@ -146,7 +226,122 @@ def display_manage_resources_tab():
     # Check for circular dependencies
     cycles = check_circular_dependencies()
     if cycles:
-        st.error(f"Circular dependencies detected in teams: {', '.join(cycles)}")
+        with st.expander("⚠️ Circular Dependencies Detected", expanded=True):
+            st.error("The following circular dependencies were detected:")
+            for cycle in cycles:
+                st.markdown(f"- {cycle}")
+            st.markdown(
+                "**Impact:** Circular dependencies can cause issues with resource allocation and cost calculations."
+            )
+            st.markdown(
+                "**Solution:** Review the team memberships to eliminate overlapping assignments."
+            )
+
+
+def display_consolidated_resources():
+    """Display a consolidated view of all resources."""
+    # Create a combined dataframe of all resources
+    people_df = pd.DataFrame(st.session_state.data["people"])
+    if not people_df.empty:
+        people_df["Type"] = "Person"
+        people_df["Members/Teams"] = None
+
+    teams_df = pd.DataFrame(st.session_state.data["teams"])
+    if not teams_df.empty:
+        teams_df["Type"] = "Team"
+        teams_df["role"] = None
+        teams_df["Members/Teams"] = teams_df["members"]
+
+    departments_df = pd.DataFrame(st.session_state.data["departments"])
+    if not departments_df.empty:
+        departments_df["Type"] = "Department"
+        departments_df["role"] = None
+        departments_df["department"] = None
+        departments_df["team"] = None
+        departments_df["Members/Teams"] = departments_df.apply(
+            lambda x: x["members"] + x["teams"], axis=1
+        )
+
+    # Combine dataframes
+    combined_df = pd.concat(
+        [df for df in [people_df, teams_df, departments_df] if not df.empty],
+        ignore_index=True,
+    )
+
+    if combined_df.empty:
+        st.warning("No resources found. Please add some first.")
+        return
+
+    # Add filter for resource type
+    with st.expander("Search and Filter Resources", expanded=False):
+        search_term = st.text_input("Search Resources", key="search_all_resources")
+
+        col1, _ = st.columns(2)
+        with col1:
+            type_filter = st.multiselect(
+                "Filter by Type",
+                options=["Person", "Team", "Department"],
+                default=[],
+                key="filter_type_all",
+            )
+
+            dept_filter = st.multiselect(
+                "Filter by Department",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                default=[],
+                key="filter_dept_all",
+            )
+
+        # Apply filters
+        if search_term:
+            mask = np.column_stack(
+                [
+                    combined_df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in combined_df.columns
+                ]
+            )
+            combined_df = combined_df[mask.any(axis=1)]
+
+        if type_filter:
+            combined_df = combined_df[combined_df["Type"].isin(type_filter)]
+
+        if dept_filter:
+            dept_mask = (
+                (combined_df["Type"] == "Department")
+                & combined_df["name"].isin(dept_filter)
+            ) | (
+                (combined_df["Type"] != "Department")
+                & combined_df["department"].isin(dept_filter)
+            )
+            combined_df = combined_df[dept_mask]
+
+        # Apply sorting and pagination
+        combined_df = _apply_sorting(combined_df, "all_resources")
+        combined_df = paginate_dataframe(combined_df, "all_resources")
+
+    # Display the consolidated dataframe
+    st.dataframe(
+        combined_df,
+        column_config={
+            "name": "Name",
+            "Type": "Resource Type",
+            "role": "Role",
+            "department": "Department",
+            "team": "Team",
+            "Members/Teams": "Members/Teams",
+            "daily_cost": st.column_config.NumberColumn(
+                "Daily Cost (€)", format="€%.2f"
+            ),
+            "work_days": "Work Days",
+            "daily_work_hours": "Daily Work Hours",
+            "members": "Members",
+            "teams": "Teams",
+        },
+        use_container_width=True,
+    )
 
 
 def display_manage_projects_tab():
@@ -228,7 +423,7 @@ def _filter_projects_dataframe(projects_df):
         projects_df = _apply_resource_filters(projects_df, resource_filters)
 
         # Apply sorting and pagination
-        projects_df = _apply_sorting(projects_df)
+        projects_df = _apply_sorting(projects_df, "projects")  # Use imported function
         projects_df = paginate_dataframe(projects_df, "projects")
 
     return projects_df
@@ -333,14 +528,6 @@ def _apply_resource_filters(projects_df, resource_filters):
     return projects_df
 
 
-def _apply_sorting(df):
-    """Apply sorting to the dataframe."""
-    sort_by = st.selectbox("Sort by", df.columns, key="sort_by")
-    sort_order = st.radio("Sort order", ["Ascending", "Descending"], key="sort_order")
-    ascending = sort_order == "Ascending"
-    return df.sort_values(by=sort_by, ascending=ascending)
-
-
 def _handle_project_deletion():
     """Helper function to handle project deletion."""
     if not st.session_state.data["projects"]:
@@ -371,7 +558,9 @@ def display_visualize_data_tab():
 
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add projects first.")
-    elif not (
+        return
+
+    if not (
         st.session_state.data["people"]
         or st.session_state.data["teams"]
         or st.session_state.data["departments"]
@@ -379,196 +568,228 @@ def display_visualize_data_tab():
         st.warning(
             "No resources found. Please add people, teams, or departments first."
         )
-    else:
-        # Add Resource Filtering to Visualization
-        st.subheader("Filter Options")
+        return
 
-        col1, col2, col3 = st.columns(3)
+    # Filter Options
+    filters = _get_visualization_filters()
 
-        with col1:
-            # Department filter
-            dept_filter = st.multiselect(
-                "Filter by Department",
-                options=[d["name"] for d in st.session_state.data["departments"]],
-                default=[],
-            )
+    # Create visualization data
+    gantt_data = create_gantt_data(
+        st.session_state.data["projects"], st.session_state.data
+    )
 
-        with col2:
-            # Resource type filter
-            resource_type_filter = st.multiselect(
-                "Filter by Resource Type",
-                options=["Person", "Team", "Department"],
-                default=[],
-            )
+    # Apply filters
+    gantt_data = _apply_visualization_filters(gantt_data, filters)
 
-        with col3:
-            # Date range filter
-            min_date = min(
-                [
-                    pd.to_datetime(p["start_date"])
-                    for p in st.session_state.data["projects"]
-                ]
-            )
-            max_date = max(
-                [
-                    pd.to_datetime(p["end_date"])
-                    for p in st.session_state.data["projects"]
-                ]
-            )
+    # Display Gantt chart
+    _display_gantt_chart_with_filters(gantt_data)
 
-            date_range = st.date_input(
-                "Date Range",
-                value=(min_date.date(), max_date.date()),
-                min_value=min_date.date(),
-                max_value=max_date.date(),
-            )
+    # Check for resource conflicts
+    _display_resource_conflicts(gantt_data)
 
-        # Add project filter
-        project_filter = st.multiselect(
-            "Filter by Project",
-            options=[p["name"] for p in st.session_state.data["projects"]],
+    # Drill-down view for resources
+    _display_resource_drill_down(gantt_data)
+
+
+def _get_visualization_filters():
+    """Get filters for the visualization tab."""
+    st.subheader("Filter Options")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        dept_filter = st.multiselect(
+            "Filter by Department",
+            options=[d["name"] for d in st.session_state.data["departments"]],
             default=[],
         )
 
-        # Create visualization data
-        gantt_data = create_gantt_data(
-            st.session_state.data["projects"], st.session_state.data
+    with col2:
+        resource_type_filter = st.multiselect(
+            "Filter by Resource Type",
+            options=["Person", "Team", "Department"],
+            default=[],
         )
 
-        # Apply filters
-        if dept_filter:
-            gantt_data = gantt_data[gantt_data["Department"].isin(dept_filter)]
+    with col3:
+        min_date = min(
+            [pd.to_datetime(p["start_date"]) for p in st.session_state.data["projects"]]
+        )
+        max_date = max(
+            [pd.to_datetime(p["end_date"]) for p in st.session_state.data["projects"]]
+        )
+        date_range = st.date_input(
+            "Date Range",
+            value=(min_date.date(), max_date.date()),
+            min_value=min_date.date(),
+            max_value=max_date.date(),
+        )
 
-        if resource_type_filter:
-            gantt_data = gantt_data[gantt_data["Type"].isin(resource_type_filter)]
+    project_filter = st.multiselect(
+        "Filter by Project",
+        options=[p["name"] for p in st.session_state.data["projects"]],
+        default=[],
+    )
 
-        if project_filter:
-            gantt_data = gantt_data[gantt_data["Project"].isin(project_filter)]
+    return {
+        "dept_filter": dept_filter,
+        "resource_type_filter": resource_type_filter,
+        "date_range": date_range,
+        "project_filter": project_filter,
+    }
 
-        if len(date_range) == 2:
-            start_date, end_date = date_range
-            start_date = pd.to_datetime(start_date)
-            end_date = pd.to_datetime(end_date)
 
-            # Filter by date overlap (any project that overlaps with the range)
-            gantt_data = gantt_data[
-                (
-                    (gantt_data["Start"] <= end_date)
-                    & (gantt_data["Finish"] >= start_date)
-                )
-            ]
+def _apply_visualization_filters(gantt_data, filters):
+    """Apply filters to the Gantt data."""
+    if filters["dept_filter"]:
+        gantt_data = gantt_data[gantt_data["Department"].isin(filters["dept_filter"])]
 
-        # Display enhanced Gantt chart
-        display_gantt_chart(gantt_data)
+    if filters["resource_type_filter"]:
+        gantt_data = gantt_data[
+            gantt_data["Type"].isin(filters["resource_type_filter"])
+        ]
 
-        # Check for resource conflicts
-        conflicts = find_resource_conflicts(gantt_data)
-        if conflicts:
-            st.subheader("Resource Conflicts")
-            st.warning(f"{len(conflicts)} resource conflicts detected")
+    if filters["project_filter"]:
+        gantt_data = gantt_data[gantt_data["Project"].isin(filters["project_filter"])]
 
-            # Create conflicts dataframe for better display
-            conflicts_df = pd.DataFrame(conflicts)
-            conflicts_df["overlap_start"] = pd.to_datetime(
-                conflicts_df["overlap_start"]
-            )
-            conflicts_df["overlap_end"] = pd.to_datetime(conflicts_df["overlap_end"])
+    if len(filters["date_range"]) == 2:
+        start_date, end_date = filters["date_range"]
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+        gantt_data = gantt_data[
+            (gantt_data["Start"] <= end_date) & (gantt_data["Finish"] >= start_date)
+        ]
 
-            # Format for display
-            conflicts_display = conflicts_df.copy()
-            conflicts_display["overlap_period"] = conflicts_display.apply(
-                lambda x: f"{x['overlap_start'].strftime('%Y-%m-%d')} to {x['overlap_end'].strftime('%Y-%m-%d')}",
-                axis=1,
-            )
-            conflicts_display["projects"] = conflicts_display.apply(
-                lambda x: f"{x['project1']} and {x['project2']}", axis=1
-            )
+    return gantt_data
 
-            # Display as a filterable table
-            filtered_conflicts = filter_dataframe(
-                conflicts_display[
-                    ["resource", "projects", "overlap_period", "overlap_days"]
-                ],
-                "conflicts",
-                ["resource", "projects", "overlap_period", "overlap_days"],
-            )
-            st.dataframe(filtered_conflicts, use_container_width=True)
-        else:
-            st.success("No resource conflicts detected")
 
-        # Drill-down view for resources
-        st.subheader("Resource Drill-Down")
+def _display_gantt_chart_with_filters(gantt_data):
+    """Display the Gantt chart with applied filters."""
+    display_gantt_chart(gantt_data)
 
-        # Select resource to drill down
-        if not gantt_data.empty:
-            drill_down_options = ["None"] + list(gantt_data["Resource"].unique())
-            resource_to_drill = st.selectbox(
-                "Select resource for details", options=drill_down_options
-            )
 
-            if resource_to_drill != "None":
-                # Filter data for selected resource
-                resource_data = gantt_data[gantt_data["Resource"] == resource_to_drill]
+def _display_resource_conflicts(gantt_data):
+    """Check and display resource conflicts."""
+    conflicts = find_resource_conflicts(gantt_data)
+    if conflicts:
+        st.subheader("Resource Conflicts")
 
-                # Create resource card
-                col1, col2 = st.columns([1, 2])
+        conflict_summary = {}
+        for conflict in conflicts:
+            resource = conflict["resource"]
+            if resource not in conflict_summary:
+                conflict_summary[resource] = 0
+            conflict_summary[resource] += 1
 
-                with col1:
-                    st.markdown(f"**Resource:** {resource_to_drill}")
-                    st.markdown(f"**Type:** {resource_data['Type'].iloc[0]}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Total Conflicts", len(conflicts))
+        with col2:
+            st.metric("Affected Resources", len(conflict_summary))
+
+        conflicts_df = pd.DataFrame(conflicts)
+        conflicts_df["overlap_start"] = pd.to_datetime(conflicts_df["overlap_start"])
+        conflicts_df["overlap_end"] = pd.to_datetime(conflicts_df["overlap_end"])
+
+        fig = px.timeline(
+            conflicts_df,
+            x_start="overlap_start",
+            x_end="overlap_end",
+            y="resource",
+            color="overlap_days",
+            hover_data=["project1", "project2", "overlap_days"],
+            color_continuous_scale="Reds",
+            title="Resource Conflict Timeline",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("Conflict Details")
+        filtered_conflicts = filter_dataframe(
+            conflicts_df.rename(
+                columns={
+                    "resource": "Resource",
+                    "project1": "Project 1",
+                    "project2": "Project 2",
+                    "overlap_days": "Overlapping Days",
+                }
+            ),
+            key="Conflicts",
+            columns=["Resource", "Project 1", "Project 2", "Overlapping Days"],
+        )
+        st.dataframe(filtered_conflicts, use_container_width=True)
+
+        # Update dropdown labels
+        with st.expander("Search and Filter Conflicts", expanded=False):
+            st.text_input("Search Conflicts", key="search_conflicts")
+            st.multiselect("Filter Resource", options=[], key="filter_resource")
+            st.multiselect("Filter Project 1", options=[], key="filter_project1")
+            st.multiselect("Filter Project 2", options=[], key="filter_project2")
+    else:
+        st.success("No resource conflicts detected")
+
+
+def _display_resource_drill_down(gantt_data):
+    """Display drill-down view for resources."""
+    st.subheader("Resource Drill-Down")
+
+    if not gantt_data.empty:
+        drill_down_options = ["None"] + list(gantt_data["Resource"].unique())
+        resource_to_drill = st.selectbox(
+            "Select resource for details", options=drill_down_options
+        )
+
+        if resource_to_drill != "None":
+            resource_data = gantt_data[gantt_data["Resource"] == resource_to_drill]
+
+            col1, col2 = st.columns([1, 2])
+
+            with col1:
+                st.markdown(f"**Resource:** {resource_to_drill}")
+                st.markdown(f"**Type:** {resource_data['Type'].iloc[0]}")
+                st.markdown(f"**Department:** {resource_data['Department'].iloc[0]}")
+
+                resource_util = calculate_resource_utilization(resource_data)
+                if not resource_util.empty:
                     st.markdown(
-                        f"**Department:** {resource_data['Department'].iloc[0]}"
+                        f"**Utilization:** {resource_util['Utilization %'].iloc[0]:.1f}%"
                     )
-
-                    # Calculate utilization for this resource
-                    resource_util = calculate_resource_utilization(resource_data)
-                    if not resource_util.empty:
-                        st.markdown(
-                            f"**Utilization:** {resource_util['Utilization %'].iloc[0]:.1f}%"
-                        )
-                        st.markdown(
-                            f"**Overallocation:** {resource_util['Overallocation %'].iloc[0]:.1f}%"
-                        )
-                        st.markdown(f"**Projects Assigned:** {len(resource_data)}")
-
-                with col2:
-                    # Create mini Gantt chart for this resource
-                    fig = px.timeline(
-                        resource_data,
-                        x_start="Start",
-                        x_end="Finish",
-                        y="Project",
-                        color="Project",
-                        height=200,
+                    st.markdown(
+                        f"**Overallocation:** {resource_util['Overallocation %'].iloc[0]:.1f}%"
                     )
-                    fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.markdown(f"**Projects Assigned:** {len(resource_data)}")
 
-                # Show project details
-                st.markdown("**Project Assignments:**")
-
-                # Format the data for display
-                projects_data = resource_data.copy()
-                projects_data["Duration (days)"] = (
-                    projects_data["Finish"] - projects_data["Start"]
-                ).dt.days + 1
-                projects_data["Start"] = projects_data["Start"].dt.strftime("%Y-%m-%d")
-                projects_data["Finish"] = projects_data["Finish"].dt.strftime(
-                    "%Y-%m-%d"
+            with col2:
+                fig = px.timeline(
+                    resource_data,
+                    x_start="Start",
+                    x_end="Finish",
+                    y="Project",
+                    color="Project",
+                    height=200,
                 )
+                fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+                st.plotly_chart(fig, use_container_width=True)
 
-                st.dataframe(
-                    projects_data[
-                        [
-                            "Project",
-                            "Start",
-                            "Finish",
-                            "Priority",
-                            "Duration (days)",
-                        ]
-                    ],
-                    use_container_width=True,
-                )
+            st.markdown("**Project Assignments:**")
+            projects_data = resource_data.copy()
+            projects_data["Duration (days)"] = (
+                projects_data["Finish"] - projects_data["Start"]
+            ).dt.days + 1
+            projects_data["Start"] = projects_data["Start"].dt.strftime("%Y-%m-%d")
+            projects_data["Finish"] = projects_data["Finish"].dt.strftime("%Y-%m-%d")
+
+            st.dataframe(
+                projects_data[
+                    [
+                        "Project",
+                        "Start",
+                        "Finish",
+                        "Priority",
+                        "Duration (days)",
+                    ]
+                ],
+                use_container_width=True,
+            )
 
 
 def display_resource_utilization_tab():
@@ -727,6 +948,21 @@ def display_settings_tab():
             )
             st.success("Currency settings updated.")
 
+    st.subheader("Daily Cost Settings")
+    from color_management import save_daily_cost_settings
+
+    # Define or import the load_daily_cost_settings function
+    from color_management import load_daily_cost_settings
+
+    max_daily_cost = load_daily_cost_settings()
+    with st.form("daily_cost_form"):
+        new_max_cost = st.number_input(
+            "Max Daily Cost (€)", min_value=1.0, value=float(max_daily_cost), step=100.0
+        )
+        if st.form_submit_button("Save Max Daily Cost"):
+            save_daily_cost_settings(new_max_cost)
+            st.success("Max daily cost updated.")
+
 
 def initialize_session_state():
     """
@@ -778,11 +1014,95 @@ def initialize_session_state():
         st.session_state["edit_form_initialized"] = False
 
 
+def apply_custom_css():
+    """Apply custom CSS for better mobile experience."""
+    st.markdown(
+        """
+        <style>
+        @media (max-width: 640px) {
+            .stButton button {
+                height: 3rem;
+                font-size: 1rem;
+            }
+            .stSelectbox div[data-baseweb="select"] {
+                height: 3rem;
+            }
+            .stTextInput input {
+                height: 3rem;
+                font-size: 1rem;
+            }
+            h1 {
+                font-size: 1.8rem !important;
+            }
+            h2 {
+                font-size: 1.5rem !important;
+            }
+            h3 {
+                font-size: 1.2rem !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def main():
-    """Orchestrates the Streamlit application flow."""
+    """Orchestrates the Streamlit application flow with responsive design."""
+    apply_custom_css()
+
     st.title("Resource Management App")
 
-    tabs = st.tabs(
+    # Detect viewport width (workaround, as Streamlit doesn't expose it directly)
+    is_mobile = False
+
+    # Create sidebar navigation
+    st.sidebar.title("Navigation")
+
+    with st.sidebar.expander("Quick Actions", expanded=True):
+        if is_mobile:
+            # Single column for mobile
+            if st.button("➕ Add Person", use_container_width=True):
+                st.session_state["active_tab"] = "Manage Resources"
+                st.session_state["resource_type"] = "People"
+                st.rerun()
+
+            if st.button("➕ Add Team", use_container_width=True):
+                st.session_state["active_tab"] = "Manage Resources"
+                st.session_state["resource_type"] = "Teams"
+                st.rerun()
+
+            if st.button("➕ Add Project", use_container_width=True):
+                st.session_state["active_tab"] = "Manage Projects"
+                st.rerun()
+
+            if st.button("📊 View Gantt", use_container_width=True):
+                st.session_state["active_tab"] = "Visualize Data"
+                st.rerun()
+        else:
+            # Two columns for desktop
+            col1, col2 = st.sidebar.columns(2)
+            with col1:
+                if st.button("➕ Add Person", use_container_width=True):
+                    st.session_state["active_tab"] = "Manage Resources"
+                    st.session_state["resource_type"] = "People"
+                    st.rerun()
+
+                if st.button("➕ Add Team", use_container_width=True):
+                    st.session_state["active_tab"] = "Manage Resources"
+                    st.session_state["resource_type"] = "Teams"
+                    st.rerun()
+            with col2:
+                if st.button("➕ Add Project", use_container_width=True):
+                    st.session_state["active_tab"] = "Manage Projects"
+                    st.rerun()
+
+                if st.button("📊 View Gantt", use_container_width=True):
+                    st.session_state["active_tab"] = "Visualize Data"
+                    st.rerun()
+
+    page = st.sidebar.radio(
+        "Go to",
         [
             "Home",
             "Manage Resources",
@@ -791,22 +1111,23 @@ def main():
             "Resource Utilization",
             "Import/Export Data",
             "Settings",
-        ]
+        ],
+        key="active_tab",
     )
 
-    with tabs[0]:
+    if page == "Home":
         display_home_tab()
-    with tabs[1]:
+    elif page == "Manage Resources":
         display_manage_resources_tab()
-    with tabs[2]:
+    elif page == "Manage Projects":
         display_manage_projects_tab()
-    with tabs[3]:
+    elif page == "Visualize Data":
         display_visualize_data_tab()
-    with tabs[4]:
+    elif page == "Resource Utilization":
         display_resource_utilization_tab()
-    with tabs[5]:
+    elif page == "Import/Export Data":
         display_import_export_data_tab()
-    with tabs[6]:
+    elif page == "Settings":
         display_settings_tab()
 
 
