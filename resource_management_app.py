@@ -290,7 +290,7 @@ def display_consolidated_resources():
 
 
 def _display_resource_cards(people, teams, departments, type_filter):
-    """Display resources as visual cards."""
+    """Display resources as visual cards with consistent sizing."""
     # Load currency settings
     currency, _ = load_currency_settings()
 
@@ -304,22 +304,20 @@ def _display_resource_cards(people, teams, departments, type_filter):
     if "Person" in type_filter:
         for person in people:
             with cols[idx % 3]:
-                # Determine the visual indicator
-                icon = "👤+" if person["team"] else "👤"
-                team_info = (
-                    f"Team: {person['team']}"
-                    if person["team"]
-                    else "Individual Contributor"
-                )
                 st.markdown(
                     f"""
-                    ### {icon} {person["name"]}
-                    - **Role:** {person["role"]}
-                    - **Department:** {person["department"]}
-                    - **{team_info}**
-                    - **Daily Cost:** {currency} {person["daily_cost"]:,.2f}
-                    - **Work Days:** {", ".join(person["work_days"])}
-                    - **Hours:** {person["daily_work_hours"]} per day
+                    <div class="card">
+                        <h3>👤 {person["name"]}</h3>
+                        <div style="background-color: {"rgba(255,215,0,0.2)" if person["team"] else "rgba(100,100,100,0.1)"}; padding: 5px; border-radius: 4px; margin-bottom: 10px; display: inline-block;">
+                            <span style="font-weight: bold;">{"👥 " + person["team"] if person["team"] else "Individual Contributor"}</span>
+                        </div>
+                        <p><strong>Role:</strong> {person["role"]}</p>
+                        <p><strong>Department:</strong> {person["department"]}</p>
+                        <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
+                        <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
+                        <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
+                        <div style="height: 10px;"></div>
+                    </div>
                     """,
                     unsafe_allow_html=True,
                 )
@@ -336,10 +334,14 @@ def _display_resource_cards(people, teams, departments, type_filter):
                 )
                 st.markdown(
                     f"""
-                    ### 👥 {team["name"]}
-                    - **Department:** {team["department"]}
-                    - **Members:** {len(team["members"])}
-                    - **Daily Cost:** {currency} {team_cost:,.2f}
+                    <div class="card">
+                        <h3>👥 {team["name"]}</h3>
+                        <div style="height: 40px;"></div> <!-- Placeholder for consistent height -->
+                        <p><strong>Department:</strong> {team["department"]}</p>
+                        <p><strong>Members:</strong> {len(team["members"])}</p>
+                        <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
+                        <div style="height: 30px;"></div>
+                    </div>
                     """,
                     unsafe_allow_html=True,
                 )
@@ -348,15 +350,24 @@ def _display_resource_cards(people, teams, departments, type_filter):
     # Display department cards
     if "Department" in type_filter:
         for dept in departments:
-            with cols[idx % 3]:
-                st.markdown(
-                    f"""
-                    ### 🏢 {dept["name"]}
-                    - **Teams:** {len(dept["teams"])}
-                    - **Members:** {len(dept["members"])}
-                    """,
-                    unsafe_allow_html=True,
-                )
+            dept_cost = sum(
+                person["daily_cost"]
+                for person in people
+                if person["department"] == dept["name"]
+            )
+            st.markdown(
+                f"""
+                <div class="card">
+                    <h3>🏢 {dept["name"]}</h3>
+                    <div style="height: 40px;"></div> <!-- Placeholder for consistent height -->
+                    <p><strong>Teams:</strong> {len(dept["teams"])}</p>
+                    <p><strong>Members:</strong> {len(dept["members"])}</p>
+                    <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
+                    <div style="height: 30px;"></div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             idx += 1
 
 
@@ -1157,36 +1168,52 @@ def initialize_session_state():
 
 
 def apply_custom_css():
-    """Apply custom CSS for better mobile experience."""
+    """Apply custom CSS for better mobile experience and card styling."""
     st.markdown(
         """
-        <style>
-        @media (max-width: 640px) {
-            .stButton button {
-                height: 3rem;
-                font-size: 1rem;
-            }
-            .stSelectbox div[data-baseweb="select"] {
-                height: 3rem;
-            }
-            .stTextInput input {
-                height: 3rem;
-                font-size: 1rem;
-            }
-            h1 {
-                font-size: 1.8rem !important;
-            }
-            h2 {
-                font-size: 1.5rem !important;
-            }
-            h3 {
-                font-size: 1.2rem !important;
-            }
+    <style>
+    /* Card styling with theme-compatible colors */
+    div.stMarkdown div.card {
+        border: 1px solid rgba(49, 51, 63, 0.2);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    div.stMarkdown div.card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        border-color: #ff4b4b;
+    }
+    
+    /* Team member indicator */
+    .team-member {
+        color: #00cc96;
+        font-weight: bold;
+    }
+    
+    /* Individual contributor indicator */
+    .individual {
+        color: #ff9e4a;
+        font-weight: bold;
+    }
+    
+    @media (max-width: 640px) {
+        .stButton button {
+            height: 3rem;
+            font-size: 1rem;
         }
-        </style>
-        """,
+    }
+    </style>
+    """,
         unsafe_allow_html=True,
     )
+
+
+# Call the function to apply CSS
+apply_custom_css()
 
 
 def main():
