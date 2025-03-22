@@ -207,21 +207,37 @@ def display_manage_resources_tab():
     )
 
     if view_type == "All Resources":
-        display_consolidated_resources()
+        if (
+            not st.session_state.data["people"]
+            and not st.session_state.data["teams"]
+            and not st.session_state.data["departments"]
+        ):
+            st.info("No resources found. Please add people, teams, or departments.")
+        else:
+            display_consolidated_resources()
     elif view_type == "People":
-        st.subheader("Manage People")
-        display_filtered_resource("people", "people")
-        person_crud_form()
+        if not st.session_state.data["people"]:
+            st.info("No people found. Please add people to manage them.")
+        else:
+            st.subheader("Manage People")
+            display_filtered_resource("people", "people")
+            person_crud_form()
     elif view_type == "Teams":
-        st.subheader("Manage Teams")
-        display_filtered_resource("teams", "teams", distinct_filters=True)
-        team_crud_form()
+        if not st.session_state.data["teams"]:
+            st.info("No teams found. Please add teams to manage them.")
+        else:
+            st.subheader("Manage Teams")
+            display_filtered_resource("teams", "teams", distinct_filters=True)
+            team_crud_form()
     elif view_type == "Departments":
-        st.subheader("Manage Departments")
-        display_filtered_resource(
-            "departments", "departments", distinct_filters=True, filter_by="teams"
-        )
-        department_crud_form()
+        if not st.session_state.data["departments"]:
+            st.info("No departments found. Please add departments to manage them.")
+        else:
+            st.subheader("Manage Departments")
+            display_filtered_resource(
+                "departments", "departments", distinct_filters=True, filter_by="teams"
+            )
+            department_crud_form()
 
     # Check for circular dependencies
     cycles = check_circular_dependencies()
@@ -245,11 +261,11 @@ def display_consolidated_resources():
     teams = st.session_state.data["teams"]
     departments = st.session_state.data["departments"]
 
-    # Add filter controls
-    with st.expander("Search and Filter Resources", expanded=False):
+    # Add sorting and filtering controls
+    with st.expander("Search, Sort, and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
             type_filter = st.multiselect(
                 "Filter by Type",
@@ -257,7 +273,6 @@ def display_consolidated_resources():
                 default=["Person", "Team", "Department"],
                 key="filter_type_all",
             )
-
         with col2:
             dept_filter = st.multiselect(
                 "Filter by Department",
@@ -265,6 +280,13 @@ def display_consolidated_resources():
                 default=[],
                 key="filter_dept_all",
             )
+        with col3:
+            sort_option = st.selectbox(
+                "Sort by",
+                options=["Name", "Role", "Department", "Daily Cost"],
+                key="sort_option_all",
+            )
+            ascending = st.checkbox("Ascending", value=True, key="sort_ascending_all")
 
     # Apply filters
     if search_term:
@@ -276,6 +298,28 @@ def display_consolidated_resources():
         people = [p for p in people if p["department"] in dept_filter]
         teams = [t for t in teams if t["department"] in dept_filter]
         departments = [d for d in departments if d["name"] in dept_filter]
+
+    # Apply sorting
+    if sort_option == "Name":
+        people.sort(key=lambda x: x["name"], reverse=not ascending)
+        teams.sort(key=lambda x: x["name"], reverse=not ascending)
+        departments.sort(key=lambda x: x["name"], reverse=not ascending)
+    elif sort_option == "Role":
+        people.sort(key=lambda x: x.get("role", ""), reverse=not ascending)
+    elif sort_option == "Department":
+        people.sort(key=lambda x: x["department"], reverse=not ascending)
+        teams.sort(key=lambda x: x["department"], reverse=not ascending)
+        departments.sort(key=lambda x: x["name"], reverse=not ascending)
+    elif sort_option == "Daily Cost":
+        people.sort(key=lambda x: x.get("daily_cost", 0), reverse=not ascending)
+        teams.sort(
+            key=lambda x: sum(
+                p["daily_cost"]
+                for p in st.session_state.data["people"]
+                if p["name"] in x.get("members", [])
+            ),
+            reverse=not ascending,
+        )
 
     # Display resources as cards
     st.write("### Resources Overview")
@@ -290,32 +334,73 @@ def display_consolidated_resources():
 
 
 def _display_resource_cards(people, teams, departments, type_filter):
-    """Display resources as visual cards organized by type."""
+    """Display resources as visual cards organized by type with summaries."""
     # Load currency settings
     currency, _ = load_currency_settings()
 
     # Display resources by type in separate sections
     if "Person" in type_filter and people:
         st.markdown("### People")
+        _display_people_summary(people, currency)
         _display_person_cards(people, currency)
 
     if "Team" in type_filter and teams:
         st.markdown("### Teams")
+        _display_teams_summary(teams, people, currency)
         _display_team_cards(teams, people, currency)
 
     if "Department" in type_filter and departments:
         st.markdown("### Departments")
+        _display_departments_summary(departments, people, currency)
         _display_department_cards(departments, people, currency)
 
 
+def _display_people_summary(people, currency):
+    """Display a summary for people."""
+    total_people = len(people)
+    avg_daily_cost = sum(p["daily_cost"] for p in people) / total_people
+    st.write(f"**Total People:** {total_people}")
+    st.write(f"**Average Daily Cost:** {currency} {avg_daily_cost:,.2f}")
+
+
+def _display_teams_summary(teams, people, currency):
+    """Display a summary for teams."""
+    total_teams = len(teams)
+    avg_team_cost = (
+        sum(
+            sum(p["daily_cost"] for p in people if p["name"] in t["members"])
+            for t in teams
+        )
+        / total_teams
+    )
+    st.write(f"**Total Teams:** {total_teams}")
+    st.write(f"**Average Team Daily Cost:** {currency} {avg_team_cost:,.2f}")
+
+
+def _display_departments_summary(departments, people, currency):
+    """Display a summary for departments."""
+    total_departments = len(departments)
+    avg_department_cost = (
+        sum(
+            sum(p["daily_cost"] for p in people if p["department"] == d["name"])
+            for d in departments
+        )
+        / total_departments
+    )
+    st.write(f"**Total Departments:** {total_departments}")
+    st.write(
+        f"**Average Department Daily Cost:** {currency} {avg_department_cost:,.2f}"
+    )
+
+
 def _display_person_cards(people, currency):
-    """Display person cards in a consistent grid."""
+    """Display person cards in a consistent grid with actions and hover effects."""
     cols = st.columns(3)
     for idx, person in enumerate(people):
         with cols[idx % 3]:
             st.markdown(
                 f"""
-                <div class="card">
+                <div class="card person-card">
                     <h3>👤 {person["name"]}</h3>
                     <div style="background-color: {"rgba(255,215,0,0.2)" if person["team"] else "rgba(100,100,100,0.1)"}; padding: 5px; border-radius: 4px; margin-bottom: 10px;">
                         <span style="font-weight: bold;">{"👥 " + person["team"] if person["team"] else "Individual Contributor"}</span>
@@ -325,6 +410,10 @@ def _display_person_cards(people, currency):
                     <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
                     <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
                     <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
+                    <div class="card-actions">
+                        <button class="action-btn">Edit</button>
+                        <button class="action-btn">View Details</button>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -332,7 +421,7 @@ def _display_person_cards(people, currency):
 
 
 def _display_team_cards(teams, people, currency):
-    """Display team cards in a consistent grid."""
+    """Display team cards in a consistent grid with actions and hover effects."""
     cols = st.columns(3)
     for idx, team in enumerate(teams):
         with cols[idx % 3]:
@@ -343,11 +432,15 @@ def _display_team_cards(teams, people, currency):
             )
             st.markdown(
                 f"""
-                <div class="card">
+                <div class="card team-card">
                     <h3>👥 {team["name"]}</h3>
                     <p><strong>Department:</strong> {team["department"]}</p>
                     <p><strong>Members:</strong> {len(team["members"])}</p>
                     <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
+                    <div class="card-actions">
+                        <button class="action-btn">Edit</button>
+                        <button class="action-btn">View Details</button>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -355,7 +448,7 @@ def _display_team_cards(teams, people, currency):
 
 
 def _display_department_cards(departments, people, currency):
-    """Display department cards in a consistent grid."""
+    """Display department cards in a consistent grid with actions and hover effects."""
     cols = st.columns(3)
     for idx, dept in enumerate(departments):
         with cols[idx % 3]:
@@ -366,11 +459,15 @@ def _display_department_cards(departments, people, currency):
             )
             st.markdown(
                 f"""
-                <div class="card">
+                <div class="card department-card">
                     <h3>🏢 {dept["name"]}</h3>
                     <p><strong>Teams:</strong> {len(dept["teams"])}</p>
                     <p><strong>Members:</strong> {len(dept["members"])}</p>
                     <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
+                    <div class="card-actions">
+                        <button class="action-btn">Edit</button>
+                        <button class="action-btn">View Details</button>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1174,11 +1271,11 @@ def initialize_session_state():
 
 
 def apply_custom_css():
-    """Apply custom CSS for better mobile experience and card styling."""
+    """Apply custom CSS for better mobile experience, card styling, and hover effects."""
     st.markdown(
         """
     <style>
-    /* Card styling with theme-compatible colors */
+    /* Card styling with consistent height and hover effects */
     div.stMarkdown div.card {
         border: 1px solid rgba(49, 51, 63, 0.2);
         border-radius: 0.5rem;
@@ -1186,6 +1283,10 @@ def apply_custom_css():
         margin-bottom: 1rem;
         transition: all 0.3s ease;
         background-color: rgba(255, 255, 255, 0.05);
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     
     div.stMarkdown div.card:hover {
@@ -1193,23 +1294,46 @@ def apply_custom_css():
         transform: translateY(-2px);
         border-color: #ff4b4b;
     }
-    
-    /* Team member indicator */
-    .team-member {
-        color: #00cc96;
-        font-weight: bold;
+
+    /* Card-specific colors */
+    div.stMarkdown div.person-card {
+        border-left: 5px solid green;
     }
-    
-    /* Individual contributor indicator */
-    .individual {
-        color: #ff9e4a;
-        font-weight: bold;
+    div.stMarkdown div.team-card {
+        border-left: 5px solid blue;
     }
-    
-    @media (max-width: 640px) {
-        .stButton button {
-            height: 3rem;
-            font-size: 1rem;
+    div.stMarkdown div.department-card {
+        border-left: 5px solid purple;
+    }
+
+    /* Action buttons */
+    .card-actions {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .action-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .action-btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* Responsive layout */
+    @media (max-width: 1024px) {
+        div.stMarkdown div.card {
+            min-height: 180px;
+        }
+    }
+    @media (max-width: 768px) {
+        div.stMarkdown div.card {
+            min-height: 160px;
         }
     }
     </style>
