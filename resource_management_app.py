@@ -63,7 +63,52 @@ if "data" not in st.session_state:
     st.session_state.data = load_demo_data()
 
 
+def display_action_bar():
+    """Display a combined breadcrumbs and action bar with improved design."""
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        # Display breadcrumbs with the current page visually distinct
+        active_tab = st.session_state.get("active_tab", "Home")
+        resource_view = st.session_state.get("resource_view", "All Resources")
+        breadcrumb = f"Home > {active_tab}"
+        if active_tab == "Manage Resources" and resource_view != "All Resources":
+            breadcrumb += f" > {resource_view}"
+        st.markdown(f"**{breadcrumb}**")  # Make the current page bold
+
+    with col2:
+        # Display action buttons with icons and labels
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            if st.button("➕ Add", use_container_width=True):
+                st.session_state["active_tab"] = "Manage Resources"
+                st.rerun()
+        with col_b:
+            if st.button("📊 View", use_container_width=True):
+                st.session_state["active_tab"] = "Visualize Data"
+                st.rerun()
+        with col_c:
+            if st.button("⋯ More", use_container_width=True):
+                st.session_state["active_tab"] = "Settings"
+                st.rerun()
+
+
+def global_search(query):
+    """Search resources and projects globally."""
+    results = []
+    for person in st.session_state.data["people"]:
+        if query.lower() in person["name"].lower():
+            results.append(("Person", person["name"]))
+    for team in st.session_state.data["teams"]:
+        if query.lower() in team["name"].lower():
+            results.append(("Team", team["name"]))
+    for project in st.session_state.data["projects"]:
+        if query.lower() in project["name"].lower():
+            results.append(("Project", project["name"]))
+    return results
+
+
 def display_home_tab():
+    display_action_bar()
     """Displays an enhanced home dashboard with key metrics and charts."""
     st.subheader("Resource Management Dashboard")
 
@@ -198,14 +243,29 @@ def display_home_tab():
 
 
 def display_manage_resources_tab():
+    display_action_bar()
     """Displays a consolidated view of all resources with type filtering."""
     st.subheader("Manage Resources")
 
+    # Initialize resource_view if not set
+    if "resource_view" not in st.session_state:
+        st.session_state["resource_view"] = "All Resources"
+
     # Add tabs for different resource views
     view_type = st.radio(
-        "View", ["All Resources", "People", "Teams", "Departments"], horizontal=True
+        "View",
+        ["All Resources", "People", "Teams", "Departments"],
+        index=["All Resources", "People", "Teams", "Departments"].index(
+            st.session_state["resource_view"]
+        ),
+        horizontal=True,
+        key="resource_view_selector",
     )
 
+    # Update session state with the selected view
+    st.session_state["resource_view"] = view_type
+
+    # Display the selected view
     if view_type == "All Resources":
         if (
             not st.session_state.data["people"]
@@ -394,7 +454,7 @@ def _display_departments_summary(departments, people, currency):
 
 
 def _display_person_cards(people, currency):
-    """Display person cards in a consistent grid with actions and hover effects."""
+    """Display person cards in a consistent grid."""
     cols = st.columns(3)
     for idx, person in enumerate(people):
         with cols[idx % 3]:
@@ -410,10 +470,6 @@ def _display_person_cards(people, currency):
                     <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
                     <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
                     <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
-                    <div class="card-actions">
-                        <button class="action-btn">Edit</button>
-                        <button class="action-btn">View Details</button>
-                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -421,7 +477,7 @@ def _display_person_cards(people, currency):
 
 
 def _display_team_cards(teams, people, currency):
-    """Display team cards in a consistent grid with actions and hover effects."""
+    """Display team cards in a consistent grid."""
     cols = st.columns(3)
     for idx, team in enumerate(teams):
         with cols[idx % 3]:
@@ -437,10 +493,6 @@ def _display_team_cards(teams, people, currency):
                     <p><strong>Department:</strong> {team["department"]}</p>
                     <p><strong>Members:</strong> {len(team["members"])}</p>
                     <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
-                    <div class="card-actions">
-                        <button class="action-btn">Edit</button>
-                        <button class="action-btn">View Details</button>
-                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -448,7 +500,7 @@ def _display_team_cards(teams, people, currency):
 
 
 def _display_department_cards(departments, people, currency):
-    """Display department cards in a consistent grid with actions and hover effects."""
+    """Display department cards in a consistent grid."""
     cols = st.columns(3)
     for idx, dept in enumerate(departments):
         with cols[idx % 3]:
@@ -464,10 +516,6 @@ def _display_department_cards(departments, people, currency):
                     <p><strong>Teams:</strong> {len(dept["teams"])}</p>
                     <p><strong>Members:</strong> {len(dept["members"])}</p>
                     <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
-                    <div class="card-actions">
-                        <button class="action-btn">Edit</button>
-                        <button class="action-btn">View Details</button>
-                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -601,6 +649,7 @@ def _display_resource_visual_map(people, teams, departments, type_filter):
 
 
 def display_manage_projects_tab():
+    display_action_bar()
     """
     Displays the content for the Manage Projects tab.
     Fixed priority handling and improved project management.
@@ -807,6 +856,7 @@ def _handle_project_deletion():
 
 
 def display_visualize_data_tab():
+    display_action_bar()
     """
     Displays the content for the Visualize Data tab.
     """
@@ -1049,6 +1099,7 @@ def _display_resource_drill_down(gantt_data):
 
 
 def display_resource_utilization_tab():
+    display_action_bar()
     """
     Displays the content for the Resource Utilization tab.
     """
@@ -1116,6 +1167,7 @@ def display_resource_utilization_tab():
 
 
 def display_import_export_data_tab():
+    display_action_bar()
     """
     Displays the content for the Import/Export Data tab.
     """
@@ -1150,6 +1202,7 @@ def display_import_export_data_tab():
 
 
 def display_settings_tab():
+    display_action_bar()
     """
     Displays the content for the Settings tab.
     """
@@ -1347,87 +1400,87 @@ apply_custom_css()
 
 
 def main():
-    """Orchestrates the Streamlit application flow with responsive design."""
+    """Orchestrates the Streamlit application flow with improved navigation."""
+    # Apply custom CSS
     apply_custom_css()
 
+    # Initialize session state
+    initialize_session_state()
+
+    # Create sidebar with improved navigation
+    with st.sidebar:
+        st.title("Resource Management")
+
+        # Global Search
+        st.markdown("### Quick Search")
+        search_query = st.text_input("Search resources and projects")
+        if search_query:
+            search_results = global_search(search_query)
+            if search_results:
+                st.markdown("### Search Results")
+                for result_type, result_name in search_results:
+                    st.markdown(f"- {result_type}: {result_name}")
+            else:
+                st.info("No results found")
+
+        # Main Navigation with icons and sections
+        st.markdown("---")
+        st.markdown("### Navigation")
+
+        # Dashboard section
+        st.markdown("#### Dashboard")
+        if st.button("🏠 Home", use_container_width=True):
+            st.session_state["active_tab"] = "Home"
+            st.rerun()
+
+        # Resource Management section
+        st.markdown("#### Resource Management")
+        if st.button("👥 Manage Resources", use_container_width=True):
+            st.session_state["active_tab"] = "Manage Resources"
+            st.rerun()
+        if st.button("📋 Manage Projects", use_container_width=True):
+            st.session_state["active_tab"] = "Manage Projects"
+            st.rerun()
+
+        # Visualization section
+        st.markdown("#### Visualization")
+        if st.button("📈 Gantt Chart", use_container_width=True):
+            st.session_state["active_tab"] = "Visualize Data"
+            st.rerun()
+        if st.button("📉 Resource Utilization", use_container_width=True):
+            st.session_state["active_tab"] = "Resource Utilization"
+            st.rerun()
+
+        # Tools section
+        st.markdown("#### Tools")
+        if st.button("💾 Import/Export", use_container_width=True):
+            st.session_state["active_tab"] = "Import/Export Data"
+            st.rerun()
+        if st.button("⚙️ Settings", use_container_width=True):
+            st.session_state["active_tab"] = "Settings"
+            st.rerun()
+
+    # Main content area with title
     st.title("Resource Management App")
 
-    # Detect viewport width (workaround, as Streamlit doesn't expose it directly)
-    is_mobile = False
-
-    # Create sidebar navigation
-    st.sidebar.title("Navigation")
-
-    with st.sidebar.expander("Quick Actions", expanded=True):
-        if is_mobile:
-            # Single column for mobile
-            if st.button("➕ Add Person", use_container_width=True):
-                st.session_state["active_tab"] = "Manage Resources"
-                st.session_state["resource_type"] = "People"
-                st.rerun()
-
-            if st.button("➕ Add Team", use_container_width=True):
-                st.session_state["active_tab"] = "Manage Resources"
-                st.session_state["resource_type"] = "Teams"
-                st.rerun()
-
-            if st.button("➕ Add Project", use_container_width=True):
-                st.session_state["active_tab"] = "Manage Projects"
-                st.rerun()
-
-            if st.button("📊 View Gantt", use_container_width=True):
-                st.session_state["active_tab"] = "Visualize Data"
-                st.rerun()
-        else:
-            # Two columns for desktop
-            col1, col2 = st.sidebar.columns(2)
-            with col1:
-                if st.button("➕ Add Person", use_container_width=True):
-                    st.session_state["active_tab"] = "Manage Resources"
-                    st.session_state["resource_type"] = "People"
-                    st.rerun()
-
-                if st.button("➕ Add Team", use_container_width=True):
-                    st.session_state["active_tab"] = "Manage Resources"
-                    st.session_state["resource_type"] = "Teams"
-                    st.rerun()
-            with col2:
-                if st.button("➕ Add Project", use_container_width=True):
-                    st.session_state["active_tab"] = "Manage Projects"
-                    st.rerun()
-
-                if st.button("📊 View Gantt", use_container_width=True):
-                    st.session_state["active_tab"] = "Visualize Data"
-                    st.rerun()
-
-    page = st.sidebar.radio(
-        "Go to",
-        [
-            "Home",
-            "Manage Resources",
-            "Manage Projects",
-            "Visualize Data",
-            "Resource Utilization",
-            "Import/Export Data",
-            "Settings",
-        ],
-        key="active_tab",
-    )
-
-    if page == "Home":
+    # Display the selected page
+    if st.session_state.get("active_tab") == "Home":
         display_home_tab()
-    elif page == "Manage Resources":
+    elif st.session_state.get("active_tab") == "Manage Resources":
         display_manage_resources_tab()
-    elif page == "Manage Projects":
+    elif st.session_state.get("active_tab") == "Manage Projects":
         display_manage_projects_tab()
-    elif page == "Visualize Data":
+    elif st.session_state.get("active_tab") == "Visualize Data":
         display_visualize_data_tab()
-    elif page == "Resource Utilization":
+    elif st.session_state.get("active_tab") == "Resource Utilization":
         display_resource_utilization_tab()
-    elif page == "Import/Export Data":
+    elif st.session_state.get("active_tab") == "Import/Export Data":
         display_import_export_data_tab()
-    elif page == "Settings":
+    elif st.session_state.get("active_tab") == "Settings":
         display_settings_tab()
+    else:
+        # Default to home
+        display_home_tab()
 
 
 if __name__ == "__main__":
