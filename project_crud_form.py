@@ -21,21 +21,43 @@ def add_project_form():
 
         submit = st.form_submit_button("Add Project")
         if submit:
-            if not validate_project_input(name, start_date, end_date, budget):
+            # Ensure dates are converted to pd.Timestamp
+            start_date = pd.to_datetime(start_date)
+            end_date = pd.to_datetime(end_date)
+
+            # Pass all fields as a dictionary to match validate_project_input's expected input
+            project_data = {
+                "name": name,
+                "start_date": start_date,
+                "end_date": end_date,
+                "budget": budget,
+            }
+            if not validate_project_input(project_data):
                 st.error("Invalid project details. Please try again.")
                 return
+
+            # Assign the lowest priority (highest number)
+            new_priority = (
+                max(
+                    [p["priority"] for p in st.session_state.data["projects"]],
+                    default=0,
+                )
+                + 1
+            )
 
             st.session_state.data["projects"].append(
                 {
                     "name": name,
                     "start_date": start_date.strftime("%Y-%m-%d"),
                     "end_date": end_date.strftime("%Y-%m-%d"),
-                    "priority": len(st.session_state.data["projects"]) + 1,
+                    "priority": new_priority,
                     "assigned_resources": assigned_resources,
                     "allocated_budget": budget,
                 }
             )
-            st.success(f"Project '{name}' added successfully.")
+            st.success(
+                f"Project '{name}' added successfully with priority {new_priority}."
+            )
             st.rerun()
 
 
@@ -77,11 +99,43 @@ def edit_project_form():
                 ],
                 default=project["assigned_resources"],
             )
+            priority = st.number_input(
+                "Priority", min_value=1, step=1, value=project["priority"]
+            )
 
             submit = st.form_submit_button("Update Project")
             if submit:
-                if not validate_project_input(name, start_date, end_date, budget):
+                # Ensure dates are converted to pd.Timestamp
+                start_date = pd.to_datetime(start_date)
+                end_date = pd.to_datetime(end_date)
+
+                # Pass all fields as a dictionary to match validate_project_input's expected input
+                project_data = {
+                    "name": name,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "budget": budget,
+                }
+                if not validate_project_input(project_data):
                     st.error("Invalid project details. Please try again.")
+                    return
+
+                # Check for duplicate priorities
+                duplicate_projects = [
+                    p
+                    for p in st.session_state.data["projects"]
+                    if p["priority"] == priority and p["name"] != project["name"]
+                ]
+                if duplicate_projects:
+                    with st.expander("⚠️ Duplicate Priority Detected", expanded=True):
+                        st.warning(
+                            f"The priority {priority} is already assigned to the following projects:"
+                        )
+                        for p in duplicate_projects:
+                            st.write(
+                                f"- {p['name']} (Start: {p['start_date']}, End: {p['end_date']})"
+                            )
+                        st.info("Please assign a unique priority to each project.")
                     return
 
                 project.update(
@@ -91,6 +145,7 @@ def edit_project_form():
                         "end_date": end_date.strftime("%Y-%m-%d"),
                         "allocated_budget": budget,
                         "assigned_resources": assigned_resources,
+                        "priority": priority,
                     }
                 )
                 st.success(f"Project '{name}' updated successfully.")

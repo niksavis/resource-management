@@ -33,6 +33,7 @@ from data_handlers import (
     save_json,
     display_gantt_chart,
     display_utilization_dashboard,
+    sort_projects_by_priority_and_date,
 )
 from person_crud_form import person_crud_form
 from team_crud_form import team_crud_form
@@ -827,9 +828,11 @@ def display_visualize_data_tab():
 
     filters = _get_visualization_filters()
 
-    gantt_data = create_gantt_data(
-        st.session_state.data["projects"], st.session_state.data
+    # Sort projects by priority and end date
+    sorted_projects = sort_projects_by_priority_and_date(
+        st.session_state.data["projects"]
     )
+    gantt_data = create_gantt_data(sorted_projects, st.session_state.data)
 
     gantt_data = _apply_visualization_filters(gantt_data, filters)
 

@@ -525,3 +525,11 @@ def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date
     # Display detailed utilization table
     st.subheader("Detailed Utilization Data")
     st.dataframe(utilization_df, use_container_width=True)
+
+
+def sort_projects_by_priority_and_date(projects):
+    """Sort projects by priority (ascending) and end date (ascending)."""
+    return sorted(
+        projects,
+        key=lambda p: (p["priority"], pd.to_datetime(p["end_date"])),
+    )

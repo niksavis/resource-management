@@ -8,6 +8,7 @@ management application.
 from datetime import date
 from typing import Tuple, List
 import streamlit as st
+import pandas as pd
 
 
 def validate_name_field(name: str, field_type: str) -> bool:
@@ -98,20 +99,39 @@ def validate_work_hours(work_hours: int) -> bool:
     return True
 
 
-def validate_project_input(project_data: dict) -> Tuple[bool, List[str]]:
+def validate_project_input(project_data: dict) -> bool:
     """
-    Validates the entire project input data.
+    Validates the input data for a project.
+    Ensures that all required fields are present and valid.
     """
-    errors = []
-    if not project_data.get("name"):
-        errors.append("Project name cannot be empty.")
-    if project_data.get("priority") < 1:
-        errors.append("Priority must be a positive integer.")
-    if project_data.get("allocated_budget") < 0:
-        errors.append("Allocated budget must be a positive number.")
-    if project_data.get("start_date") > project_data.get("end_date"):
-        errors.append("Start date must be before the end date.")
-    return len(errors) == 0, errors
+    required_fields = ["name", "start_date", "end_date", "budget"]
+
+    for field in required_fields:
+        if field not in project_data or not project_data[field]:
+            return False
+
+    if (
+        not isinstance(project_data["name"], str)
+        or len(project_data["name"].strip()) == 0
+    ):
+        return False
+
+    if not isinstance(project_data["start_date"], (str, pd.Timestamp)):
+        return False
+
+    if not isinstance(project_data["end_date"], (str, pd.Timestamp)):
+        return False
+
+    if project_data["start_date"] > project_data["end_date"]:
+        return False
+
+    if (
+        not isinstance(project_data["budget"], (int, float))
+        or project_data["budget"] < 0
+    ):
+        return False
+
+    return True
 
 
 def detect_budget_overrun(
