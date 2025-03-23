@@ -247,28 +247,11 @@ def display_manage_resources_tab():
     """Displays a consolidated view of all resources with type filtering."""
     st.subheader("Manage Resources")
 
-    # Initialize resource_view if not set
-    if "resource_view" not in st.session_state:
-        st.session_state["resource_view"] = "All Resources"
+    # Replace radio buttons with horizontal tabs
+    resource_tabs = st.tabs(["All Resources", "People", "Teams", "Departments"])
 
-    # Add tabs for different resource views
-    previous_view = st.session_state.get("resource_view", "All Resources")
-    view_type = st.radio(
-        "View",
-        ["All Resources", "People", "Teams", "Departments"],
-        index=["All Resources", "People", "Teams", "Departments"].index(previous_view),
-        key="resource_view_selector",
-        # Immediately update session state:
-        on_change=lambda: st.session_state.update(
-            {"resource_view": st.session_state.resource_view_selector}
-        ),
-    )
-
-    # Update session state with the selected view
-    st.session_state["resource_view"] = view_type
-
-    # Display the selected view
-    if view_type == "All Resources":
+    # Display the selected view based on the active tab
+    with resource_tabs[0]:
         if (
             not st.session_state.data["people"]
             and not st.session_state.data["teams"]
@@ -277,21 +260,24 @@ def display_manage_resources_tab():
             st.info("No resources found. Please add people, teams, or departments.")
         else:
             display_consolidated_resources()
-    elif view_type == "People":
+
+    with resource_tabs[1]:
         if not st.session_state.data["people"]:
             st.info("No people found. Please add people to manage them.")
         else:
             st.subheader("Manage People")
             display_filtered_resource("people", "people")
             person_crud_form()
-    elif view_type == "Teams":
+
+    with resource_tabs[2]:
         if not st.session_state.data["teams"]:
             st.info("No teams found. Please add teams to manage them.")
         else:
             st.subheader("Manage Teams")
             display_filtered_resource("teams", "teams", distinct_filters=True)
             team_crud_form()
-    elif view_type == "Departments":
+
+    with resource_tabs[3]:
         if not st.session_state.data["departments"]:
             st.info("No departments found. Please add departments to manage them.")
         else:
