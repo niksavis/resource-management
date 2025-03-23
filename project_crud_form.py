@@ -36,7 +36,7 @@ def add_project_form():
                 }
             )
             st.success(f"Project '{name}' added successfully.")
-            st.experimental_rerun()
+            st.rerun()
 
 
 def edit_project_form():
@@ -94,4 +94,4 @@ def edit_project_form():
                     }
                 )
                 st.success(f"Project '{name}' updated successfully.")
-                st.experimental_rerun()
+                st.rerun()

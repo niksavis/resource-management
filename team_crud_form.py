@@ -23,34 +23,35 @@ def team_crud_form():
     if team:
         st.write(f"Editing team: {team['name']}")
 
-        # Team name
-        new_name = st.text_input("Team Name", value=team["name"])
+        with st.form("edit_team"):
+            # Team name
+            new_name = st.text_input("Team Name", value=team["name"])
 
-        # Team members
-        people = st.session_state.data["people"]
-        person_names = [person["name"] for person in people]
-        new_members = st.multiselect(
-            "Team Members", person_names, default=team["members"]
-        )
+            # Team members
+            people = st.session_state.data["people"]
+            person_names = [person["name"] for person in people]
+            valid_members = [
+                member for member in team["members"] if member in person_names
+            ]  # Filter valid members
+            new_members = st.multiselect(
+                "Team Members", person_names, default=valid_members
+            )
 
-        # Update team
-        update_button = st.button("Update Team")
+            update_button = st.form_submit_button("Update Team")
+            if update_button:
+                if len(new_members) < 2:
+                    st.error(
+                        "A team must have at least 2 members. Please add more members or delete the team instead."
+                    )
+                    st.stop()
 
-        if update_button:
-            if len(new_members) < 2:
-                st.error(
-                    "A team must have at least 2 members. Please add more members or delete the team instead."
-                )
-                st.stop()
-
-            team["name"] = new_name
-            team["members"] = new_members
-            st.success(f"Team '{new_name}' updated successfully.")
-            st.rerun()
+                team["name"] = new_name
+                team["members"] = new_members
+                st.success(f"Team '{new_name}' updated successfully.")
+                st.rerun()
 
         # Delete team
         delete_button = st.button("Delete Team")
-
         if delete_button:
             st.session_state.data["teams"] = [
                 t for t in teams if t["name"] != team["name"]
