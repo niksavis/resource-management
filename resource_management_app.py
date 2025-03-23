@@ -1431,7 +1431,9 @@ def main():
 
         # Visualization section
         st.markdown("#### Visualization")
-        if st.button("📈 Gantt Chart", use_container_width=True):
+        if st.button(
+            "📈 Resource Allocation", use_container_width=True
+        ):  # Updated button label
             st.session_state["active_tab"] = "Visualize Data"
             st.rerun()
         if st.button("📉 Resource Utilization", use_container_width=True):
