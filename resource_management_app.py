@@ -467,9 +467,9 @@ def _display_person_cards(people, currency):
 
 def _display_team_cards(teams, people, currency):
     """Display team cards in a consistent grid."""
-    cols = st.columns(3)  # Change from st.columns(2) to st.columns(3)
+    cols = st.columns(3)
     for idx, team in enumerate(teams):
-        with cols[idx % 3]:  # Adjust to match the new column layout
+        with cols[idx % 3]:
             with st.container():
                 team_cost = sum(
                     person["daily_cost"]
@@ -480,7 +480,7 @@ def _display_team_cards(teams, people, currency):
                     f"""
                     <div class="card team-card">
                         <h3>👥 {team["name"]}</h3>
-                        <p><strong>Department:</strong> {team["department"]}</p>
+                        <p><strong>Department:</strong> {team["department"] or "None"}</p>
                         <p><strong>Members:</strong> {len(team["members"])}</p>
                         <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
                     </div>
@@ -494,23 +494,22 @@ def _display_department_cards(departments, people, currency):
     cols = st.columns(3)
     for idx, dept in enumerate(departments):
         with cols[idx % 3]:
-            with st.container():
-                dept_cost = sum(
-                    person["daily_cost"]
-                    for person in people
-                    if person["department"] == dept["name"]
-                )
-                st.markdown(
-                    f"""
-                    <div class="card department-card">
-                        <h3>🏢 {dept["name"]}</h3>
-                        <p><strong>Teams:</strong> {len(dept["teams"])}</p>
-                        <p><strong>Members:</strong> {len(dept["members"])}</p>
-                        <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            dept_cost = sum(
+                person["daily_cost"]
+                for person in people
+                if person["department"] == dept["name"]
+            )
+            st.markdown(
+                f"""
+                <div class="card department-card">
+                    <h3>🏢 {dept["name"]}</h3>
+                    <p><strong>Teams:</strong> {len(dept["teams"])}</p>
+                    <p><strong>Members:</strong> {len(dept["members"])}</p>
+                    <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def _display_resource_visual_map(people, teams, departments, type_filter):
