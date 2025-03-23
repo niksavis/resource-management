@@ -46,7 +46,7 @@ def team_crud_form():
             team["name"] = new_name
             team["members"] = new_members
             st.success(f"Team '{new_name}' updated successfully.")
-            st.experimental_rerun()
+            st.rerun()
 
         # Delete team
         delete_button = st.button("Delete Team")
@@ -56,4 +56,4 @@ def team_crud_form():
                 t for t in teams if t["name"] != team["name"]
             ]
             st.success(f"Team '{team['name']}' deleted successfully.")
-            st.experimental_rerun()
+            st.rerun()

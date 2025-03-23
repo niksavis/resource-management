@@ -25,8 +25,3 @@ def department_crud_form():
             add_department_color(name)
             st.success(f"Department '{name}' added successfully.")
             st.experimental_rerun()
-
-    if st.session_state.data["departments"]:
-        st.subheader("Existing Departments")
-        for department in st.session_state.data["departments"]:
-            st.write(f"- {department['name']}")
