@@ -64,32 +64,14 @@ if "data" not in st.session_state:
 
 
 def display_action_bar():
-    """Display a combined breadcrumbs and action bar with improved design."""
-    col1, col2 = st.columns([3, 2])
-    with col1:
-        # Display breadcrumbs with the current page visually distinct
-        active_tab = st.session_state.get("active_tab", "Home")
-        resource_view = st.session_state.get("resource_view", "All Resources")
-        breadcrumb = f"Home > {active_tab}"
-        if active_tab == "Manage Resources" and resource_view != "All Resources":
-            breadcrumb += f" > {resource_view}"
-        st.markdown(f"**{breadcrumb}**")  # Make the current page bold
-
-    with col2:
-        # Display action buttons with icons and labels
-        col_a, col_b, col_c = st.columns(3)
-        with col_a:
-            if st.button("➕ Add", use_container_width=True):
-                st.session_state["active_tab"] = "Manage Resources"
-                st.rerun()
-        with col_b:
-            if st.button("📊 View", use_container_width=True):
-                st.session_state["active_tab"] = "Visualize Data"
-                st.rerun()
-        with col_c:
-            if st.button("⋯ More", use_container_width=True):
-                st.session_state["active_tab"] = "Settings"
-                st.rerun()
+    """Display breadcrumbs with improved design."""
+    # Display breadcrumbs with the current page visually distinct
+    active_tab = st.session_state.get("active_tab", "Home")
+    resource_view = st.session_state.get("resource_view", "All Resources")
+    breadcrumb = f"Home > {active_tab}"
+    if active_tab == "Manage Resources" and resource_view != "All Resources":
+        breadcrumb += f" > {resource_view}"
+    st.markdown(f"**{breadcrumb}**")
 
 
 def global_search(query):
@@ -478,7 +460,7 @@ def _display_team_cards(teams, people, currency):
                 )
                 st.markdown(
                     f"""
-                    <div class="card team-card">
+                    <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
                         <h3>👥 {team["name"]}</h3>
                         <p><strong>Department:</strong> {team["department"] or "None"}</p>
                         <p><strong>Members:</strong> {len(team["members"])}</p>

@@ -102,169 +102,165 @@ def person_crud_form() -> None:
     currency, currency_format = load_currency_settings()
     currency_symbol = currency
 
-    # Create tabs for Add/Edit/Delete operations
-    person_tabs = st.tabs(["Add Person", "Edit Person", "Delete Person"])
+    st.subheader("Add Person")
 
-    # Add Person Tab
-    with person_tabs[0]:
-        with st.form("add_person"):
-            st.subheader("Add New Person")
+    with st.form("add_person"):
+        st.subheader("Add New Person")
 
-            # Use consistent two-column layout
-            col1, col2 = st.columns([1, 1])
+        # Use consistent two-column layout
+        col1, col2 = st.columns([1, 1])
 
-            # Personal Information Section
-            with col1:
-                st.markdown("#### Personal Information")
-                name = st.text_input("Name")
-                role = st.selectbox(
-                    "Role",
-                    options=[
-                        "Developer",
-                        "UX/UI Designer",
-                        "Domain Lead",
-                        "Product Owner",
-                        "Project Manager",
-                        "Key Stakeholder",
-                        "Head of Department",
-                        "Other",
-                    ],
-                )
-                if role == "Other":
-                    role = st.text_input("Specify role")
+        # Personal Information Section
+        with col1:
+            st.markdown("#### Personal Information")
+            name = st.text_input("Name")
+            role = st.selectbox(
+                "Role",
+                options=[
+                    "Developer",
+                    "UX/UI Designer",
+                    "Domain Lead",
+                    "Product Owner",
+                    "Project Manager",
+                    "Key Stakeholder",
+                    "Head of Department",
+                    "Other",
+                ],
+            )
+            if role == "Other":
+                role = st.text_input("Specify role")
 
-            # Department and Team Section
-            with col2:
-                st.markdown("#### Department and Team")
+        # Department and Team Section
+        with col2:
+            st.markdown("#### Department and Team")
 
-                # Department selection with "None" and new department option
-                dept_options = ["None"] + [
-                    d["name"] for d in st.session_state.data["departments"]
-                ]
-                dept_selection = st.selectbox("Department", dept_options)
+            # Department selection with "None" and new department option
+            dept_options = ["None"] + [
+                d["name"] for d in st.session_state.data["departments"]
+            ]
+            dept_selection = st.selectbox("Department", dept_options)
 
-                if dept_selection == "None":
-                    department = None
-                    new_dept_name = st.text_input("Or create new department")
-                    if new_dept_name.strip():
-                        department = new_dept_name
-                else:
-                    department = dept_selection
+            if dept_selection == "None":
+                department = None
+                new_dept_name = st.text_input("Or create new department")
+                if new_dept_name.strip():
+                    department = new_dept_name
+            else:
+                department = dept_selection
 
-                # Team selection with "None" and new team option
-                team_options = ["None"]
-                if department:
-                    for team_obj in st.session_state.data["teams"]:
-                        if team_obj["department"] == department:
-                            team_options.append(team_obj["name"])
+            # Team selection with "None" and new team option
+            team_options = ["None"]
+            if department:
+                for team_obj in st.session_state.data["teams"]:
+                    if team_obj["department"] == department:
+                        team_options.append(team_obj["name"])
 
-                team_selection = st.selectbox("Team (optional)", team_options)
-                if team_selection == "None":
-                    team = None
-                    new_team_name = st.text_input("Or create new team")
-                    if new_team_name.strip():
-                        team = new_team_name
-                else:
-                    team = team_selection
+            team_selection = st.selectbox("Team (optional)", team_options)
+            if team_selection == "None":
+                team = None
+                new_team_name = st.text_input("Or create new team")
+                if new_team_name.strip():
+                    team = new_team_name
+            else:
+                team = team_selection
 
-            # Work Details Section
-            st.markdown("#### Work Details")
-            col3, col4 = st.columns([1, 1])
+        # Work Details Section
+        st.markdown("#### Work Details")
+        col3, col4 = st.columns([1, 1])
 
-            with col3:
-                daily_work_hours = st.number_input(
-                    "Daily Work Hours",
-                    min_value=1,
-                    max_value=24,
-                    value=8,
-                    help="Number of hours this person works per day.",
-                )
+        with col3:
+            daily_work_hours = st.number_input(
+                "Daily Work Hours",
+                min_value=1,
+                max_value=24,
+                value=8,
+                help="Number of hours this person works per day.",
+            )
 
-                daily_cost = st.number_input(
-                    f"Daily Cost ({currency_symbol})",
-                    min_value=0.0,
-                    step=50.0,
-                    value=0.0,
-                    help="Cost per day for this person.",
-                )
+            daily_cost = st.number_input(
+                f"Daily Cost ({currency_symbol})",
+                min_value=0.0,
+                step=50.0,
+                value=0.0,
+                help="Cost per day for this person.",
+            )
 
-            with col4:
-                st.write("Work Days")
-                day_labels = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
-                work_days = {}
+        with col4:
+            st.write("Work Days")
+            day_labels = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"]
+            work_days = {}
 
-                # Organize days in two rows for better layout
-                days_row1 = st.columns(5)
-                days_row2 = st.columns(5)
+            # Organize days in two rows for better layout
+            days_row1 = st.columns(5)
+            days_row2 = st.columns(5)
 
-                for idx, day in enumerate(day_labels[:5]):
-                    work_days[day] = days_row1[idx].checkbox(
-                        day, value=(day in ["MO", "TU", "WE", "TH", "FR"])
-                    )
-
-                for idx, day in enumerate(day_labels[5:]):
-                    work_days[day] = days_row2[idx].checkbox(day, value=False)
-
-                selected_work_days = [d for d, checked in work_days.items() if checked]
-
-            submit = st.form_submit_button("Add Person", use_container_width=True)
-
-            if submit:
-                # Validation for new fields
-                if not validate_daily_cost(daily_cost):
-                    st.stop()
-                if not validate_work_days(selected_work_days):
-                    st.stop()
-                if not validate_work_hours(daily_work_hours):
-                    st.stop()
-                if not validate_name_field(name, "Person"):
-                    st.stop()
-
-                # Create new department if needed
-                if department and not any(
-                    d["name"] == department
-                    for d in st.session_state.data["departments"]
-                ):
-                    st.session_state.data["departments"].append(
-                        {"name": department, "teams": [], "members": []}
-                    )
-                    add_department_color(department)
-
-                # Create new team if needed
-                if team and not any(
-                    t["name"] == team for t in st.session_state.data["teams"]
-                ):
-                    st.session_state.data["teams"].append(
-                        {"name": team, "department": department, "members": [name]}
-                    )
-
-                    # Add team to department
-                    for dept in st.session_state.data["departments"]:
-                        if dept["name"] == department:
-                            if team not in dept["teams"]:
-                                dept["teams"].append(team)
-
-                # Add person
-                st.session_state.data["people"].append(
-                    {
-                        "name": name,
-                        "role": role,
-                        "department": department,
-                        "team": team,
-                        "daily_cost": daily_cost,
-                        "work_days": selected_work_days,
-                        "daily_work_hours": daily_work_hours,
-                    }
+            for idx, day in enumerate(day_labels[:5]):
+                work_days[day] = days_row1[idx].checkbox(
+                    day, value=(day in ["MO", "TU", "WE", "TH", "FR"])
                 )
 
-                # Update department members
+            for idx, day in enumerate(day_labels[5:]):
+                work_days[day] = days_row2[idx].checkbox(day, value=False)
+
+            selected_work_days = [d for d, checked in work_days.items() if checked]
+
+        submit = st.form_submit_button("Add Person", use_container_width=True)
+
+        if submit:
+            # Validation for new fields
+            if not validate_daily_cost(daily_cost):
+                st.stop()
+            if not validate_work_days(selected_work_days):
+                st.stop()
+            if not validate_work_hours(daily_work_hours):
+                st.stop()
+            if not validate_name_field(name, "Person"):
+                st.stop()
+
+            # Create new department if needed
+            if department and not any(
+                d["name"] == department for d in st.session_state.data["departments"]
+            ):
+                st.session_state.data["departments"].append(
+                    {"name": department, "teams": [], "members": []}
+                )
+                add_department_color(department)
+
+            # Create new team if needed
+            if team and not any(
+                t["name"] == team for t in st.session_state.data["teams"]
+            ):
+                st.session_state.data["teams"].append(
+                    {"name": team, "department": department, "members": [name]}
+                )
+
+                # Add team to department
                 for dept in st.session_state.data["departments"]:
                     if dept["name"] == department:
-                        if name not in dept["members"]:
-                            dept["members"].append(name)
+                        if team not in dept["teams"]:
+                            dept["teams"].append(team)
 
-                st.success(f"Added {name} as {role} to {department}")
-                st.rerun()
+            # Add person
+            st.session_state.data["people"].append(
+                {
+                    "name": name,
+                    "role": role,
+                    "department": department,
+                    "team": team,
+                    "daily_cost": daily_cost,
+                    "work_days": selected_work_days,
+                    "daily_work_hours": daily_work_hours,
+                }
+            )
+
+            # Update department members
+            for dept in st.session_state.data["departments"]:
+                if dept["name"] == department:
+                    if name not in dept["members"]:
+                        dept["members"].append(name)
+
+            st.success(f"Added {name} as {role} to {department}")
+            st.rerun()
 
     if st.session_state.data["people"]:
         st.subheader("Edit or Delete a Person")
@@ -486,95 +482,218 @@ def person_crud_form() -> None:
 
 def team_crud_form() -> None:
     """Form for managing teams with improved layout."""
-    # Use tabs for the Team CRUD
-    team_tabs = st.tabs(["Add Team", "Edit Team", "Delete Team"])
+    st.subheader("Add Team")
 
-    # Add Team Tab
-    with team_tabs[0]:
-        with st.form("add_team"):
-            st.subheader("Add New Team")
+    with st.form("add_team"):
+        st.subheader("Add New Team")
 
-            # Consistent two-column layout
-            col1, col2 = st.columns([1, 1])
+        # Consistent two-column layout
+        col1, col2 = st.columns([1, 1])
 
-            with col1:
-                st.markdown("#### Team Information")
-                name = st.text_input("Team Name")
+        with col1:
+            st.markdown("#### Team Information")
+            name = st.text_input("Team Name")
 
-                # Department selection with "None" and new department option
-                dept_options = ["None"] + [
-                    d["name"] for d in st.session_state.data["departments"]
-                ]
-                dept_selection = st.selectbox("Department", dept_options)
+            # Department selection with "None" and new department option
+            dept_options = ["None"] + [
+                d["name"] for d in st.session_state.data["departments"]
+            ]
+            dept_selection = st.selectbox("Department", dept_options)
 
-                if dept_selection == "None":
-                    department = None
-                    new_dept_name = st.text_input("Or create new department")
-                    if new_dept_name.strip():
-                        department = new_dept_name
-                else:
-                    department = dept_selection
+            if dept_selection == "None":
+                department = None
+                new_dept_name = st.text_input("Or create new department")
+                if new_dept_name.strip():
+                    department = new_dept_name
+            else:
+                department = dept_selection
 
-            with col2:
-                st.markdown("#### Team Members")
-                member_options = [
-                    person["name"]
-                    for person in st.session_state.data["people"]
-                    if person["department"] == department
-                ]
+        with col2:
+            st.markdown("#### Team Members")
+            member_options = [
+                person["name"]
+                for person in st.session_state.data["people"]
+                if person["department"] == department
+            ]
 
-                members = st.multiselect("Team Members", member_options)
+            members = st.multiselect("Team Members", member_options)
 
-                team_daily_cost = sum(
-                    person["daily_cost"]
-                    for person in st.session_state.data["people"]
-                    if person["name"] in members
+            team_daily_cost = sum(
+                person["daily_cost"]
+                for person in st.session_state.data["people"]
+                if person["name"] in members
+            )
+
+            st.metric("Calculated Team Daily Cost", f"€{team_daily_cost:,.2f}")
+
+        submit = st.form_submit_button("Add Team", use_container_width=True)
+
+        if submit:
+            if not validate_name_field(name, "Team"):
+                st.stop()
+
+            if len(members) < 2:
+                st.error("A team must have at least 2 members.")
+            else:
+                # Create new department if needed
+                if department and not any(
+                    d["name"] == department
+                    for d in st.session_state.data["departments"]
+                ):
+                    st.session_state.data["departments"].append(
+                        {"name": department, "teams": [], "members": []}
+                    )
+                    add_department_color(department)
+
+                # Add team
+                st.session_state.data["teams"].append(
+                    {
+                        "name": name,
+                        "department": department,
+                        "members": members,
+                    }
                 )
 
-                st.metric("Calculated Team Daily Cost", f"€{team_daily_cost:,.2f}")
+                # Update department teams
+                for dept in st.session_state.data["departments"]:
+                    if dept["name"] == department:
+                        if name not in dept["teams"]:
+                            dept["teams"].append(name)
 
-            submit = st.form_submit_button("Add Team", use_container_width=True)
+                st.success(f"Added team {name} to {department}")
+                st.rerun()
 
-            if submit:
-                if not validate_name_field(name, "Team"):
-                    st.stop()
+    if st.session_state.data["teams"]:
+        st.subheader("Edit or Delete a Team")
 
-                if len(members) < 2:
-                    st.error("A team must have at least 2 members.")
-                else:
-                    # Create new department if needed
-                    if department and not any(
-                        d["name"] == department
-                        for d in st.session_state.data["departments"]
-                    ):
-                        st.session_state.data["departments"].append(
-                            {"name": department, "teams": [], "members": []}
-                        )
-                        add_department_color(department)
+        selected_team = st.selectbox(
+            "Select team",
+            [t["name"] for t in st.session_state.data["teams"]],
+        )
 
-                    # Add team
-                    st.session_state.data["teams"].append(
-                        {
-                            "name": name,
-                            "department": department,
-                            "members": members,
-                        }
-                    )
-
-                    # Update department teams
-                    for dept in st.session_state.data["departments"]:
-                        if dept["name"] == department:
-                            if name not in dept["teams"]:
-                                dept["teams"].append(name)
-
-                    st.success(f"Added team {name} to {department}")
+        if selected_team:
+            if st.button(f"Delete {selected_team}"):
+                success = delete_resource(
+                    st.session_state.data["teams"], selected_team, "team"
+                )
+                if success:
+                    st.success(f"Deleted team: {selected_team}")
                     st.rerun()
+                else:
+                    st.error("Could not delete team.")
+
+            # Edit Team functionality
+            selected_team_data = next(
+                (
+                    t
+                    for t in st.session_state.data["teams"]
+                    if t["name"] == selected_team
+                ),
+                None,
+            )
+
+            if selected_team_data:
+                with st.expander("Edit Team", expanded=False):
+                    with st.form("edit_team_form"):
+                        col1, col2 = st.columns([1, 1])
+                        with col1:
+                            new_name = st.text_input(
+                                "Team Name", value=selected_team_data["name"]
+                            )
+
+                            dept_options = [
+                                d["name"] for d in st.session_state.data["departments"]
+                            ]
+
+                            dept_index = (
+                                dept_options.index(selected_team_data["department"])
+                                if selected_team_data["department"] in dept_options
+                                else 0
+                            )
+
+                            new_department = st.selectbox(
+                                "Department", dept_options, index=dept_index
+                            )
+
+                        with col2:
+                            member_options = [
+                                person["name"]
+                                for person in st.session_state.data["people"]
+                                if person["department"] == new_department
+                            ]
+
+                            new_members = st.multiselect(
+                                "Team Members",
+                                member_options,
+                                default=selected_team_data["members"],
+                            )
+
+                            new_team_daily_cost = sum(
+                                person["daily_cost"]
+                                for person in st.session_state.data["people"]
+                                if person["name"] in new_members
+                            )
+
+                            st.metric(
+                                "Calculated Team Daily Cost",
+                                f"€{new_team_daily_cost:,.2f}",
+                            )
+
+                        update_button = st.form_submit_button(
+                            "Update Team", use_container_width=True
+                        )
+
+                        if update_button:
+                            if not validate_name_field(new_name, "Team"):
+                                st.stop()
+
+                            if len(new_members) < 2:
+                                st.error("A team must have at least 2 members.")
+                            else:
+                                # Update team info and related references
+                                for i, team in enumerate(
+                                    st.session_state.data["teams"]
+                                ):
+                                    if team["name"] == selected_team:
+                                        # Update department references
+                                        if team["department"] != new_department:
+                                            # Remove from old department
+                                            for dept in st.session_state.data[
+                                                "departments"
+                                            ]:
+                                                if (
+                                                    dept["name"] == team["department"]
+                                                    and team["name"] in dept["teams"]
+                                                ):
+                                                    dept["teams"].remove(team["name"])
+
+                                            # Add to new department
+                                            for dept in st.session_state.data[
+                                                "departments"
+                                            ]:
+                                                if (
+                                                    dept["name"] == new_department
+                                                    and new_name not in dept["teams"]
+                                                ):
+                                                    dept["teams"].append(new_name)
+
+                                        # Update team record
+                                        st.session_state.data["teams"][i] = {
+                                            "name": new_name,
+                                            "department": new_department,
+                                            "members": new_members,
+                                        }
+
+                                st.success(f"Updated {selected_team} to {new_name}")
+                                st.rerun()
 
 
 def department_crud_form() -> None:
     """Form for managing departments."""
-    with st.expander("Add new Department", expanded=False):
-        with st.form("add_department"):
+    st.subheader("Add Department")
+
+    with st.form("add_department"):
+        with st.expander("Add new Department", expanded=False):
             st.write("Add new department")
             name = st.text_input("Department Name")
             submit = st.form_submit_button("Add Department", use_container_width=True)
@@ -1055,3 +1174,11 @@ def _initialize_edit_project_form(selected_project: Dict[str, any]) -> None:
         if r in [t["name"] for t in st.session_state.data["teams"]]
     ]
     st.session_state["edit_form_initialized"] = True
+
+
+def display_manage_resources_tab() -> None:
+    """Display the manage resources section using the new structure."""
+    st.subheader("Manage Resources")
+    person_crud_form()
+    team_crud_form()
+    department_crud_form()
