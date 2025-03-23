@@ -45,6 +45,7 @@ from utils import (
     confirm_action,
     display_filtered_resource,
     paginate_dataframe,
+    format_circular_dependency_message,
 )
 
 # Set up basic page configuration
@@ -224,7 +225,6 @@ def display_home_tab():
 
 def display_manage_resources_tab():
     display_action_bar()
-    """Displays a consolidated view of all resources with type filtering."""
     st.subheader("Manage Resources")
 
     resource_tabs = st.tabs(["All Resources", "People", "Teams", "Departments"])
@@ -265,18 +265,21 @@ def display_manage_resources_tab():
             )
             department_crud_form()
 
-    cycles = check_circular_dependencies()
-    if cycles:
+    cycles, multi_team_members, multi_department_members, multi_department_teams = (
+        check_circular_dependencies()
+    )
+
+    if (
+        cycles
+        or multi_team_members
+        or multi_department_members
+        or multi_department_teams
+    ):
+        circular_dependency_message = format_circular_dependency_message(
+            cycles, multi_team_members, multi_department_members, multi_department_teams
+        )
         with st.expander("⚠️ Circular Dependencies Detected", expanded=True):
-            st.error("The following circular dependencies were detected:")
-            for cycle in cycles:
-                st.markdown(f"- {cycle}")
-            st.markdown(
-                "**Impact:** Circular dependencies can cause issues with resource allocation and cost calculations."
-            )
-            st.markdown(
-                "**Solution:** Review the team memberships to eliminate overlapping assignments."
-            )
+            st.warning(circular_dependency_message)
 
 
 def display_consolidated_resources():

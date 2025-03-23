@@ -214,18 +214,52 @@ def confirm_action(action_name: str, key_suffix: str) -> bool:
     return False
 
 
-def check_circular_dependencies() -> List[str]:
-    """Check for circular dependencies between teams with detailed path information."""
+def check_circular_dependencies() -> tuple[List[str], dict, dict, dict]:
+    """
+    Check for circular dependencies between teams and report individuals in multiple teams,
+    multiple departments, and teams in multiple departments.
+    """
     dependency_graph = {}
+    multi_team_members = {}
+    multi_department_members = {}
+    multi_department_teams = {}
 
-    # Build dependency graph
+    # Build dependency graph and check for multi-team or multi-department members
+    team_membership = {}
+    department_membership = {}
+    team_departments = {}
+
     for team in st.session_state.data["teams"]:
         dependency_graph[team["name"]] = set()
+        team_departments[team["name"]] = team["department"]
+
+        for member in team["members"]:
+            if member in team_membership:
+                if member not in multi_team_members:
+                    multi_team_members[member] = [team_membership[member]]
+                multi_team_members[member].append(team["name"])
+            team_membership[member] = team["name"]
+
         for other_team in st.session_state.data["teams"]:
             if team != other_team and any(
                 member in other_team["members"] for member in team["members"]
             ):
                 dependency_graph[team["name"]].add(other_team["name"])
+
+    for department in st.session_state.data["departments"]:
+        for member in department["members"]:
+            if member in department_membership:
+                if member not in multi_department_members:
+                    multi_department_members[member] = [department_membership[member]]
+                multi_department_members[member].append(department["name"])
+            department_membership[member] = department["name"]
+
+        for team in department["teams"]:
+            if team in team_departments:
+                if team_departments[team] != department["name"]:
+                    if team not in multi_department_teams:
+                        multi_department_teams[team] = [team_departments[team]]
+                    multi_department_teams[team].append(department["name"])
 
     # Check for cycles
     visited = set()
@@ -260,7 +294,12 @@ def check_circular_dependencies() -> List[str]:
     for node in dependency_graph:
         dfs(node, [])
 
-    return cycle_paths
+    return (
+        cycle_paths,
+        multi_team_members,
+        multi_department_members,
+        multi_department_teams,
+    )
 
 
 def validate_team_integrity(team_name):
@@ -297,3 +336,39 @@ def delete_resource(resource_list, resource_name, resource_type=None):
                 team["department"] = None
 
     return updated_list
+
+
+def format_circular_dependency_message(
+    cycle_paths: List[str],
+    multi_team_members: dict,
+    multi_department_members: dict,
+    multi_department_teams: dict,
+) -> str:
+    """
+    Formats a unified message for circular dependencies, members in multiple teams,
+    members in multiple departments, and teams in multiple departments.
+    """
+    message = "\n**⚡ Impact:** Circular dependencies can cause issues with resource allocation and cost calculations.\n"
+    message += "\n**💡 Solution:** Review the team memberships to eliminate overlapping assignments.\n"
+
+    if cycle_paths:
+        message += "\n**The following circular dependencies were detected:**\n"
+        for path in cycle_paths:
+            message += f"- {path}\n"
+
+    if multi_team_members:
+        message += "\n**Members in Multiple Teams:**\n"
+        for member, teams in multi_team_members.items():
+            message += f"- {member}: {', '.join(teams)}\n"
+
+    if multi_department_members:
+        message += "\n**Members in Multiple Departments:**\n"
+        for member, departments in multi_department_members.items():
+            message += f"- {member}: {', '.join(departments)}\n"
+
+    if multi_department_teams:
+        message += "\n**Teams in Multiple Departments:**\n"
+        for team, departments in multi_department_teams.items():
+            message += f"- {team}: {', '.join(departments)}\n"
+
+    return message
