@@ -18,6 +18,7 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 
 # Local module imports
 from calculation_helpers import calculate_project_duration, is_resource_overallocated
@@ -443,3 +444,84 @@ def calculate_project_cost(
     except Exception as e:
         st.error(f"Unexpected error while calculating project cost: {e}")
         return 0.0
+
+
+def display_gantt_chart(gantt_data):
+    """
+    Displays a Gantt chart using the provided data.
+    """
+    if gantt_data.empty:
+        st.warning("No data available to display the Gantt chart.")
+        return
+
+    fig = px.timeline(
+        gantt_data,
+        x_start="Start",
+        x_end="Finish",
+        y="Resource",
+        color="Project",
+        title="Gantt Chart",
+        hover_data=["Type", "Department"],
+    )
+    fig.update_layout(
+        xaxis_title="Timeline",
+        yaxis_title="Resources",
+        legend_title="Projects",
+        height=600,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date):
+    """
+    Displays a dashboard for resource utilization based on the provided Gantt data.
+    """
+    if gantt_data.empty:
+        st.warning("No data available for utilization dashboard.")
+        return
+
+    # Calculate utilization metrics
+    utilization_df = calculate_resource_utilization(gantt_data, start_date, end_date)
+
+    if utilization_df.empty:
+        st.warning("No utilization data available for the selected period.")
+        return
+
+    # Display summary metrics
+    st.subheader("Utilization Summary")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Resources", len(utilization_df))
+    col2.metric(
+        "Average Utilization (%)", f"{utilization_df['Utilization %'].mean():.1f}"
+    )
+    col3.metric(
+        "Average Overallocation (%)", f"{utilization_df['Overallocation %'].mean():.1f}"
+    )
+
+    # Display utilization chart
+    st.subheader("Utilization by Resource")
+    fig = px.bar(
+        utilization_df,
+        x="Resource",
+        y="Utilization %",
+        color="Type",
+        hover_data=["Department", "Projects", "Cost (€)"],
+        title="Resource Utilization",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Display overallocation chart
+    st.subheader("Overallocation by Resource")
+    overallocation_fig = px.bar(
+        utilization_df,
+        x="Resource",
+        y="Overallocation %",
+        color="Type",
+        hover_data=["Department", "Projects", "Cost (€)"],
+        title="Resource Overallocation",
+    )
+    st.plotly_chart(overallocation_fig, use_container_width=True)
+
+    # Display detailed utilization table
+    st.subheader("Detailed Utilization Data")
+    st.dataframe(utilization_df, use_container_width=True)

@@ -10,7 +10,7 @@ each resource type and integrates validation and state management.
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from typing import Dict, List
+from typing import Dict
 
 # Local module imports
 from color_management import (
@@ -37,49 +37,67 @@ from validation import (
 )
 
 
-def delete_resource(
-    resource_list: List[Dict[str, any]], resource_name: str, resource_type: str = None
-) -> bool:
-    """
-    Removes a resource from the provided list and updates related references.
-
-    Args:
-        resource_list: The list containing the resource to delete
-        resource_name: The name of the resource to delete
-        resource_type: The type of resource (person, team, department)
-
-    Returns:
-        bool: True if the resource was deleted, False otherwise
-    """
+def delete_resource(resource_list, resource_name, resource_type=None):
+    """Removes a resource and handles cascading deletions."""
     for idx, r in enumerate(resource_list):
         if r["name"] == resource_name:
-            # Handle team deletion
-            if resource_type == "team":
-                team = resource_list[idx]
-                # Update people who belong to this team
-                for person in st.session_state.data["people"]:
-                    if person["team"] == resource_name:
-                        person["team"] = None
+            # Handle person deletion
+            if resource_type == "person":
+                person = resource_list[idx]
+                team_name = person["team"]
 
-                # Remove team from department
-                for dept in st.session_state.data["departments"]:
-                    if resource_name in dept["teams"]:
-                        dept["teams"].remove(resource_name)
+                # Check if removing this person would make any team invalid
+                if team_name:
+                    team = next(
+                        (
+                            t
+                            for t in st.session_state.data["teams"]
+                            if t["name"] == team_name
+                        ),
+                        None,
+                    )
+                    if team and len(team["members"]) <= 2:
+                        # Ask user what to do
+                        st.warning(
+                            f"Removing {resource_name} will leave team '{team_name}' with fewer than 2 members, which is not allowed."
+                        )
+                        delete_options = st.radio(
+                            "Choose an action:",
+                            [
+                                "Cancel deletion",
+                                f"Delete {resource_name} and team '{team_name}'",
+                            ],
+                            key=f"delete_options_{resource_name}",
+                        )
 
-            # Handle department deletion
-            elif resource_type == "department":
-                # Update people who belong to this department
-                for person in st.session_state.data["people"]:
-                    if person["department"] == resource_name:
-                        person["department"] = None
+                        if delete_options == "Cancel deletion":
+                            return False
+                        elif delete_options.startswith("Delete"):
+                            # Delete the team first
+                            team_idx = next(
+                                (
+                                    i
+                                    for i, t in enumerate(
+                                        st.session_state.data["teams"]
+                                    )
+                                    if t["name"] == team_name
+                                ),
+                                None,
+                            )
+                            if team_idx is not None:
+                                # Remove team from department
+                                for dept in st.session_state.data["departments"]:
+                                    if team_name in dept["teams"]:
+                                        dept["teams"].remove(team_name)
+                                # Delete the team
+                                del st.session_state.data["teams"][team_idx]
+                                st.success(f"Team '{team_name}' has been deleted.")
 
-                # Update teams that belong to this department
-                for team in st.session_state.data["teams"]:
-                    if team["department"] == resource_name:
-                        team["department"] = None
-
-            # Delete the resource
+            # Remove the resource
             del resource_list[idx]
+            st.success(
+                f"{resource_type.capitalize()} '{resource_name}' has been deleted."
+            )
             return True
     return False
 

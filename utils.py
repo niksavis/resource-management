@@ -261,3 +261,13 @@ def check_circular_dependencies() -> List[str]:
         dfs(node, [])
 
     return cycle_paths
+
+
+def validate_team_integrity(team_name):
+    """Validates that a team has at least 2 members."""
+    team = next(
+        (t for t in st.session_state.data["teams"] if t["name"] == team_name), None
+    )
+    if team and len(team["members"]) < 2:
+        return False
+    return True

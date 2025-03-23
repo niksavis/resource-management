@@ -31,6 +31,8 @@ from data_handlers import (
     find_resource_conflicts,
     load_json,
     save_json,
+    display_gantt_chart,  # Import display_gantt_chart to fix undefined name
+    display_utilization_dashboard,  # Import display_utilization_dashboard to fix undefined name
 )
 from resource_forms import (
     add_project_form,
@@ -38,6 +40,7 @@ from resource_forms import (
     edit_project_form,
     person_crud_form,
     team_crud_form,
+    delete_resource,  # Import delete_resource to fix undefined name
 )
 from utils import (
     _apply_sorting,
@@ -46,7 +49,6 @@ from utils import (
     display_filtered_resource,
     paginate_dataframe,
 )
-from visualizations import display_gantt_chart, display_utilization_dashboard
 
 # Set up basic page configuration
 st.set_page_config(page_title="Resource Management App", layout="wide")
@@ -1294,6 +1296,8 @@ def initialize_session_state():
     if "edit_form_initialized" not in st.session_state:
         st.session_state["edit_form_initialized"] = False
 
+    check_data_integrity()
+
 
 def apply_custom_css():
     """Apply custom CSS for better mobile experience, card styling, and hover effects."""
@@ -1369,6 +1373,21 @@ def apply_custom_css():
 
 # Call the function to apply CSS
 apply_custom_css()
+
+
+def check_data_integrity():
+    """Checks and fixes data integrity issues."""
+    # Check for teams with fewer than 2 members
+    invalid_teams = [
+        t["name"] for t in st.session_state.data["teams"] if len(t["members"]) < 2
+    ]
+
+    if invalid_teams:
+        st.warning(
+            f"Found {len(invalid_teams)} teams with fewer than 2 members. These teams will be automatically removed."
+        )
+        for team_name in invalid_teams:
+            delete_resource(st.session_state.data["teams"], team_name, "team")
 
 
 def main():
