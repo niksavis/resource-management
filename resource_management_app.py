@@ -91,7 +91,7 @@ def global_search(query):
 
 def display_home_tab():
     display_action_bar()
-    """Displays an enhanced home dashboard with key metrics and charts."""
+
     st.subheader("Resource Management Dashboard")
 
     # Resource Summary Cards
@@ -124,6 +124,11 @@ def display_home_tab():
             ]
         )
 
+        # Sort projects by priority (ascending) and end date (ascending)
+        projects_df = projects_df.sort_values(
+            by=["Priority", "Finish"], ascending=[False, False]
+        )
+
         today = pd.Timestamp.now()
         fig = px.timeline(
             projects_df,
@@ -140,7 +145,7 @@ def display_home_tab():
             xaxis_title="Timeline",
             yaxis_title="Projects",
             legend_title="Priority",
-            height=300,
+            height=600,
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -613,9 +618,7 @@ def _display_resource_visual_map(people, teams, departments, type_filter):
 
 def display_manage_projects_tab():
     display_action_bar()
-    """
-    Displays the content for the Manage Projects tab.
-    """
+
     st.subheader("Manage Projects")
 
     if not st.session_state.data["projects"]:
@@ -625,16 +628,7 @@ def display_manage_projects_tab():
 
     projects_df = _create_projects_dataframe()
 
-    projects_df["Priority Count"] = projects_df.groupby("Priority")[
-        "Priority"
-    ].transform("count")
-    projects_df["Priority Label"] = projects_df.apply(
-        lambda row: f"Priority {row['Priority']} (Duplicate)"
-        if row["Priority Count"] > 1
-        else f"Priority {row['Priority']}",
-        axis=1,
-    )
-
+    # Remove Priority Count and Priority Label logic
     projects_df = _filter_projects_dataframe(projects_df)
 
     st.dataframe(projects_df, use_container_width=True)
@@ -655,7 +649,7 @@ def _create_projects_dataframe():
                 "Name": p["name"],
                 "Start Date": pd.to_datetime(p["start_date"]).strftime("%Y-%m-%d"),
                 "End Date": pd.to_datetime(p["end_date"]).strftime("%Y-%m-%d"),
-                "Priority": p["priority"],
+                "Priority": p["priority"],  # Directly use Priority
                 "Duration (days)": (
                     pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
                 ).days
@@ -807,9 +801,7 @@ def _handle_project_deletion():
 
 def display_visualize_data_tab():
     display_action_bar()
-    """
-    Displays the content for the Visualize Data tab.
-    """
+
     st.subheader("Resource Allocation Visualization")
 
     if not st.session_state.data["projects"]:
@@ -1080,9 +1072,7 @@ def _display_resource_drill_down(gantt_data):
 
 def display_resource_utilization_tab():
     display_action_bar()
-    """
-    Displays the content for the Resource Utilization tab.
-    """
+
     st.subheader("Resource Utilization Dashboard")
 
     if not st.session_state.data["projects"]:
@@ -1142,9 +1132,7 @@ def display_resource_utilization_tab():
 
 def display_import_export_data_tab():
     display_action_bar()
-    """
-    Displays the content for the Import/Export Data tab.
-    """
+
     st.subheader("Import/Export Data")
 
     col1, col2 = st.columns(2)
@@ -1176,9 +1164,7 @@ def display_import_export_data_tab():
 
 def display_settings_tab():
     display_action_bar()
-    """
-    Displays the content for the Settings tab.
-    """
+
     st.subheader("Settings")
     display_color_settings()
 

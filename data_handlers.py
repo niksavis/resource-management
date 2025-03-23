@@ -454,6 +454,10 @@ def display_gantt_chart(gantt_data):
         st.warning("No data available to display the Gantt chart.")
         return
 
+    # Sort resources by type and name
+    gantt_data = gantt_data.sort_values(by=["Type", "Resource"])
+
+    # Create the Gantt chart
     fig = px.timeline(
         gantt_data,
         x_start="Start",
@@ -461,14 +465,23 @@ def display_gantt_chart(gantt_data):
         y="Resource",
         color="Project",
         title="Gantt Chart",
-        hover_data=["Type", "Department"],
+        hover_data=["Type", "Department", "Duration", "Priority"],
     )
+
+    # Add a vertical line for today's date
+    fig.add_vline(
+        x=pd.Timestamp.now(), line_width=2, line_dash="dash", line_color="red"
+    )
+
+    # Update layout
     fig.update_layout(
         xaxis_title="Timeline",
         yaxis_title="Resources",
         legend_title="Projects",
         height=600,
     )
+
+    # Display the chart
     st.plotly_chart(fig, use_container_width=True)
 
 

@@ -1157,7 +1157,7 @@
       "name": "AI-Powered Customer Support",
       "start_date": "2025-03-01",
       "end_date": "2025-04-15",
-      "priority": 2,
+      "priority": 6,
       "assigned_resources": ["Innovation Team", "Technical Support Team"],
       "allocated_budget": 11000000.0
     },
@@ -1165,7 +1165,7 @@
       "name": "IoT Service Platform",
       "start_date": "2025-05-15",
       "end_date": "2025-06-15",
-      "priority": 1,
+      "priority": 7,
       "assigned_resources": ["Technology Research Team", "Backend Team"],
       "allocated_budget": 15000000.0
     },
@@ -1173,7 +1173,7 @@
       "name": "Cloud Migration",
       "start_date": "2025-01-01",
       "end_date": "2025-12-31",
-      "priority": 3,
+      "priority": 8,
       "assigned_resources": [
         "Backend Team",
         "Infrastructure Team",
@@ -1185,7 +1185,7 @@
       "name": "E-commerce Platform Upgrade",
       "start_date": "2025-06-01",
       "end_date": "2025-09-30",
-      "priority": 4,
+      "priority": 9,
       "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"],
       "allocated_budget": 10000000.0
     },
@@ -1193,7 +1193,7 @@
       "name": "Data Analytics Platform",
       "start_date": "2025-03-01",
       "end_date": "2026-02-28",
-      "priority": 1,
+      "priority": 10,
       "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"],
       "allocated_budget": 25000000.0
     },
@@ -1201,7 +1201,7 @@
       "name": "Customer Feedback System",
       "start_date": "2025-04-01",
       "end_date": "2025-06-30",
-      "priority": 5,
+      "priority": 11,
       "assigned_resources": [
         "Frontend Team",
         "User Experience Team",
@@ -1213,7 +1213,7 @@
       "name": "AI Research Initiative",
       "start_date": "2025-01-01",
       "end_date": "2026-12-31",
-      "priority": 6,
+      "priority": 12,
       "assigned_resources": [
         "Innovation Team",
         "Technology Research Team",
