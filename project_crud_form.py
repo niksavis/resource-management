@@ -1,14 +1,6 @@
-"""
-Project CRUD Form Module
-
-This module contains the Streamlit forms for adding and editing projects.
-"""
-
 import streamlit as st
 import pandas as pd
-from validation import (
-    validate_project_input,
-)
+from validation import validate_project_input
 
 
 def add_project_form():

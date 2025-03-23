@@ -34,18 +34,15 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
         st.warning("No data available to visualize.")
         return
 
-    # Prepare data for visualization
     df_with_utilization = _prepare_gantt_data(df)
 
-    # Get dynamically managed colors
     department_colors = {
         dept: color.lower()
         for dept, color in manage_visualization_colors(
             df_with_utilization["Department"].unique()
         ).items()
-    }  # Ensure lowercase hex codes
+    }
 
-    # Create the Gantt chart
     fig = px.timeline(
         df_with_utilization,
         x_start="Start",
@@ -59,21 +56,17 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
             "Duration (days)",
             "Utilization %",
             "Overallocation %",
-            "Cost (€)",  # Add cost information to hover data
+            "Cost (€)",
         ],
         labels={"Resource": "Resource Name"},
         height=600,
-        color_discrete_map=department_colors,  # Use dynamically managed colors
+        color_discrete_map=department_colors,
     )
 
-    # Add today marker and highlight overallocated resources
     fig = _add_today_marker(fig)
     fig = _highlight_overallocated_resources(fig, df_with_utilization)
 
-    # Display the chart
     st.plotly_chart(fig, use_container_width=True)
-
-    # Add explanation for the visual indicators
     _display_chart_legend()
 
 
@@ -420,7 +413,7 @@ def _display_resource_conflicts(gantt_data):
         st.subheader("Conflict Details")
         filtered_conflicts = filter_dataframe(
             conflicts_df[["resource", "project1", "project2", "overlap_days"]],
-            key="Conflicts",  # Corrected name
+            key="Conflicts",
         )
         st.dataframe(filtered_conflicts, use_container_width=True)
     else:

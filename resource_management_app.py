@@ -227,10 +227,8 @@ def display_manage_resources_tab():
     """Displays a consolidated view of all resources with type filtering."""
     st.subheader("Manage Resources")
 
-    # Replace radio buttons with horizontal tabs
     resource_tabs = st.tabs(["All Resources", "People", "Teams", "Departments"])
 
-    # Display the selected view based on the active tab
     with resource_tabs[0]:
         if (
             not st.session_state.data["people"]
@@ -267,7 +265,6 @@ def display_manage_resources_tab():
             )
             department_crud_form()
 
-    # Check for circular dependencies
     cycles = check_circular_dependencies()
     if cycles:
         with st.expander("⚠️ Circular Dependencies Detected", expanded=True):
@@ -284,12 +281,10 @@ def display_manage_resources_tab():
 
 def display_consolidated_resources():
     """Display a consolidated view of all resources using cards."""
-    # Create filtered collections of resources
     people = st.session_state.data["people"]
     teams = st.session_state.data["teams"]
     departments = st.session_state.data["departments"]
 
-    # Add sorting and filtering controls
     with st.expander("Search, Sort, and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
@@ -316,7 +311,6 @@ def display_consolidated_resources():
             )
             ascending = st.checkbox("Ascending", value=True, key="sort_ascending_all")
 
-    # Apply filters
     if search_term:
         people = [p for p in people if search_term.lower() in str(p).lower()]
         teams = [t for t in teams if search_term.lower() in str(t).lower()]
@@ -327,7 +321,6 @@ def display_consolidated_resources():
         teams = [t for t in teams if t["department"] in dept_filter]
         departments = [d for d in departments if d["name"] in dept_filter]
 
-    # Apply sorting
     if sort_option == "Name":
         people.sort(key=lambda x: x["name"], reverse=not ascending)
         teams.sort(key=lambda x: x["name"], reverse=not ascending)
@@ -349,10 +342,8 @@ def display_consolidated_resources():
             reverse=not ascending,
         )
 
-    # Display resources as cards
     st.write("### Resources Overview")
 
-    # Create tabs for different view options
     view_option = st.radio("View As:", ["Cards", "Visual Map"], horizontal=True)
 
     if view_option == "Cards":
@@ -363,10 +354,8 @@ def display_consolidated_resources():
 
 def _display_resource_cards(people, teams, departments, type_filter):
     """Display resources as visual cards organized by type with summaries."""
-    # Load currency settings
     currency, _ = load_currency_settings()
 
-    # Display resources by type in separate sections
     if "Person" in type_filter and people:
         st.markdown("### People")
         _display_people_summary(people, currency)
@@ -622,20 +611,16 @@ def display_manage_projects_tab():
     display_action_bar()
     """
     Displays the content for the Manage Projects tab.
-    Fixed priority handling and improved project management.
     """
     st.subheader("Manage Projects")
 
-    # Display existing projects with enhanced table
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add a project first.")
         add_project_form()
         return
 
-    # Create the projects DataFrame with proper parsing
     projects_df = _create_projects_dataframe()
 
-    # Add priority count column to identify duplicate priorities
     projects_df["Priority Count"] = projects_df.groupby("Priority")[
         "Priority"
     ].transform("count")
@@ -646,23 +631,18 @@ def display_manage_projects_tab():
         axis=1,
     )
 
-    # Apply search and filtering
     projects_df = _filter_projects_dataframe(projects_df)
 
-    # Display the filtered dataframe
     st.dataframe(projects_df, use_container_width=True)
 
-    # Add and edit project forms
     add_project_form()
     edit_project_form()
 
-    # Delete project functionality
     _handle_project_deletion()
 
 
 def _create_projects_dataframe():
     """Helper function to create a DataFrame from project data."""
-    # Fix undefined function `parse_resources`
     from data_handlers import parse_resources
 
     return pd.DataFrame(
@@ -676,7 +656,6 @@ def _create_projects_dataframe():
                     pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
                 ).days
                 + 1,
-                # Parse assigned resources
                 "Assigned People": parse_resources(p["assigned_resources"])[0],
                 "Assigned Teams": parse_resources(p["assigned_resources"])[1],
                 "Assigned Departments": parse_resources(p["assigned_resources"])[2],
@@ -692,13 +671,11 @@ def _filter_projects_dataframe(projects_df):
         date_filter = _handle_date_filter(projects_df)
         resource_filters = _handle_resource_filters()
 
-        # Apply filters
         projects_df = _apply_search_filter(projects_df, search_term)
         projects_df = _apply_date_filter(projects_df, date_filter)
         projects_df = _apply_resource_filters(projects_df, resource_filters)
 
-        # Apply sorting and pagination
-        projects_df = _apply_sorting(projects_df, "projects")  # Use imported function
+        projects_df = _apply_sorting(projects_df, "projects")
         projects_df = paginate_dataframe(projects_df, "projects")
 
     return projects_df
@@ -816,7 +793,6 @@ def _handle_project_deletion():
     )
 
     if confirm_action(f"deleting project {delete_project}", "delete_project"):
-        # Remove the project from the data
         st.session_state.data["projects"] = [
             p for p in st.session_state.data["projects"] if p["name"] != delete_project
         ]
@@ -846,24 +822,18 @@ def display_visualize_data_tab():
         )
         return
 
-    # Filter Options
     filters = _get_visualization_filters()
 
-    # Create visualization data
     gantt_data = create_gantt_data(
         st.session_state.data["projects"], st.session_state.data
     )
 
-    # Apply filters
     gantt_data = _apply_visualization_filters(gantt_data, filters)
 
-    # Display Gantt chart
     _display_gantt_chart_with_filters(gantt_data)
 
-    # Check for resource conflicts
     _display_resource_conflicts(gantt_data)
 
-    # Drill-down view for resources
     _display_resource_drill_down(gantt_data)
 
 
@@ -994,7 +964,6 @@ def _display_resource_conflicts(gantt_data):
         )
         st.dataframe(filtered_conflicts, use_container_width=True)
 
-        # Update dropdown labels
         with st.expander("Search and Filter Conflicts", expanded=False):
             st.text_input("Search Conflicts", key="search_conflicts")
             st.multiselect("Filter Resource", options=[], key="filter_resource")
@@ -1086,15 +1055,12 @@ def display_resource_utilization_tab():
             "No resources found. Please add people, teams, or departments first."
         )
     else:
-        # Create base data
         gantt_data = create_gantt_data(
             st.session_state.data["projects"], st.session_state.data
         )
 
-        # Date range filter for utilization
         st.subheader("Utilization Period")
 
-        # Get min and max dates from projects
         min_date = min(
             [pd.to_datetime(p["start_date"]) for p in st.session_state.data["projects"]]
         )
@@ -1119,20 +1085,17 @@ def display_resource_utilization_tab():
                 max_value=max_date.date(),
             )
 
-        # Resource type filter
         resource_types = st.multiselect(
             "Resource Types",
             options=["Person", "Team", "Department"],
             default=["Person", "Team", "Department"],
         )
 
-        # Filter data by resource type
         if resource_types:
             filtered_data = gantt_data[gantt_data["Type"].isin(resource_types)]
         else:
             filtered_data = gantt_data
 
-        # Display utilization dashboard with the filtered data
         display_utilization_dashboard(filtered_data, start_date, end_date)
 
 
@@ -1154,7 +1117,6 @@ def display_import_export_data_tab():
             if data:
                 if st.button("Import Data"):
                     st.session_state.data = data
-                    # Regenerate department colors based on the imported data
                     departments = [d["name"] for d in data.get("departments", [])]
                     regenerate_department_colors(departments)
                     st.success("Data imported successfully")
@@ -1182,7 +1144,6 @@ def display_settings_tab():
     st.subheader("Currency Settings")
     currency, currency_format = load_currency_settings()
 
-    # Define a list of common currencies with both code and name
     currency_options = [
         "USD - United States Dollar",
         "EUR - Euro",
@@ -1198,7 +1159,6 @@ def display_settings_tab():
     currency_codes = [option.split(" - ")[0] for option in currency_options]
 
     with st.form("currency_settings_form"):
-        # Display currency dropdown with code and name
         selected_currency = st.selectbox(
             "Select Currency",
             options=currency_options,
@@ -1230,7 +1190,6 @@ def display_settings_tab():
     st.subheader("Daily Cost Settings")
     from color_management import save_daily_cost_settings
 
-    # Define or import the load_daily_cost_settings function
     from color_management import load_daily_cost_settings
 
     max_daily_cost = load_daily_cost_settings()
@@ -1247,38 +1206,31 @@ def initialize_session_state():
     """
     Initialize all session state variables used throughout the application.
     """
-    # Load data if not already loaded
     if "data" not in st.session_state:
         st.session_state.data = load_demo_data()
 
-    # Initialize settings.json with proper values
     settings_file = "settings.json"
     if not os.path.exists(settings_file):
-        # Get departments from the data
         departments = [d["name"] for d in st.session_state.data["departments"]]
 
-        # Create default settings structure
         default_settings = {
             "department_colors": {},
             "utilization_colorscale": [
-                [0, "#00FF00"],  # Green for 0% utilization
-                [0.5, "#FFFF00"],  # Yellow for 50% utilization
-                [1, "#FF0000"],  # Red for 100% or over-utilization
+                [0, "#00FF00"],
+                [0.5, "#FFFF00"],
+                [1, "#FF0000"],
             ],
         }
 
-        # Generate colors for departments
         colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
         for i, dept in enumerate(departments):
             default_settings["department_colors"][dept] = colorscale[
                 i % len(colorscale)
             ].lower()
 
-        # Save the settings file
         with open(settings_file, "w") as file:
             json.dump(default_settings, file, indent=4)
 
-    # Project form state variables
     if "new_project_people" not in st.session_state:
         st.session_state["new_project_people"] = []
     if "new_project_teams" not in st.session_state:
@@ -1367,13 +1319,11 @@ def apply_custom_css():
     )
 
 
-# Call the function to apply CSS
 apply_custom_css()
 
 
 def check_data_integrity():
     """Checks and fixes data integrity issues."""
-    # Check for teams with fewer than 2 members
     invalid_teams = [
         t["name"] for t in st.session_state.data["teams"] if len(t["members"]) < 2
     ]
@@ -1388,17 +1338,13 @@ def check_data_integrity():
 
 def main():
     """Orchestrates the Streamlit application flow with improved navigation."""
-    # Apply custom CSS
     apply_custom_css()
 
-    # Initialize session state
     initialize_session_state()
 
-    # Create sidebar with improved navigation
     with st.sidebar:
         st.title("Resource Management")
 
-        # Global Search
         st.markdown("### Quick Search")
         search_query = st.text_input("Search resources and projects")
         if search_query:
@@ -1410,17 +1356,14 @@ def main():
             else:
                 st.info("No results found")
 
-        # Main Navigation with icons and sections
         st.markdown("---")
         st.markdown("### Navigation")
 
-        # Dashboard section
         st.markdown("#### Dashboard")
         if st.button("🏠 Home", use_container_width=True):
             st.session_state["active_tab"] = "Home"
             st.rerun()
 
-        # Resource Management section
         st.markdown("#### Resource Management")
         if st.button("👥 Manage Resources", use_container_width=True):
             st.session_state["active_tab"] = "Manage Resources"
@@ -1429,18 +1372,14 @@ def main():
             st.session_state["active_tab"] = "Manage Projects"
             st.rerun()
 
-        # Visualization section
         st.markdown("#### Visualization")
-        if st.button(
-            "📈 Resource Allocation", use_container_width=True
-        ):  # Updated button label
+        if st.button("📈 Resource Allocation", use_container_width=True):
             st.session_state["active_tab"] = "Visualize Data"
             st.rerun()
         if st.button("📉 Resource Utilization", use_container_width=True):
             st.session_state["active_tab"] = "Resource Utilization"
             st.rerun()
 
-        # Tools section
         st.markdown("#### Tools")
         if st.button("💾 Import/Export", use_container_width=True):
             st.session_state["active_tab"] = "Import/Export Data"
@@ -1449,10 +1388,8 @@ def main():
             st.session_state["active_tab"] = "Settings"
             st.rerun()
 
-    # Main content area with title
     st.title("Resource Management App")
 
-    # Display the selected page
     if st.session_state.get("active_tab") == "Home":
         display_home_tab()
     elif st.session_state.get("active_tab") == "Manage Resources":
@@ -1468,7 +1405,6 @@ def main():
     elif st.session_state.get("active_tab") == "Settings":
         display_settings_tab()
     else:
-        # Default to home
         display_home_tab()
 
 
