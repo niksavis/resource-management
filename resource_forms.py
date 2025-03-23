@@ -396,28 +396,6 @@ def person_crud_form() -> None:
                                     st.success(f"Updated {selected_name} to {new_name}")
                                     st.rerun()
 
-    # Display people with cost information
-    if st.session_state.data["people"]:
-        st.subheader("People Overview")
-        people_df = pd.DataFrame(st.session_state.data["people"])
-        st.dataframe(
-            people_df,
-            column_config={
-                "name": "Name",
-                "role": "Role",
-                "department": "Department",
-                "team": "Team",
-                "daily_cost": st.column_config.NumberColumn(
-                    "Daily Cost (€)", format="€%.2f"
-                ),
-                "work_days": "Work Days",
-                "daily_work_hours": st.column_config.NumberColumn(
-                    "Daily Work Hours", format="%.1f hours"
-                ),
-            },
-            use_container_width=True,
-        )
-
 
 def team_crud_form() -> None:
     """Form for managing teams with improved layout."""
@@ -625,19 +603,6 @@ def team_crud_form() -> None:
                 use_container_width=True,
             )
 
-    if st.session_state.data["teams"]:
-        st.subheader("Teams Overview")
-        teams_df = pd.DataFrame(st.session_state.data["teams"])
-        st.dataframe(
-            teams_df,
-            column_config={
-                "name": "Team Name",
-                "department": "Department",
-                "members": "Members",
-            },
-            use_container_width=True,
-        )
-
 
 def department_crud_form() -> None:
     """Form for managing departments."""
@@ -752,7 +717,7 @@ def department_crud_form() -> None:
             col2.metric("Total Individual Cost", f"{total_individual_cost:,.2f}")
 
             # Pie Chart for Cost Breakdown
-            st.markdown("### Cost Breakdown (Pie Chart)")
+            st.markdown("### Cost Breakdown")
             pie_data = {
                 "Category": ["Teams", "Individuals"],
                 "Cost": [total_team_cost, total_individual_cost],
@@ -768,7 +733,7 @@ def department_crud_form() -> None:
             st.plotly_chart(pie_chart, use_container_width=True)
 
             # Bar Chart for Team Costs
-            st.markdown("### Team Cost Breakdown (Bar Chart)")
+            st.markdown("### Team Cost Breakdown")
             team_costs = [
                 {"Team": team["name"], "Cost": calculate_team_cost(team, people)}
                 for team in teams
@@ -788,7 +753,7 @@ def department_crud_form() -> None:
                 st.plotly_chart(bar_chart, use_container_width=True)
 
             # Interactive Table for Individual Costs
-            st.markdown("### Individual Cost Breakdown (Table)")
+            st.markdown("### Individual Cost Breakdown")
             individual_costs = [
                 {"Name": person["name"], "Cost": calculate_person_cost(person)}
                 for person in people
@@ -813,19 +778,6 @@ def department_crud_form() -> None:
                 },
                 use_container_width=True,
             )
-
-    if st.session_state.data["departments"]:
-        st.subheader("Departments Overview")
-        departments_df = pd.DataFrame(st.session_state.data["departments"])
-        st.dataframe(
-            departments_df,
-            column_config={
-                "name": "Department Name",
-                "teams": "Teams",
-                "members": "Members",
-            },
-            use_container_width=True,
-        )
 
 
 def add_project_form() -> None:

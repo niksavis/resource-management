@@ -252,14 +252,16 @@ def display_manage_resources_tab():
         st.session_state["resource_view"] = "All Resources"
 
     # Add tabs for different resource views
+    previous_view = st.session_state.get("resource_view", "All Resources")
     view_type = st.radio(
         "View",
         ["All Resources", "People", "Teams", "Departments"],
-        index=["All Resources", "People", "Teams", "Departments"].index(
-            st.session_state["resource_view"]
-        ),
-        horizontal=True,
+        index=["All Resources", "People", "Teams", "Departments"].index(previous_view),
         key="resource_view_selector",
+        # Immediately update session state:
+        on_change=lambda: st.session_state.update(
+            {"resource_view": st.session_state.resource_view_selector}
+        ),
     )
 
     # Update session state with the selected view
