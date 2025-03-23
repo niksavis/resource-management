@@ -953,25 +953,60 @@ def _display_resource_conflicts(gantt_data):
         st.plotly_chart(fig, use_container_width=True)
 
         st.subheader("Conflict Details")
-        filtered_conflicts = filter_dataframe(
-            conflicts_df.rename(
-                columns={
-                    "resource": "Resource",
-                    "project1": "Project 1",
-                    "project2": "Project 2",
-                    "overlap_days": "Overlapping Days",
-                }
-            ),
-            key="Conflicts",
-            columns=["Resource", "Project 1", "Project 2", "Overlapping Days"],
-        )
-        st.dataframe(filtered_conflicts, use_container_width=True)
 
+        # Add search and filter inputs
         with st.expander("Search and Filter Conflicts", expanded=False):
-            st.text_input("Search Conflicts", key="search_conflicts")
-            st.multiselect("Filter Resource", options=[], key="filter_resource")
-            st.multiselect("Filter Project 1", options=[], key="filter_project1")
-            st.multiselect("Filter Project 2", options=[], key="filter_project2")
+            search_term = st.text_input("Search Conflicts", key="search_conflicts")
+            resource_filter = st.multiselect(
+                "Filter Resource",
+                options=conflicts_df["resource"].unique(),
+                key="filter_resource",
+            )
+            project1_filter = st.multiselect(
+                "Filter Project 1",
+                options=conflicts_df["project1"].unique(),
+                key="filter_project1",
+            )
+            project2_filter = st.multiselect(
+                "Filter Project 2",
+                options=conflicts_df["project2"].unique(),
+                key="filter_project2",
+            )
+
+        # Apply search and filters
+        filtered_conflicts = conflicts_df.rename(
+            columns={
+                "resource": "Resource",
+                "project1": "Project 1",
+                "project2": "Project 2",
+                "overlap_start": "Overlap Start",
+                "overlap_end": "Overlap End",
+                "overlap_days": "Overlapping Days",
+            }
+        )
+
+        if search_term:
+            mask = filtered_conflicts.apply(
+                lambda row: search_term.lower()
+                in row.astype(str).str.lower().to_string(),
+                axis=1,
+            )
+            filtered_conflicts = filtered_conflicts[mask]
+
+        if resource_filter:
+            filtered_conflicts = filtered_conflicts[
+                filtered_conflicts["Resource"].isin(resource_filter)
+            ]
+        if project1_filter:
+            filtered_conflicts = filtered_conflicts[
+                filtered_conflicts["Project 1"].isin(project1_filter)
+            ]
+        if project2_filter:
+            filtered_conflicts = filtered_conflicts[
+                filtered_conflicts["Project 2"].isin(project2_filter)
+            ]
+
+        st.dataframe(filtered_conflicts, use_container_width=True)
     else:
         st.success("No resource conflicts detected")
 
