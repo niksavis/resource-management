@@ -458,7 +458,7 @@ def _display_team_cards(teams, people, currency):
                 )
                 st.markdown(
                     f"""
-                    <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                    <div class="card team-card">
                         <h3>👥 {team["name"]}</h3>
                         <p><strong>Department:</strong> {team["department"] or "None"}</p>
                         <p><strong>Members:</strong> {len(team["members"])}</p>
