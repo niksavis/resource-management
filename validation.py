@@ -15,7 +15,7 @@ def validate_name_field(name: str, field_type: str) -> bool:
     Validates a name field to ensure it is not empty and does not contain invalid characters.
     """
     if not name.strip():
-        st.error(f"{field_type} name cannot be empty.")
+        st.error(f"The {field_type} name is required.")
         return False
     if len(name) > 50:
         st.error(f"{field_type} name cannot exceed 50 characters.")
@@ -73,7 +73,7 @@ def validate_budget(budget: float) -> bool:
     Validates a budget to ensure it is a positive number.
     """
     if budget < 0:
-        st.error("Budget must be a positive number.")
+        st.error("Budget must be a non-negative number.")
         return False
     return True
 

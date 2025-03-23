@@ -74,7 +74,7 @@ def person_crud_form() -> None:
         with st.form("add_person"):
             st.subheader("Add New Person")
 
-            # Create two columns for better layout
+            # Use consistent two-column layout
             col1, col2 = st.columns([1, 1])
 
             # Personal Information Section
@@ -220,6 +220,7 @@ def person_crud_form() -> None:
             )
 
             if selected_person:
+                # Make expander collapsed
                 with st.expander("Edit Person", expanded=False):
                     with st.form("edit_person_form"):
                         col1, col2 = st.columns([1, 1])
@@ -318,7 +319,9 @@ def person_crud_form() -> None:
                             d for d, checked in new_work_days.items() if checked
                         ]
 
-                        update_button = st.form_submit_button("Update Person")
+                        update_button = st.form_submit_button(
+                            "Update Person", use_container_width=True
+                        )
 
                         if update_button:
                             # Validation for updated fields
@@ -399,7 +402,7 @@ def person_crud_form() -> None:
 
 def team_crud_form() -> None:
     """Form for managing teams with improved layout."""
-    # Create tabs for Add/Edit/Delete operations
+    # Use tabs for the Team CRUD
     team_tabs = st.tabs(["Add Team", "Edit Team", "Delete Team"])
 
     # Add Team Tab
@@ -407,7 +410,7 @@ def team_crud_form() -> None:
         with st.form("add_team"):
             st.subheader("Add New Team")
 
-            # Team Information Section
+            # Consistent two-column layout
             col1, col2 = st.columns([1, 1])
 
             with col1:
@@ -532,7 +535,9 @@ def team_crud_form() -> None:
                         )
                         st.write(f"Calculated Team Daily Cost: {calculated_cost:,.2f}")
 
-                        update_button = st.form_submit_button("Update Team")
+                        update_button = st.form_submit_button(
+                            "Update Team", use_container_width=True
+                        )
 
                         if update_button:
                             if len(new_members) < 2:
@@ -610,7 +615,7 @@ def department_crud_form() -> None:
         with st.form("add_department"):
             st.write("Add new department")
             name = st.text_input("Department Name")
-            submit = st.form_submit_button("Add Department")
+            submit = st.form_submit_button("Add Department", use_container_width=True)
 
             if submit and name:
                 if not validate_name_field(name, "Department"):
@@ -663,7 +668,9 @@ def department_crud_form() -> None:
                             "Department Name", value=selected_dept_data["name"]
                         )
 
-                        update_button = st.form_submit_button("Update Department")
+                        update_button = st.form_submit_button(
+                            "Update Department", use_container_width=True
+                        )
 
                         if update_button:
                             # Update department info and related references
@@ -842,7 +849,9 @@ def add_project_form() -> None:
             )
             st.session_state["new_project_teams"] = selected_teams
 
-            submit = st.form_submit_button("Add Project")  # Add missing submit button
+            submit = st.form_submit_button(
+                "Add Project", use_container_width=True
+            )  # Add missing submit button
 
             if submit:
                 # Validation for budget
@@ -1018,7 +1027,9 @@ def edit_project_form() -> None:
         )
         st.bar_chart(resource_cost_df.set_index("Resource Type"))
 
-        submit = st.form_submit_button("Update Project")  # Add missing submit button
+        submit = st.form_submit_button(
+            "Update Project", use_container_width=True
+        )  # Add missing submit button
 
         if submit:
             # Validation for budget

@@ -26,6 +26,11 @@ def display_filtered_resource(
     Converts session data to a DataFrame, applies filtering, and displays the results.
     Refactored to improve readability and maintainability.
     """
+    # If no data, show a helpful empty state message
+    if not st.session_state.data.get(data_key, []):
+        st.info(f"No {label} found. Add your first {label[:-1]} using the form below.")
+        return
+
     data = st.session_state.data[data_key]
     if not data:
         st.warning(f"No {label} found. Please add some first.")

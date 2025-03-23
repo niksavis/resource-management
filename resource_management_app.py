@@ -460,45 +460,47 @@ def _display_person_cards(people, currency):
     cols = st.columns(3)
     for idx, person in enumerate(people):
         with cols[idx % 3]:
-            st.markdown(
-                f"""
-                <div class="card person-card">
-                    <h3>👤 {person["name"]}</h3>
-                    <div style="background-color: {"rgba(255,215,0,0.2)" if person["team"] else "rgba(100,100,100,0.1)"}; padding: 5px; border-radius: 4px; margin-bottom: 10px;">
-                        <span style="font-weight: bold;">{"👥 " + person["team"] if person["team"] else "Individual Contributor"}</span>
+            with st.container():
+                st.markdown(
+                    f"""
+                    <div class="card person-card">
+                        <h3>👤 {person["name"]}</h3>
+                        <div style="background-color: {"rgba(255,215,0,0.2)" if person["team"] else "rgba(100,100,100,0.1)"}; padding: 5px; border-radius: 4px; margin-bottom: 10px;">
+                            <span style="font-weight: bold;">{"👥 " + person["team"] if person["team"] else "Individual Contributor"}</span>
+                        </div>
+                        <p><strong>Role:</strong> {person["role"]}</p>
+                        <p><strong>Department:</strong> {person["department"]}</p>
+                        <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
+                        <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
+                        <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
                     </div>
-                    <p><strong>Role:</strong> {person["role"]}</p>
-                    <p><strong>Department:</strong> {person["department"]}</p>
-                    <p><strong>Daily Cost:</strong> {currency} {person["daily_cost"]:,.2f}</p>
-                    <p><strong>Work Days:</strong> {", ".join(person["work_days"])}</p>
-                    <p><strong>Hours:</strong> {person["daily_work_hours"]} per day</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 def _display_team_cards(teams, people, currency):
     """Display team cards in a consistent grid."""
-    cols = st.columns(3)
+    cols = st.columns(3)  # Change from st.columns(2) to st.columns(3)
     for idx, team in enumerate(teams):
-        with cols[idx % 3]:
-            team_cost = sum(
-                person["daily_cost"]
-                for person in people
-                if person["name"] in team["members"]
-            )
-            st.markdown(
-                f"""
-                <div class="card team-card">
-                    <h3>👥 {team["name"]}</h3>
-                    <p><strong>Department:</strong> {team["department"]}</p>
-                    <p><strong>Members:</strong> {len(team["members"])}</p>
-                    <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        with cols[idx % 3]:  # Adjust to match the new column layout
+            with st.container():
+                team_cost = sum(
+                    person["daily_cost"]
+                    for person in people
+                    if person["name"] in team["members"]
+                )
+                st.markdown(
+                    f"""
+                    <div class="card team-card">
+                        <h3>👥 {team["name"]}</h3>
+                        <p><strong>Department:</strong> {team["department"]}</p>
+                        <p><strong>Members:</strong> {len(team["members"])}</p>
+                        <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 def _display_department_cards(departments, people, currency):
@@ -506,22 +508,23 @@ def _display_department_cards(departments, people, currency):
     cols = st.columns(3)
     for idx, dept in enumerate(departments):
         with cols[idx % 3]:
-            dept_cost = sum(
-                person["daily_cost"]
-                for person in people
-                if person["department"] == dept["name"]
-            )
-            st.markdown(
-                f"""
-                <div class="card department-card">
-                    <h3>🏢 {dept["name"]}</h3>
-                    <p><strong>Teams:</strong> {len(dept["teams"])}</p>
-                    <p><strong>Members:</strong> {len(dept["members"])}</p>
-                    <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            with st.container():
+                dept_cost = sum(
+                    person["daily_cost"]
+                    for person in people
+                    if person["department"] == dept["name"]
+                )
+                st.markdown(
+                    f"""
+                    <div class="card department-card">
+                        <h3>🏢 {dept["name"]}</h3>
+                        <p><strong>Teams:</strong> {len(dept["teams"])}</p>
+                        <p><strong>Members:</strong> {len(dept["members"])}</p>
+                        <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 def _display_resource_visual_map(people, teams, departments, type_filter):
@@ -1330,7 +1333,7 @@ def apply_custom_css():
     st.markdown(
         """
     <style>
-    /* Card styling with consistent height and hover effects */
+    /* Card styling with hover effects */
     div.stMarkdown div.card {
         border: 1px solid rgba(49, 51, 63, 0.2);
         border-radius: 0.5rem;
@@ -1338,10 +1341,10 @@ def apply_custom_css():
         margin-bottom: 1rem;
         transition: all 0.3s ease;
         background-color: rgba(255, 255, 255, 0.05);
-        min-height: 200px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        /* Remove align-items: center to restore left-aligned text */
     }
     
     div.stMarkdown div.card:hover {
@@ -1383,12 +1386,12 @@ def apply_custom_css():
     /* Responsive layout */
     @media (max-width: 1024px) {
         div.stMarkdown div.card {
-            min-height: 180px;
+            /* Allow dynamic height for smaller screens */
         }
     }
     @media (max-width: 768px) {
         div.stMarkdown div.card {
-            min-height: 160px;
+            /* Allow dynamic height for mobile screens */
         }
     }
     </style>
