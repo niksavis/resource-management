@@ -31,18 +31,15 @@ from data_handlers import (
     find_resource_conflicts,
     load_json,
     save_json,
-    display_gantt_chart,  # Import display_gantt_chart to fix undefined name
-    display_utilization_dashboard,  # Import display_utilization_dashboard to fix undefined name
+    display_gantt_chart,
+    display_utilization_dashboard,
 )
-from resource_forms import (
-    add_project_form,
-    department_crud_form,
-    edit_project_form,
-    person_crud_form,
-    team_crud_form,
-    delete_resource,  # Import delete_resource to fix undefined name
-)
+from person_crud_form import person_crud_form
+from team_crud_form import team_crud_form
+from department_crud_form import department_crud_form
+from project_crud_form import add_project_form, edit_project_form
 from utils import (
+    delete_resource,
     _apply_sorting,
     check_circular_dependencies,
     confirm_action,
@@ -67,7 +64,6 @@ if "data" not in st.session_state:
 
 def display_action_bar():
     """Display breadcrumbs with improved design."""
-    # Display breadcrumbs with the current page visually distinct
     active_tab = st.session_state.get("active_tab", "Home")
     resource_view = st.session_state.get("resource_view", "All Resources")
     breadcrumb = f"Home > {active_tab}"

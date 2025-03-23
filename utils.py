@@ -271,3 +271,29 @@ def validate_team_integrity(team_name):
     if team and len(team["members"]) < 2:
         return False
     return True
+
+
+def delete_resource(resource_list, resource_name, resource_type=None):
+    """
+    Deletes a resource from the given resource list by name.
+    Optionally, handles additional cleanup based on the resource type.
+    """
+    # Filter out the resource to delete
+    updated_list = [r for r in resource_list if r["name"] != resource_name]
+
+    # Update the session state
+    if resource_type == "team":
+        # Remove the team from all people
+        for person in st.session_state.data["people"]:
+            if person["team"] == resource_name:
+                person["team"] = None
+    elif resource_type == "department":
+        # Remove the department from all people and teams
+        for person in st.session_state.data["people"]:
+            if person["department"] == resource_name:
+                person["department"] = None
+        for team in st.session_state.data["teams"]:
+            if team["department"] == resource_name:
+                team["department"] = None
+
+    return updated_list
