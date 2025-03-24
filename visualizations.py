@@ -124,11 +124,11 @@ def _highlight_overallocated_resources(fig: go.Figure, df: pd.DataFrame) -> go.F
 
     for i, resource in enumerate(df["Resource"].unique()):
         overallocation = overallocation_map.get(resource, 0)
-        if overallocation > 0:
+        if overallocation > 0:  # Highlight only if Overallocation % > 0
             fig.add_shape(
                 type="rect",
-                x0=df["Start"].min(),
-                x1=df["Finish"].max(),
+                x0=df[df["Resource"] == resource]["Start"].min(),
+                x1=df[df["Resource"] == resource]["Finish"].max(),
                 y0=i - 0.4,
                 y1=i + 0.4,
                 line=dict(color="rgba(255,0,0,0.1)", width=0),

@@ -155,7 +155,13 @@ def calculate_resource_utilization(
         resource_type = resource_df["Type"].iloc[0]
         department = resource_df["Department"].iloc[0]
 
-        days_utilized = calculate_resource_allocation(resource, start_date, end_date)
+        # Calculate days utilized by summing overlapping days for all projects
+        days_utilized = 0
+        for _, row in resource_df.iterrows():
+            overlap_start = max(start_date, row["Start"])
+            overlap_end = min(end_date, row["Finish"])
+            if overlap_start <= overlap_end:
+                days_utilized += (overlap_end - overlap_start).days + 1
 
         utilization_percentage = (days_utilized / total_period_days) * 100
         overallocation_percentage = max(0, utilization_percentage - 100)
