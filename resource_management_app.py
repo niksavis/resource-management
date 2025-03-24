@@ -27,7 +27,6 @@ from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
     create_gantt_data,
-    filter_dataframe,
     find_resource_conflicts,
     load_json,
     save_json,
