@@ -116,7 +116,7 @@ def display_home_tab():
             ]
         )
 
-        # Sort projects by priority (ascending) and end date (ascending)
+        # Sort projects by priority and end date
         projects_df = projects_df.sort_values(
             by=["Priority", "Finish"], ascending=[False, False]
         )

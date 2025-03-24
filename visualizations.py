@@ -23,6 +23,9 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
         st.warning("No data available to visualize.")
         return
 
+    # Sort by priority to ensure priority 1 projects are at the top
+    df = df.sort_values(by=["Priority", "Finish"], ascending=[False, False])
+
     df_with_utilization = _prepare_gantt_data(df)
 
     department_colors = {
