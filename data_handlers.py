@@ -21,14 +21,22 @@ import streamlit as st
 import plotly.express as px
 
 # Local module imports
-from calculation_helpers import calculate_project_duration, is_resource_overallocated
+from calculation_helpers import calculate_project_duration
 from utils import paginate_dataframe
 
 
 def load_json(file: io.TextIOWrapper) -> Dict[str, any]:
     """Loads and returns JSON data from a file safely."""
     try:
-        return json.load(file)
+        data = json.load(file)
+        for person in data.get("people", []):
+            person["capacity_hours_per_week"] = person["daily_work_hours"] * len(
+                person["work_days"]
+            )
+            person["capacity_hours_per_month"] = (
+                person["capacity_hours_per_week"] * 4.33
+            )
+        return data
     except json.JSONDecodeError as e:
         st.error(f"Invalid JSON format: {e}")
         return None
@@ -121,27 +129,6 @@ def calculate_date_range(
     return start_date, end_date, total_period_days
 
 
-def calculate_resource_allocation(
-    resource_df: pd.DataFrame, start_date: datetime, end_date: datetime
-) -> Tuple[int, int]:
-    """Calculates allocation metrics for a single resource."""
-    resources_per_day = {}
-
-    for _, row in resource_df.iterrows():
-        project_start = max(row["Start"], start_date)
-        project_end = min(row["Finish"], end_date)
-
-        project_dates = pd.date_range(start=project_start, end=project_end)
-
-        for date in project_dates:
-            resources_per_day[date] = resources_per_day.get(date, 0) + 1
-
-    days_utilized = len(resources_per_day)
-    days_overallocated = sum(1 for count in resources_per_day.values() if count > 1)
-
-    return days_utilized, days_overallocated
-
-
 @st.cache_data(ttl=3600)
 def calculate_resource_utilization(
     gantt_data: pd.DataFrame,
@@ -149,7 +136,7 @@ def calculate_resource_utilization(
     end_date: Optional[datetime] = None,
 ) -> pd.DataFrame:
     """Computes utilization metrics for each resource."""
-    if gantt_data.empty:
+    if gantt_data.empty:  # Explicitly check if DataFrame is empty
         return pd.DataFrame()
 
     start_date, end_date, total_period_days = calculate_date_range(
@@ -167,14 +154,10 @@ def calculate_resource_utilization(
         resource_type = resource_df["Type"].iloc[0]
         department = resource_df["Department"].iloc[0]
 
-        days_utilized, days_overallocated = calculate_resource_allocation(
-            resource_df, start_date, end_date
-        )
+        days_utilized = calculate_resource_allocation(resource, start_date, end_date)
 
         utilization_percentage = (days_utilized / total_period_days) * 100
-        overallocation_percentage = (
-            (days_overallocated / total_period_days) * 100 if days_utilized > 0 else 0
-        )
+        overallocation_percentage = max(0, utilization_percentage - 100)
 
         if resource_type == "Person":
             person = next(
@@ -203,12 +186,7 @@ def calculate_resource_utilization(
                 "Days Utilized": days_utilized,
                 "Total Period Days": total_period_days,
                 "Utilization %": utilization_percentage,
-                "Days Overallocated": days_overallocated,
                 "Overallocation %": overallocation_percentage,
-                "Projects": len(resource_df),
-                "Overallocated": is_resource_overallocated(
-                    days_overallocated, total_period_days
-                ),
                 "Cost (€)": f"{cost:,.2f}",
             }
         )
@@ -546,3 +524,155 @@ def sort_projects_by_priority_and_date(projects):
         projects,
         key=lambda p: (p["priority"], pd.to_datetime(p["end_date"])),
     )
+
+
+def calculate_resource_capacity(resource_name, resource_type, start_date, end_date):
+    """Calculate total capacity hours for a resource over a date range."""
+    if resource_type == "Person":
+        person = next(
+            (p for p in st.session_state.data["people"] if p["name"] == resource_name),
+            None,
+        )
+        if not person:
+            return 0
+
+        # Calculate work days in the period
+        date_range = pd.date_range(start=start_date, end=end_date)
+        work_days_in_period = sum(
+            1 for d in date_range if d.strftime("%a")[:2].upper() in person["work_days"]
+        )
+
+        # Calculate capacity
+        return work_days_in_period * person["daily_work_hours"]
+
+    elif resource_type == "Team":
+        team = next(
+            (t for t in st.session_state.data["teams"] if t["name"] == resource_name),
+            None,
+        )
+        if not team:
+            return 0
+
+        # Sum capacity of all team members
+        return sum(
+            calculate_resource_capacity(member, "Person", start_date, end_date)
+            for member in team["members"]
+        )
+
+    return 0
+
+
+def calculate_resource_allocation(resource_name, start_date, end_date):
+    """Calculate allocated hours for a resource across all projects."""
+    total_allocated_hours = 0
+    for project in st.session_state.data["projects"]:
+        project_start = pd.to_datetime(project["start_date"])
+        project_end = pd.to_datetime(project["end_date"])
+
+        if project_end >= pd.Timestamp(start_date) and project_start <= pd.Timestamp(
+            end_date
+        ):
+            assigned_resources = project["assigned_resources"]
+
+            # Check if assigned_resources is a list or string
+            if isinstance(assigned_resources, (list, str)):
+                if resource_name in assigned_resources:
+                    allocation = next(
+                        (
+                            a
+                            for a in project.get("resource_allocations", [])
+                            if a["resource"] == resource_name
+                        ),
+                        {"allocation_percentage": 100},
+                    )
+                    resource_type = (
+                        "Person"
+                        if resource_name
+                        in [p["name"] for p in st.session_state.data["people"]]
+                        else "Team"
+                    )
+                    capacity = calculate_resource_capacity(
+                        resource_name, resource_type, project_start, project_end
+                    )
+                    allocated_hours = capacity * (
+                        allocation["allocation_percentage"] / 100
+                    )
+                    total_allocated_hours += allocated_hours
+
+            # Check if assigned_resources is a DataFrame or Series
+            elif isinstance(assigned_resources, (pd.DataFrame, pd.Series)):
+                if resource_name in assigned_resources.values:
+                    allocation = next(
+                        (
+                            a
+                            for a in project.get("resource_allocations", [])
+                            if a["resource"] == resource_name
+                        ),
+                        {"allocation_percentage": 100},
+                    )
+                    resource_type = (
+                        "Person"
+                        if resource_name
+                        in [p["name"] for p in st.session_state.data["people"]]
+                        else "Team"
+                    )
+                    capacity = calculate_resource_capacity(
+                        resource_name, resource_type, project_start, project_end
+                    )
+                    allocated_hours = capacity * (
+                        allocation["allocation_percentage"] / 100
+                    )
+                    total_allocated_hours += allocated_hours
+
+            # If assigned_resources is neither a list/string nor a DataFrame/Series
+            else:
+                st.warning(
+                    f"Unexpected type for assigned_resources in project {project['name']}"
+                )
+
+    return total_allocated_hours
+
+
+def calculate_capacity_data(start_date, end_date):
+    """Calculate capacity and allocation data for all resources."""
+    capacity_data = []
+
+    # Calculate for people
+    for person in st.session_state.data["people"]:
+        capacity = calculate_resource_capacity(
+            person["name"], "Person", start_date, end_date
+        )
+        allocation = calculate_resource_allocation(person["name"], start_date, end_date)
+
+        capacity_data.append(
+            {
+                "Resource": person["name"],
+                "Type": "Person",
+                "Department": person["department"],
+                "Capacity (hours)": capacity,
+                "Allocated (hours)": allocation,
+                "Utilization %": (allocation / capacity * 100) if capacity > 0 else 0,
+                "Available (hours)": max(0, capacity - allocation),
+            }
+        )
+
+    # Calculate for teams
+    for team in st.session_state.data["teams"]:
+        capacity = calculate_resource_capacity(
+            team["name"], "Team", start_date, end_date
+        )
+        allocation = calculate_resource_allocation(team["name"], start_date, end_date)
+
+        capacity_data.append(
+            {
+                "Resource": team["name"],
+                "Type": "Team",
+                "Department": team["department"],
+                "Capacity (hours)": capacity,
+                "Allocated (hours)": allocation,
+                "Utilization %": (allocation / capacity * 100) if capacity > 0 else 0,
+                "Available (hours)": max(0, capacity - allocation),
+            }
+        )
+
+    return pd.DataFrame(capacity_data)

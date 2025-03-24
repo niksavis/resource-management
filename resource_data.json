@@ -7,7 +7,9 @@
       "team": null,
       "daily_cost": 600,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Sarah Johnson",
@@ -16,7 +18,9 @@
       "team": "Network Planning Team",
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Michael Chen",
@@ -25,7 +29,9 @@
       "team": "Network Planning Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Emma Rodriguez",
@@ -34,7 +40,9 @@
       "team": "Network Planning Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "David Thompson",
@@ -43,7 +51,9 @@
       "team": "Network Planning Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "James Williams",
@@ -52,7 +62,9 @@
       "team": "Network Implementation Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Olivia Garcia",
@@ -61,7 +73,9 @@
       "team": "Network Implementation Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ethan Martinez",
@@ -70,7 +84,9 @@
       "team": "Network Implementation Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Sophia Anderson",
@@ -79,7 +95,9 @@
       "team": "Network Implementation Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Benjamin Taylor",
@@ -88,7 +106,9 @@
       "team": "Network Operations Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Isabella Thomas",
@@ -97,7 +117,9 @@
       "team": "Network Operations Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Alexander Hernandez",
@@ -106,7 +128,9 @@
       "team": "Network Operations Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Mia Jackson",
@@ -115,7 +139,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "William Davis",
@@ -124,7 +150,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Charlotte White",
@@ -133,7 +161,9 @@
       "team": "Frontend Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Jacob Harris",
@@ -142,7 +172,9 @@
       "team": "Frontend Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Amelia Clark",
@@ -151,7 +183,9 @@
       "team": "Frontend Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Daniel Lewis",
@@ -160,7 +194,9 @@
       "team": "Frontend Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Harper Young",
@@ -169,7 +205,9 @@
       "team": "Backend Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Matthew Walker",
@@ -178,7 +216,9 @@
       "team": "Backend Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Abigail Allen",
@@ -187,7 +227,9 @@
       "team": "Backend Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Joseph King",
@@ -196,7 +238,9 @@
       "team": "Backend Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Elizabeth Wright",
@@ -205,7 +249,9 @@
       "team": "Mobile App Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Samuel Lopez",
@@ -214,7 +260,9 @@
       "team": "Mobile App Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Grace Hill",
@@ -223,7 +271,9 @@
       "team": "Mobile App Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Christopher Scott",
@@ -232,7 +282,9 @@
       "team": "Mobile App Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Victoria Green",
@@ -241,7 +293,9 @@
       "team": "QA Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Andrew Adams",
@@ -250,7 +304,9 @@
       "team": "QA Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Scarlett Baker",
@@ -259,7 +315,9 @@
       "team": "QA Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Joshua Nelson",
@@ -268,7 +326,9 @@
       "team": "QA Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ella Carter",
@@ -277,7 +337,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "John Mitchell",
@@ -286,7 +348,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Oliver Brown",
@@ -295,7 +359,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ryan Phillips",
@@ -304,7 +370,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Chloe Evans",
@@ -313,7 +381,9 @@
       "team": "Infrastructure Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Nathan Turner",
@@ -322,7 +392,9 @@
       "team": "Infrastructure Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Lily Torres",
@@ -331,7 +403,9 @@
       "team": "Infrastructure Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Caleb Morgan",
@@ -340,7 +414,9 @@
       "team": "Infrastructure Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Nora Cooper",
@@ -349,7 +425,9 @@
       "team": "Security Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Isaac Rivera",
@@ -358,7 +436,9 @@
       "team": "Security Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Leah Reed",
@@ -367,7 +447,9 @@
       "team": "Security Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Owen Bailey",
@@ -376,7 +458,9 @@
       "team": "Security Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Hannah Peterson",
@@ -385,7 +469,9 @@
       "team": "Enterprise Systems Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Luke Kelly",
@@ -394,7 +480,9 @@
       "team": "Enterprise Systems Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Zoe Howard",
@@ -403,7 +491,9 @@
       "team": "Enterprise Systems Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Gabriel Cox",
@@ -412,7 +502,9 @@
       "team": "Enterprise Systems Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Audrey Ward",
@@ -421,7 +513,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Theodore Brooks",
@@ -430,7 +524,9 @@
       "team": "Consumer Products Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Claire Richardson",
@@ -439,7 +535,9 @@
       "team": "Consumer Products Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Julian Watson",
@@ -448,7 +546,9 @@
       "team": "Consumer Products Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Skylar Price",
@@ -457,7 +557,9 @@
       "team": "Consumer Products Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Elias Jenkins",
@@ -466,7 +568,9 @@
       "team": "Enterprise Products Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Naomi Powell",
@@ -475,7 +579,9 @@
       "team": "Enterprise Products Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Adrian Long",
@@ -484,7 +590,9 @@
       "team": "Enterprise Products Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Madeline Russell",
@@ -493,7 +601,9 @@
       "team": "Enterprise Products Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ian Barnes",
@@ -502,7 +612,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Willow Simmons",
@@ -511,7 +623,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Jason Ross",
@@ -520,7 +634,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Jade Foster",
@@ -529,7 +645,9 @@
       "team": "User Experience Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Wyatt Butler",
@@ -538,7 +656,9 @@
       "team": "User Experience Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Isabelle Simmons",
@@ -547,7 +667,9 @@
       "team": "User Experience Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Levi Griffin",
@@ -556,7 +678,9 @@
       "team": "User Experience Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Violet Hayes",
@@ -565,7 +689,9 @@
       "team": "Service Design Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Grayson Fisher",
@@ -574,7 +700,9 @@
       "team": "Service Design Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Lincoln Wood",
@@ -583,7 +711,9 @@
       "team": "Service Design Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Stella Rogers",
@@ -592,7 +722,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Hudson Reed",
@@ -601,7 +733,9 @@
       "team": "Field Operations Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Nova Coleman",
@@ -610,7 +744,9 @@
       "team": "Field Operations Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ezra Perry",
@@ -619,7 +755,9 @@
       "team": "Field Operations Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Autumn Bryant",
@@ -628,7 +766,9 @@
       "team": "Field Operations Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Kai Russell",
@@ -637,7 +777,9 @@
       "team": "Customer Support Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Iris Gray",
@@ -646,7 +788,9 @@
       "team": "Customer Support Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Oscar Sullivan",
@@ -655,7 +799,9 @@
       "team": "Customer Support Team",
       "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ruby Price",
@@ -664,7 +810,9 @@
       "team": "Customer Support Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Miles Patterson",
@@ -673,7 +821,9 @@
       "team": "Technical Support Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Eden Campbell",
@@ -682,7 +832,9 @@
       "team": "Technical Support Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Felix Hughes",
@@ -691,7 +843,9 @@
       "team": "Technical Support Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ivy Washington",
@@ -700,7 +854,9 @@
       "team": "Technical Support Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Harvey Butler",
@@ -709,7 +865,9 @@
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Lydia Simmons",
@@ -718,7 +876,9 @@
       "team": "Innovation Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Rowan Foster",
@@ -727,7 +887,9 @@
       "team": "Innovation Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Emery Ross",
@@ -736,7 +898,9 @@
       "team": "Innovation Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Rosalie Sanders",
@@ -745,7 +909,9 @@
       "team": "Innovation Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Sawyer Barnes",
@@ -754,7 +920,9 @@
       "team": "Technology Research Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Dahlia Reed",
@@ -763,7 +931,9 @@
       "team": "Technology Research Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Jasper Coleman",
@@ -772,7 +942,9 @@
       "team": "Technology Research Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     },
     {
       "name": "Ophelia Gray",
@@ -781,7 +953,9 @@
       "team": "Technology Research Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     }
   ],
   "teams": [

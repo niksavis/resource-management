@@ -30,8 +30,6 @@ from data_handlers import (
     find_resource_conflicts,
     load_json,
     save_json,
-    display_gantt_chart,
-    display_utilization_dashboard,
     sort_projects_by_priority_and_date,
 )
 from person_crud_form import person_crud_form
@@ -46,6 +44,11 @@ from utils import (
     display_filtered_resource,
     paginate_dataframe,
     format_circular_dependency_message,
+)
+from visualizations import (
+    display_capacity_planning_dashboard,  # Added import
+    display_gantt_chart,
+    display_utilization_dashboard,
 )
 
 # Set up basic page configuration
@@ -741,10 +744,13 @@ def _apply_search_filter(projects_df, search_term):
 def _apply_date_filter(projects_df, date_range):
     """Apply date range filter to the projects dataframe."""
     if len(date_range) == 2:
-        start_date, end_date = date_range
+        start_date, end_date = (
+            pd.to_datetime(date_range[0]),
+            pd.to_datetime(date_range[1]),
+        )  # Ensure consistent types
         projects_df = projects_df[
-            (pd.to_datetime(projects_df["Start Date"]) >= pd.to_datetime(start_date))
-            & (pd.to_datetime(projects_df["End Date"]) <= pd.to_datetime(end_date))
+            (pd.to_datetime(projects_df["Start Date"]) >= start_date)
+            & (pd.to_datetime(projects_df["End Date"]) <= end_date)
         ]
     return projects_df
 
@@ -1405,6 +1411,9 @@ def main():
         if st.button("📉 Resource Utilization", use_container_width=True):
             st.session_state["active_tab"] = "Resource Utilization"
             st.rerun()
+        if st.sidebar.button("📊 Capacity Planning", use_container_width=True):
+            st.session_state["active_tab"] = "Capacity Planning"
+            st.rerun()
 
         st.markdown("#### Tools")
         if st.button("💾 Import/Export", use_container_width=True):
@@ -1430,8 +1439,15 @@ def main():
         display_import_export_data_tab()
     elif st.session_state.get("active_tab") == "Settings":
         display_settings_tab()
+    elif st.session_state.get("active_tab") == "Capacity Planning":
+        display_capacity_planning_tab()
     else:
         display_home_tab()
+
+
+def display_capacity_planning_tab():
+    display_action_bar()
+    display_capacity_planning_dashboard()
 
 
 if __name__ == "__main__":

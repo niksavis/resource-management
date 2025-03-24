@@ -16,14 +16,14 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # Local module imports
-from color_management import load_utilization_colorscale, manage_visualization_colors
+from color_management import manage_visualization_colors
 from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
+    calculate_capacity_data,  # Added import
     filter_dataframe,
     find_resource_conflicts,  # Added missing import
 )
-from utils import paginate_dataframe
 
 
 def display_gantt_chart(df: pd.DataFrame) -> None:
@@ -74,6 +74,10 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
     """Prepare data for Gantt chart by adding utilization and cost information."""
     # Calculate utilization for coloring
     utilization_df = calculate_resource_utilization(df)
+
+    # Check if 'Overallocation %' column exists, if not, create it with default values
+    if "Overallocation %" not in utilization_df.columns:
+        utilization_df["Overallocation %"] = 0
 
     # Create utilization mappings
     utilization_map = utilization_df.set_index("Resource")["Utilization %"].to_dict()
@@ -162,170 +166,69 @@ def display_utilization_dashboard(
     """
     Displays a dashboard with resource utilization metrics.
     """
-    if gantt_data.empty:
-        st.warning("No data available for utilization metrics.")
-        return
-
-    # Calculate utilization metrics
-    utilization_df = calculate_resource_utilization(gantt_data, start_date, end_date)
-
-    if utilization_df.empty:
-        st.warning("No utilization data available for the selected period.")
-        return
-
-    # Ensure "Cost (€)" is numeric for calculations
-    utilization_df["Cost (€)"] = (
-        utilization_df["Cost (€)"].replace(",", "", regex=True).astype(float)
+    # Add a tab for capacity-based utilization
+    utilization_tabs = st.tabs(
+        ["Project-Based Utilization", "Capacity-Based Utilization"]
     )
 
-    # Load utilization colorscale dynamically
-    utilization_colorscale = load_utilization_colorscale()
-    if not utilization_colorscale:
-        st.warning("Utilization colorscale is not defined. Using default colorscale.")
-        utilization_colorscale = px.colors.sequential.Viridis  # Default colorscale
+    with utilization_tabs[0]:
+        # Existing utilization code
+        if gantt_data.empty:
+            st.warning("No data available for utilization metrics.")
+            return
 
-    # Display summary metrics
-    st.subheader("Resource Utilization Summary")
+        # Calculate utilization metrics
+        utilization_df = calculate_resource_utilization(
+            gantt_data, start_date, end_date
+        )
 
-    avg_utilization = utilization_df["Utilization %"].mean()
-    avg_overallocation = utilization_df["Overallocation %"].mean()
-    total_resources = len(utilization_df)
-    overallocated_resources = (utilization_df["Overallocation %"] > 0).sum()
-    total_cost = utilization_df["Cost (€)"].sum()  # Ensure numeric sum
+        if utilization_df.empty:
+            st.warning("No utilization data available for the selected period.")
+            return
 
-    col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("Average Utilization", f"{avg_utilization:.1f}%")
-    col2.metric(
-        "Overallocated Resources", f"{overallocated_resources}/{total_resources}"
-    )
-    col3.metric("Average Overallocation", f"{avg_overallocation:.1f}%")
-    col4.metric("Total Resources", total_resources)
-    col5.metric("Total Cost (€)", f"{total_cost:,.2f}")  # Format with commas
+        # Display summary metrics
+        st.subheader("Project-Based Utilization Summary")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Resources", len(utilization_df))
+        col2.metric(
+            "Average Utilization (%)", f"{utilization_df['Utilization %'].mean():.1f}"
+        )
+        col3.metric(
+            "Average Overallocation (%)",
+            f"{utilization_df['Overallocation %'].mean():.1f}",
+        )
 
-    # Add utilization charts
-    st.subheader("Resource Utilization Breakdown")
-
-    # Sort utilization data for better visualization
-    utilization_df = utilization_df.sort_values(by="Utilization %", ascending=False)
-
-    # Display utilization by resource type
-    col1, col2 = st.columns(2)
-
-    with col1:
-        # Utilization by Resource Type
-        type_util = utilization_df.groupby("Type")["Utilization %"].mean().reset_index()
+        # Display utilization chart
+        st.subheader("Utilization by Resource")
         fig = px.bar(
-            type_util,
-            x="Type",
+            utilization_df,
+            x="Resource",
             y="Utilization %",
             color="Type",
-            title="Average Utilization by Resource Type",
-            labels={"Utilization %": "Utilization Percentage (%)"},
+            hover_data=["Department", "Days Utilized", "Cost (€)"],  # Fixed hover_data
+            title="Resource Utilization",
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    with col2:
-        # Utilization by Department
-        dept_util = (
-            utilization_df.groupby("Department")["Utilization %"].mean().reset_index()
+        # Display overallocation chart
+        st.subheader("Overallocation by Resource")
+        overallocation_fig = px.bar(
+            utilization_df,
+            x="Resource",
+            y="Overallocation %",
+            color="Type",
+            hover_data=["Department", "Days Utilized", "Cost (€)"],  # Fixed hover_data
+            title="Resource Overallocation",
         )
-        fig = px.bar(
-            dept_util,
-            x="Department",
-            y="Utilization %",
-            color="Department",
-            title="Average Utilization by Department",
-            labels={"Utilization %": "Utilization Percentage (%)"},
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(overallocation_fig, use_container_width=True)
 
-    # Display resource utilization heatmap
-    st.subheader("Resource Utilization Heatmap")
+        # Display detailed utilization table
+        st.subheader("Detailed Utilization Data")
+        st.dataframe(utilization_df, use_container_width=True)
 
-    # Prepare data for heatmap - top 20 resources by utilization
-    top_resources = utilization_df.head(20)
-
-    # Create heatmap data
-    heatmap_data = pd.DataFrame(
-        {
-            "Resource": top_resources["Resource"],
-            "Utilization": top_resources["Utilization %"],
-            "Overallocation": top_resources["Overallocation %"],
-        }
-    )
-
-    # Create a wide-format dataframe for the heatmap
-    heatmap_wide = pd.DataFrame()
-    heatmap_wide["Resource"] = heatmap_data["Resource"]
-    heatmap_wide["Utilization %"] = heatmap_data["Utilization"]
-    heatmap_wide["Overallocation %"] = heatmap_data["Overallocation"]
-
-    # Create heatmap
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Heatmap(
-            z=heatmap_wide[["Utilization %", "Overallocation %"]].values.T,
-            x=heatmap_wide["Resource"],
-            y=["Utilization %", "Overallocation %"],
-            colorscale=utilization_colorscale,  # Use dynamically loaded or default colorscale
-            showscale=True,
-            hoverongaps=False,
-            text=[
-                [f"Utilization: {val:.1f}%" for val in heatmap_wide["Utilization %"]],
-                [
-                    f"Overallocation: {val:.1f}%"
-                    for val in heatmap_wide["Overallocation %"]
-                ],
-            ],
-            hoverinfo="text+x+y",
-        )
-    )
-
-    fig.update_layout(
-        title="Resource Utilization and Overallocation Heatmap",
-        xaxis_title="Resource",
-        yaxis_title="Metric",
-        height=400,
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Display detailed utilization table
-    st.subheader("Detailed Resource Utilization")
-
-    # Format the utilization dataframe for display
-    display_df = utilization_df.copy()
-    display_df["Utilization %"] = display_df["Utilization %"].round(1).astype(str) + "%"
-    display_df["Overallocation %"] = (
-        display_df["Overallocation %"].round(1).astype(str) + "%"
-    )
-    display_df["Cost (€)"] = display_df["Cost (€)"].apply(
-        lambda x: f"{x:,.2f}"  # Format with commas
-    )
-
-    # Apply search and filtering
-    filtered_df = filter_dataframe(
-        display_df,
-        key="Utilization",  # Corrected name
-        columns=[
-            "Resource",
-            "Type",
-            "Department",
-            "Projects",
-            "Utilization %",
-            "Overallocation %",
-            "Cost (€)",  # Include cost in the table
-        ],
-    )
-
-    # Pagination
-    filtered_df = paginate_dataframe(
-        filtered_df,
-        "Utilization",  # Corrected name
-    )
-
-    st.dataframe(filtered_df, use_container_width=True)
+    with utilization_tabs[1]:
+        # Use the new capacity planning dashboard
+        display_capacity_planning_dashboard(start_date, end_date)
 
 
 def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
@@ -418,3 +321,119 @@ def _display_resource_conflicts(gantt_data):
         st.dataframe(filtered_conflicts, use_container_width=True)
     else:
         st.success("No resource conflicts detected")
+
+
+def display_capacity_planning_dashboard(start_date=None, end_date=None):
+    """Display capacity planning dashboard with visualizations."""
+    st.subheader("Resource Capacity Planning")
+
+    # Date range selector
+    col1, col2 = st.columns(2)
+    with col1:
+        if start_date is None:
+            start_date = st.date_input("Start Date", value=pd.to_datetime("today"))
+        else:
+            start_date = st.date_input("Start Date", value=start_date)
+
+    with col2:
+        if end_date is None:
+            end_date = st.date_input(
+                "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
+            )
+        else:
+            end_date = st.date_input("End Date", value=end_date)
+
+    # Calculate capacity data
+    capacity_data = calculate_capacity_data(start_date, end_date)
+
+    if capacity_data.empty:
+        st.warning("No capacity data available for the selected period.")
+        return
+
+    # Display capacity overview
+    st.subheader("Capacity Overview")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        total_capacity = capacity_data["Capacity (hours)"].sum()
+        st.metric("Total Capacity (hours)", f"{total_capacity:,.1f}")
+
+    with col2:
+        total_allocated = capacity_data["Allocated (hours)"].sum()
+        st.metric("Total Allocated (hours)", f"{total_allocated:,.1f}")
+
+    with col3:
+        overall_utilization = (
+            (total_allocated / total_capacity * 100) if total_capacity > 0 else 0
+        )
+        st.metric("Overall Utilization", f"{overall_utilization:.1f}%")
+
+    # Capacity vs Allocation chart
+    st.subheader("Capacity vs Allocation by Resource")
+
+    # Sort by utilization for better visualization
+    capacity_data = capacity_data.sort_values(by="Utilization %", ascending=False)
+
+    fig = px.bar(
+        capacity_data,
+        x="Resource",
+        y=["Capacity (hours)", "Allocated (hours)"],
+        barmode="overlay",
+        title="Resource Capacity vs Allocation",
+        color_discrete_map={
+            "Capacity (hours)": "lightblue",
+            "Allocated (hours)": "darkblue",
+        },
+        labels={"value": "Hours", "variable": "Metric"},
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Resource availability heatmap
+    st.subheader("Resource Availability")
+
+    # Display detailed capacity table
+    st.subheader("Detailed Capacity Data")
+    st.dataframe(
+        capacity_data,
+        column_config={
+            "Resource": st.column_config.TextColumn("Resource"),
+            "Type": st.column_config.TextColumn("Type"),
+            "Department": st.column_config.TextColumn("Department"),
+            "Capacity (hours)": st.column_config.NumberColumn(
+                "Capacity (hours)", format="%.1f"
+            ),
+            "Allocated (hours)": st.column_config.NumberColumn(
+                "Allocated (hours)", format="%.1f"
+            ),
+            "Utilization %": st.column_config.ProgressColumn(
+                "Utilization %", format="%.1f%%", min_value=0, max_value=100
+            ),
+            "Available (hours)": st.column_config.NumberColumn(
+                "Available (hours)", format="%.1f"
+            ),
+        },
+        use_container_width=True,
+    )
+
+
+def identify_overallocated_resources(capacity_data, threshold=100):
+    """Identify resources that are overallocated based on a utilization threshold."""
+    overallocated = capacity_data[capacity_data["Utilization %"] > threshold]
+    return overallocated
+
+
+def display_overallocation_warnings(capacity_data):
+    """Display warnings for overallocated resources."""
+    overallocated = identify_overallocated_resources(capacity_data)
+
+    if not overallocated.empty:
+        st.warning(f"⚠️ {len(overallocated)} resources are overallocated:")
+
+        for _, row in overallocated.iterrows():
+            st.markdown(
+                f"**{row['Resource']}** ({row['Type']}) - "
+                f"Utilization: {row['Utilization %']:.1f}% - "
+                f"Allocated: {row['Allocated (hours)']:.1f} hours / "
+                f"Capacity: {row['Capacity (hours)']:.1f} hours"
+            )
