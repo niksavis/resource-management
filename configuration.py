@@ -1,10 +1,3 @@
-"""
-Color Management Module
-
-This module contains functions for managing colors used in visualizations,
-including department colors and utilization colorscales.
-"""
-
 import json
 import os
 import streamlit as st

@@ -1,10 +1,3 @@
-"""
-Calculation Helpers Module
-
-This module contains pure functions that can be tested independently.
-"""
-
-# Standard library imports
 from datetime import datetime
 
 

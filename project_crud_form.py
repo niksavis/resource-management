@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from validation import validate_project_input
-from color_management import load_currency_settings
+from configuration import load_currency_settings
 
 
 def add_project_form():

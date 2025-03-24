@@ -1,10 +1,3 @@
-"""
-Validation Module
-
-This module contains functions for validating input data in the resource
-management application.
-"""
-
 from datetime import date
 from typing import Tuple, List
 import regex

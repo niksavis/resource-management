@@ -1,11 +1,5 @@
-"""
-Person CRUD Form Module
-
-This module contains the Streamlit form for managing people.
-"""
-
 import streamlit as st
-from color_management import add_department_color, load_currency_settings
+from configuration import add_department_color, load_currency_settings
 from validation import (
     validate_daily_cost,
     validate_work_days,

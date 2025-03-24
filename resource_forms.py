@@ -1,10 +1,3 @@
-"""
-Resource Forms Module
-
-This module imports and orchestrates the CRUD forms for managing people,
-teams, departments, and projects.
-"""
-
 import streamlit as st
 from person_crud_form import person_crud_form
 from team_crud_form import team_crud_form

@@ -1,22 +1,12 @@
-"""
-Visualizations Module
-
-This module contains functions for creating visualizations using Plotly
-and Streamlit, including Gantt charts and resource utilization dashboards.
-"""
-
-# Standard library imports
 from datetime import datetime
 from typing import Dict, List, Optional
 
-# Third-party imports
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-# Local module imports
-from color_management import manage_visualization_colors, load_currency_settings
+from configuration import manage_visualization_colors, load_currency_settings
 from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
@@ -55,7 +45,7 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
             "Duration (days)",
             "Utilization %",
             "Overallocation %",
-            "Cost (€)",
+            "Cost",
         ],
         labels={"Resource": "Resource Name"},
         height=600,
@@ -90,9 +80,9 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
     df["Overallocation %"] = df["Resource"].map(overallocation_map)
     df["Duration (days)"] = (df["Finish"] - df["Start"]).dt.days + 1
 
-    # Ensure the Cost (€) column is calculated
-    if "Cost (€)" not in df.columns:
-        df["Cost (€)"] = df.apply(
+    # Ensure the Cost column is calculated
+    if "Cost" not in df.columns:
+        df["Cost"] = df.apply(
             lambda row: calculate_project_cost(
                 {
                     "start_date": row["Start"].strftime(
@@ -251,7 +241,7 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
             {
                 "Project": project["name"],
                 "Allocated Budget (€)": project["allocated_budget"],
-                "Actual Cost (€)": actual_cost,
+                "Actual Cost": actual_cost,
             }
         )
 
@@ -261,21 +251,21 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
     fig = px.bar(
         df,
         x="Project",
-        y=["Allocated Budget (€)", "Actual Cost (€)"],
+        y=["Allocated Budget (€)", "Actual Cost"],
         barmode="group",
         title="Budget vs. Actual Cost by Project",
-        labels={"value": "Cost (€)", "variable": "Cost Type"},
+        labels={"value": "Cost", "variable": "Cost Type"},
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
     # Highlight projects with cost overruns
-    overruns = df[df["Actual Cost (€)"] > df["Allocated Budget (€)"]]
+    overruns = df[df["Actual Cost"] > df["Allocated Budget (€)"]]
     if not overruns.empty:
         overruns["Allocated Budget (€)"] = overruns["Allocated Budget (€)"].apply(
             lambda x: f"{x:,.2f}"  # Format with commas
         )
-        overruns["Actual Cost (€)"] = overruns["Actual Cost (€)"].apply(
+        overruns["Actual Cost"] = overruns["Actual Cost"].apply(
             lambda x: f"{x:,.2f}"  # Format with commas
         )
         st.warning("The following projects have cost overruns:")
@@ -314,6 +304,7 @@ def _display_resource_conflicts(gantt_data):
             hover_data=["project1", "project2", "overlap_days"],
             color_continuous_scale="Reds",
             title="Resource Conflict Timeline",
+            labels={"overlap_days": "Overlapping Days"},
         )
         st.plotly_chart(fig, use_container_width=True)
         _display_resource_conflicts_chart_legend()

@@ -1,8 +1,3 @@
-"""
-Team CRUD Form Module
-This module contains the Streamlit form for managing teams.
-"""
-
 import streamlit as st
 from validation import validate_name_field
 

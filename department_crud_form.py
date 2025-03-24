@@ -1,11 +1,5 @@
-"""
-Department CRUD Form Module
-
-This module contains the Streamlit form for managing departments.
-"""
-
 import streamlit as st
-from color_management import add_department_color
+from configuration import add_department_color
 from validation import validate_name_field
 
 

@@ -1,12 +1,3 @@
-"""
-Data Handlers Module
-
-This module contains functions for loading, parsing, and processing
-resource and project data. It serves as the data layer for the
-resource management application.
-"""
-
-# Standard library imports
 import base64
 import io
 import json
@@ -14,16 +5,14 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
-# Third-party imports
 import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-# Local module imports
 from calculation_helpers import calculate_project_duration
 from utils import paginate_dataframe
-from color_management import load_currency_settings
+from configuration import load_currency_settings
 
 
 def load_json(file: io.TextIOWrapper) -> Dict[str, any]:
@@ -505,7 +494,7 @@ def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date
         x="Resource",
         y="Utilization %",
         color="Type",
-        hover_data=["Department", "Projects", "Cost (€)"],
+        hover_data=["Department", "Projects", "Cost"],
         title="Resource Utilization",
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -517,7 +506,7 @@ def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date
         x="Resource",
         y="Overallocation %",
         color="Type",
-        hover_data=["Department", "Projects", "Cost (€)"],
+        hover_data=["Department", "Projects", "Cost"],
         title="Resource Overallocation",
     )
     st.plotly_chart(overallocation_fig, use_container_width=True)

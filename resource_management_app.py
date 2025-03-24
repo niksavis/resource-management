@@ -1,23 +1,12 @@
-"""
-Resource Management Application
-
-This module orchestrates the Streamlit application flow, including
-navigation, data loading, and rendering of various tabs for managing
-resources, projects, and visualizing data.
-"""
-
-# Standard library imports
 import json
 import os
 
-# Third-party imports
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Local module imports
-from color_management import (
+from configuration import (
     display_color_settings,
     load_currency_settings,
     regenerate_department_colors,
@@ -1127,14 +1116,14 @@ def display_settings_tab():
             st.success("Currency settings updated.")
 
     st.subheader("Daily Cost Settings")
-    from color_management import save_daily_cost_settings
+    from configuration import save_daily_cost_settings
 
-    from color_management import load_daily_cost_settings
+    from configuration import load_daily_cost_settings
 
     max_daily_cost = load_daily_cost_settings()
     with st.form("daily_cost_form"):
         new_max_cost = st.number_input(
-            "Max Daily Cost (€)", min_value=1.0, value=float(max_daily_cost), step=100.0
+            "Max Daily Cost", min_value=1.0, value=float(max_daily_cost), step=100.0
         )
         if st.form_submit_button("Save Max Daily Cost"):
             save_daily_cost_settings(new_max_cost)

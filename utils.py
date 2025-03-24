@@ -1,20 +1,10 @@
-"""
-Utilities Module
-
-This module contains utility functions for the resource management
-application, including data pagination, confirmation dialogs, and
-circular dependency checks.
-"""
-
-# Standard library imports
 import math
 
-# Third-party imports
 import numpy as np
 import pandas as pd
 import streamlit as st
 from typing import List
-from color_management import load_currency_settings
+from configuration import load_currency_settings
 
 
 def display_filtered_resource(
@@ -39,12 +29,8 @@ def display_filtered_resource(
 
     df = pd.DataFrame(data)
 
-    with st.expander(
-        f"Search and Filter {label.title()}", expanded=False
-    ):  # Corrected name
-        search_term = st.text_input(
-            f"Search {label.title()}", key=f"search_{label}"
-        )  # Corrected name
+    with st.expander(f"Search and Filter {label.title()}", expanded=False):
+        search_term = st.text_input(f"Search {label.title()}", key=f"search_{label}")
 
         col1, col2 = st.columns(2)
         team_filter = []
@@ -69,7 +55,6 @@ def display_filtered_resource(
         df = _apply_sorting(df, label)
         df = paginate_dataframe(df, label)
 
-    # Load currency settings
     currency, _ = load_currency_settings()
 
     st.dataframe(
