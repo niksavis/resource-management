@@ -22,22 +22,35 @@ def person_crud_form():
 
     # Add Person Form
     with st.expander("Add Person"):
+        # Track selected department in session state
+        if "add_person_department" not in st.session_state:
+            st.session_state.add_person_department = None
+
+        def update_teams():
+            st.session_state.add_person_team = None  # Reset team selection
+
+        department = st.selectbox(
+            "Department",
+            options=[d["name"] for d in st.session_state.data["departments"]],
+            key="add_person_department",
+            on_change=update_teams,  # Callback to update teams
+        )
+
+        # Dynamically update team options based on selected department
+        teams_in_department = [
+            t["name"]
+            for t in st.session_state.data["teams"]
+            if t["department"] == st.session_state.add_person_department
+        ]
+        team = st.selectbox(
+            "Team",
+            options=["None"] + teams_in_department,
+            key="add_person_team",
+        )
+
         with st.form("add_person"):
             name = st.text_input("Name")
             role = st.text_input("Role")
-            department = st.selectbox(
-                "Department",
-                options=[d["name"] for d in st.session_state.data["departments"]],
-            )
-            team = st.selectbox(
-                "Team",
-                options=["None"]
-                + [
-                    t["name"]
-                    for t in st.session_state.data["teams"]
-                    if t["department"] == department
-                ],
-            )
             daily_cost = st.number_input(
                 f"Daily Cost ({currency})", min_value=0.0, step=50.0
             )
@@ -109,33 +122,43 @@ def person_crud_form():
         )
 
         if person:
+            # Track selected department in session state
+            if "edit_person_department" not in st.session_state:
+                st.session_state.edit_person_department = person["department"]
+
+            def update_edit_teams():
+                st.session_state.edit_person_team = None  # Reset team selection
+
+            department = st.selectbox(
+                "Department",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                index=[d["name"] for d in st.session_state.data["departments"]].index(
+                    person["department"]
+                ),
+                key="edit_person_department",
+                on_change=update_edit_teams,  # Callback to update teams
+            )
+
+            # Dynamically update team options based on selected department
+            teams_in_department = [
+                t["name"]
+                for t in st.session_state.data["teams"]
+                if t["department"] == st.session_state.edit_person_department
+            ]
+            # Ensure the selected team is valid for the current department
+            current_team = (
+                person["team"] if person["team"] in teams_in_department else "None"
+            )
+            team = st.selectbox(
+                "Team",
+                options=["None"] + teams_in_department,
+                index=(["None"] + teams_in_department).index(current_team),
+                key="edit_person_team",
+            )
+
             with st.form("edit_person"):
                 name = st.text_input("Name", value=person["name"])
                 role = st.text_input("Role", value=person["role"])
-                department = st.selectbox(
-                    "Department",
-                    options=[d["name"] for d in st.session_state.data["departments"]],
-                    index=[
-                        d["name"] for d in st.session_state.data["departments"]
-                    ].index(person["department"]),
-                )
-                team = st.selectbox(
-                    "Team",
-                    options=["None"]
-                    + [
-                        t["name"]
-                        for t in st.session_state.data["teams"]
-                        if t["department"] == department
-                    ],
-                    index=(
-                        ["None"]
-                        + [
-                            t["name"]
-                            for t in st.session_state.data["teams"]
-                            if t["department"] == department
-                        ]
-                    ).index(person["team"] if person["team"] else "None"),
-                )
                 daily_cost = st.number_input(
                     f"Daily Cost ({currency})",
                     min_value=0.0,
@@ -188,7 +211,7 @@ def person_crud_form():
                         }
                     )
                     st.success(f"Person '{name}' updated successfully.")
-                    st.rerun()  # Updated from st.experimental_rerun()
+                    st.rerun()
 
             # Delete person
             delete = st.button("Delete Person")
@@ -198,4 +221,4 @@ def person_crud_form():
                     for p in st.session_state.data["people"]
                     if p["name"] != person["name"]
                 ]
-                st.rerun()  # Updated from st.experimental_rerun()
+                st.rerun()
