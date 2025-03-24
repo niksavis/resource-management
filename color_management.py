@@ -145,7 +145,7 @@ def save_daily_cost_settings(max_daily_cost: float) -> None:
 
 def display_color_settings():
     """Allow users to customize visualization colors."""
-    st.subheader("Visualization Colors")
+    st.subheader("Colors Settings")
 
     # Load current colors
     department_colors = load_department_colors()

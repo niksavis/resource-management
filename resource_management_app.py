@@ -68,10 +68,10 @@ if "data" not in st.session_state:
 
 def display_action_bar():
     """Display breadcrumbs with improved design."""
-    active_tab = st.session_state.get("active_tab", "Home")
+    active_tab = st.session_state.get("active_tab", "Dashboard")
     resource_view = st.session_state.get("resource_view", "All Resources")
-    breadcrumb = f"Home > {active_tab}"
-    if active_tab == "Manage Resources" and resource_view != "All Resources":
+    breadcrumb = f"Dashboard > {active_tab}"
+    if active_tab == "Resource Management" and resource_view != "All Resources":
         breadcrumb += f" > {resource_view}"
     st.markdown(f"**{breadcrumb}**")
 
@@ -233,7 +233,7 @@ def display_home_tab():
 
 def display_manage_resources_tab():
     display_action_bar()
-    st.subheader("Manage Resources")
+    st.subheader("Resource Management")
 
     resource_tabs = st.tabs(["All Resources", "People", "Teams", "Departments"])
 
@@ -621,7 +621,7 @@ def _display_resource_visual_map(people, teams, departments, type_filter):
 def display_manage_projects_tab():
     display_action_bar()
 
-    st.subheader("Manage Projects")
+    st.subheader("Project Management")
 
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add a project first.")
@@ -807,7 +807,7 @@ def _handle_project_deletion():
 def display_visualize_data_tab():
     display_action_bar()
 
-    st.subheader("Resource Allocation Visualization")
+    st.subheader("Workload Distribution")
 
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add projects first.")
@@ -1078,7 +1078,7 @@ def _display_resource_drill_down(gantt_data):
 def display_resource_utilization_tab():
     display_action_bar()
 
-    st.subheader("Resource Utilization Dashboard")
+    st.subheader("Performance Metrics")
 
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add projects first.")
@@ -1138,7 +1138,7 @@ def display_resource_utilization_tab():
 def display_import_export_data_tab():
     display_action_bar()
 
-    st.subheader("Import/Export Data")
+    st.subheader("Data Tools")
 
     col1, col2 = st.columns(2)
 
@@ -1170,7 +1170,7 @@ def display_import_export_data_tab():
 def display_settings_tab():
     display_action_bar()
 
-    st.subheader("Settings")
+    st.subheader("Configuration")
     display_color_settings()
 
     st.subheader("Currency Settings")
@@ -1392,54 +1392,54 @@ def main():
         st.markdown("### Navigation")
 
         st.markdown("#### Dashboard")
-        if st.button("🏠 Home", use_container_width=True):
-            st.session_state["active_tab"] = "Home"
+        if st.button("🏠 Dashboard", use_container_width=True):
+            st.session_state["active_tab"] = "Dashboard"
             st.rerun()
 
         st.markdown("#### Resource Management")
-        if st.button("👥 Manage Resources", use_container_width=True):
-            st.session_state["active_tab"] = "Manage Resources"
+        if st.button("👥 Resource Management", use_container_width=True):
+            st.session_state["active_tab"] = "Resource Management"
             st.rerun()
-        if st.button("📋 Manage Projects", use_container_width=True):
-            st.session_state["active_tab"] = "Manage Projects"
+        if st.button("📋 Project Management", use_container_width=True):
+            st.session_state["active_tab"] = "Project Management"
             st.rerun()
 
-        st.markdown("#### Visualization")
-        if st.button("📈 Resource Allocation", use_container_width=True):
-            st.session_state["active_tab"] = "Visualize Data"
+        st.markdown("#### Resource Analytics")
+        if st.button("📈 Workload Distribution", use_container_width=True):
+            st.session_state["active_tab"] = "Workload Distribution"
             st.rerun()
-        if st.button("📉 Resource Utilization", use_container_width=True):
-            st.session_state["active_tab"] = "Resource Utilization"
+        if st.button("📉 Performance Metrics", use_container_width=True):
+            st.session_state["active_tab"] = "Performance Metrics"
             st.rerun()
-        if st.sidebar.button("📊 Capacity Planning", use_container_width=True):
-            st.session_state["active_tab"] = "Capacity Planning"
+        if st.sidebar.button("📊 Availability Forecast", use_container_width=True):
+            st.session_state["active_tab"] = "Availability Forecast"
             st.rerun()
 
         st.markdown("#### Tools")
-        if st.button("💾 Import/Export", use_container_width=True):
-            st.session_state["active_tab"] = "Import/Export Data"
+        if st.button("💾 Data Tools", use_container_width=True):
+            st.session_state["active_tab"] = "Data Tools"
             st.rerun()
-        if st.button("⚙️ Settings", use_container_width=True):
-            st.session_state["active_tab"] = "Settings"
+        if st.button("⚙️ Configuration", use_container_width=True):
+            st.session_state["active_tab"] = "Configuration"
             st.rerun()
 
     st.title("Resource Management App")
 
-    if st.session_state.get("active_tab") == "Home":
+    if st.session_state.get("active_tab") == "Dashboard":
         display_home_tab()
-    elif st.session_state.get("active_tab") == "Manage Resources":
+    elif st.session_state.get("active_tab") == "Resource Management":
         display_manage_resources_tab()
-    elif st.session_state.get("active_tab") == "Manage Projects":
+    elif st.session_state.get("active_tab") == "Project Management":
         display_manage_projects_tab()
-    elif st.session_state.get("active_tab") == "Visualize Data":
+    elif st.session_state.get("active_tab") == "Workload Distribution":
         display_visualize_data_tab()
-    elif st.session_state.get("active_tab") == "Resource Utilization":
+    elif st.session_state.get("active_tab") == "Performance Metrics":
         display_resource_utilization_tab()
-    elif st.session_state.get("active_tab") == "Import/Export Data":
+    elif st.session_state.get("active_tab") == "Data Tools":
         display_import_export_data_tab()
-    elif st.session_state.get("active_tab") == "Settings":
+    elif st.session_state.get("active_tab") == "Configuration":
         display_settings_tab()
-    elif st.session_state.get("active_tab") == "Capacity Planning":
+    elif st.session_state.get("active_tab") == "Availability Forecast":
         display_capacity_planning_tab()
     else:
         display_home_tab()

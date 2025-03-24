@@ -11,10 +11,12 @@ A comprehensive resource management application built with Streamlit. This app a
 
 - **Dashboard**: View a summary of resources and projects.
 - **Resource Management**: Add, edit, or delete people, teams, and departments.
-- **Project Management**: Create and manage projects with assigned resources and budgets.
-- **Visualization**: Explore Gantt charts, resource utilization dashboards, and detect conflicts.
-- **Import/Export**: Import or export data in JSON format.
-- **Customizable Settings**: Configure department colors, currency settings, and daily cost limits.
+- **Project Management**: Manage projects, including assigning resources and tracking budgets.
+- **Workload Distribution**: Visualize resource allocation across projects.
+- **Performance Metrics**: Track resource utilization and overallocation.
+- **Availability Forecast**: Plan resource capacity and availability.
+- **Data Tools**: Import and export data in JSON format.
+- **Configuration**: Customize settings such as colors and currency.
 
 ---
 

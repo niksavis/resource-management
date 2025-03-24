@@ -325,7 +325,7 @@ def _display_resource_conflicts(gantt_data):
 
 def display_capacity_planning_dashboard(start_date=None, end_date=None):
     """Display capacity planning dashboard with visualizations."""
-    st.subheader("Resource Capacity Planning")
+    st.subheader("Availability Forecast")
 
     # Date range selector
     col1, col2 = st.columns(2)
