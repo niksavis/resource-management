@@ -480,8 +480,8 @@ def _display_department_cards(departments, people, currency):
                 f"""
                 <div class="card department-card">
                     <h3>🏢 {dept["name"]}</h3>
-                    <p><strong>Teams:</strong> {len(dept["teams"])}</p>
-                    <p><strong>Members:</strong> {len(dept["members"])}</p>
+                    <p><strong>Teams:</strong> {len(dept.get("teams", []))}</p>
+                    <p><strong>Members:</strong> {len(dept.get("members", []))}</p>
                     <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
                 </div>
                 """,

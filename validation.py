@@ -7,25 +7,38 @@ management application.
 
 from datetime import date
 from typing import Tuple, List
+import regex
 import streamlit as st
 import pandas as pd
 
 
 def validate_name_field(name: str, field_type: str) -> bool:
     """
-    Validates a name field to ensure it is not empty and does not contain invalid characters.
+    Validates a name field to ensure it meets naming requirements.
     """
     if not name.strip():
         st.error(f"The {field_type} name is required.")
         return False
-    if len(name) > 50:
-        st.error(f"{field_type} name cannot exceed 50 characters.")
-        return False
-    if not name.replace(" ", "").isalpha():
+
+    if len(name) > 100:
         st.error(
-            f"{field_type} name can only contain alphabetic characters and spaces."
+            f"Due to system limitations, {field_type} names cannot exceed 100 characters."
         )
         return False
+
+    # Check if name starts or ends with whitespace
+    if name[0].isspace() or name[-1].isspace():
+        st.error(f"The {field_type} name must not start or end with spaces.")
+        return False
+
+    # Use Unicode properties which are supported in the regex module
+    # This allows for international characters in names
+    if not regex.match(r"^[\p{L}\p{N} \-\'\.\,_]*$", name):
+        st.error(
+            f"The {field_type} name contains invalid characters. Please use only letters, numbers, spaces, hyphens, apostrophes, periods, commas, and underscores."
+        )
+        return False
+
     return True
 
 

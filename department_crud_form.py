@@ -77,7 +77,9 @@ def department_crud_form():
                 st.error("Invalid department name. Please try again.")
                 return
 
-            st.session_state.data["departments"].append({"name": name, "teams": []})
+            st.session_state.data["departments"].append(
+                {"name": name, "teams": [], "members": []}
+            )
             add_department_color(name)
             st.success(f"Department '{name}' added successfully.")
             st.rerun()
