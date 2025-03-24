@@ -20,9 +20,8 @@ from color_management import manage_visualization_colors, load_currency_settings
 from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
-    calculate_capacity_data,  # Added import
-    filter_dataframe,
-    find_resource_conflicts,  # Added missing import
+    calculate_capacity_data,
+    find_resource_conflicts,
 )
 
 
@@ -285,7 +284,7 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
 
 def _display_resource_conflicts(gantt_data):
     """Check and display resource conflicts."""
-    conflicts = find_resource_conflicts(gantt_data)  # Now correctly defined
+    conflicts = find_resource_conflicts(gantt_data)
     if conflicts:
         st.subheader("Resource Conflicts")
 
@@ -317,15 +316,79 @@ def _display_resource_conflicts(gantt_data):
             title="Resource Conflict Timeline",
         )
         st.plotly_chart(fig, use_container_width=True)
+        _display_resource_conflicts_chart_legend()
 
         st.subheader("Conflict Details")
-        filtered_conflicts = filter_dataframe(
-            conflicts_df[["resource", "project1", "project2", "overlap_days"]],
-            key="Conflicts",
+
+        # Add search and filter inputs
+        with st.expander("Search and Filter Conflicts", expanded=False):
+            search_term = st.text_input("Search Conflicts", key="search_conflicts")
+            resource_filter = st.multiselect(
+                "Filter Resource",
+                options=conflicts_df["resource"].unique(),
+                key="filter_resource",
+            )
+            project1_filter = st.multiselect(
+                "Filter Project 1",
+                options=conflicts_df["project1"].unique(),
+                key="filter_project1",
+            )
+            project2_filter = st.multiselect(
+                "Filter Project 2",
+                options=conflicts_df["project2"].unique(),
+                key="filter_project2",
+            )
+
+        # Apply search and filters
+        filtered_conflicts = conflicts_df.rename(
+            columns={
+                "resource": "Resource",
+                "project1": "Project 1",
+                "project2": "Project 2",
+                "overlap_start": "Overlap Start",
+                "overlap_end": "Overlap End",
+                "overlap_days": "Overlapping Days",
+            }
         )
+
+        if search_term:
+            mask = filtered_conflicts.apply(
+                lambda row: search_term.lower()
+                in row.astype(str).str.lower().to_string(),
+                axis=1,
+            )
+            filtered_conflicts = filtered_conflicts[mask]
+
+        if resource_filter:
+            filtered_conflicts = filtered_conflicts[
+                filtered_conflicts["Resource"].isin(resource_filter)
+            ]
+        if project1_filter:
+            filtered_conflicts = filtered_conflicts[
+                filtered_conflicts["Project 1"].isin(project1_filter)
+            ]
+        if project2_filter:
+            filtered_conflicts = filtered_conflicts[
+                filtered_conflicts["Project 2"].isin(project2_filter)
+            ]
+
         st.dataframe(filtered_conflicts, use_container_width=True)
     else:
         st.success("No resource conflicts detected")
+
+
+def _display_resource_conflicts_chart_legend():
+    with st.expander("Chart Legend", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Visual Indicators:**")
+            st.markdown("- **Red Bars**: Duration of overlapping assignments.")
+            st.markdown("- **Hover Details**: Shows overlapping projects and days.")
+        with col2:
+            st.markdown("**Interactive Features:**")
+            st.markdown("- **Zoom**: Use the range selector or slider at the bottom.")
+            st.markdown("- **Details**: Hover over bars to see conflict details.")
+            st.markdown("- **Pan**: Click and drag on the timeline.")
 
 
 def display_capacity_planning_dashboard(start_date=None, end_date=None):

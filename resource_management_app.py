@@ -27,7 +27,6 @@ from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
     create_gantt_data,
-    find_resource_conflicts,
     load_json,
     save_json,
     sort_projects_by_priority_and_date,
@@ -46,9 +45,10 @@ from utils import (
     format_circular_dependency_message,
 )
 from visualizations import (
-    display_capacity_planning_dashboard,  # Added import
+    display_capacity_planning_dashboard,
     display_gantt_chart,
     display_utilization_dashboard,
+    _display_resource_conflicts,
 )
 
 # Set up basic page configuration
@@ -916,100 +916,6 @@ def _apply_visualization_filters(gantt_data, filters):
 def _display_gantt_chart_with_filters(gantt_data):
     """Display the Gantt chart with applied filters."""
     display_gantt_chart(gantt_data)
-
-
-def _display_resource_conflicts(gantt_data):
-    """Check and display resource conflicts."""
-    conflicts = find_resource_conflicts(gantt_data)
-    if conflicts:
-        st.subheader("Resource Conflicts")
-
-        conflict_summary = {}
-        for conflict in conflicts:
-            resource = conflict["resource"]
-            if resource not in conflict_summary:
-                conflict_summary[resource] = 0
-            conflict_summary[resource] += 1
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Total Conflicts", len(conflicts))
-        with col2:
-            st.metric("Affected Resources", len(conflict_summary))
-
-        conflicts_df = pd.DataFrame(conflicts)
-        conflicts_df["overlap_start"] = pd.to_datetime(conflicts_df["overlap_start"])
-        conflicts_df["overlap_end"] = pd.to_datetime(conflicts_df["overlap_end"])
-
-        fig = px.timeline(
-            conflicts_df,
-            x_start="overlap_start",
-            x_end="overlap_end",
-            y="resource",
-            color="overlap_days",
-            hover_data=["project1", "project2", "overlap_days"],
-            color_continuous_scale="Reds",
-            title="Resource Conflict Timeline",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.subheader("Conflict Details")
-
-        # Add search and filter inputs
-        with st.expander("Search and Filter Conflicts", expanded=False):
-            search_term = st.text_input("Search Conflicts", key="search_conflicts")
-            resource_filter = st.multiselect(
-                "Filter Resource",
-                options=conflicts_df["resource"].unique(),
-                key="filter_resource",
-            )
-            project1_filter = st.multiselect(
-                "Filter Project 1",
-                options=conflicts_df["project1"].unique(),
-                key="filter_project1",
-            )
-            project2_filter = st.multiselect(
-                "Filter Project 2",
-                options=conflicts_df["project2"].unique(),
-                key="filter_project2",
-            )
-
-        # Apply search and filters
-        filtered_conflicts = conflicts_df.rename(
-            columns={
-                "resource": "Resource",
-                "project1": "Project 1",
-                "project2": "Project 2",
-                "overlap_start": "Overlap Start",
-                "overlap_end": "Overlap End",
-                "overlap_days": "Overlapping Days",
-            }
-        )
-
-        if search_term:
-            mask = filtered_conflicts.apply(
-                lambda row: search_term.lower()
-                in row.astype(str).str.lower().to_string(),
-                axis=1,
-            )
-            filtered_conflicts = filtered_conflicts[mask]
-
-        if resource_filter:
-            filtered_conflicts = filtered_conflicts[
-                filtered_conflicts["Resource"].isin(resource_filter)
-            ]
-        if project1_filter:
-            filtered_conflicts = filtered_conflicts[
-                filtered_conflicts["Project 1"].isin(project1_filter)
-            ]
-        if project2_filter:
-            filtered_conflicts = filtered_conflicts[
-                filtered_conflicts["Project 2"].isin(project2_filter)
-            ]
-
-        st.dataframe(filtered_conflicts, use_container_width=True)
-    else:
-        st.success("No resource conflicts detected")
 
 
 def _display_resource_drill_down(gantt_data):
