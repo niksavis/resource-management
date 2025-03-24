@@ -112,6 +112,7 @@ def display_home_tab():
     # Project Timeline Overview
     st.markdown("### Project Timeline")
     if st.session_state.data["projects"]:
+        currency, _ = load_currency_settings()
         projects_df = pd.DataFrame(
             [
                 {
@@ -120,7 +121,7 @@ def display_home_tab():
                     "Finish": pd.to_datetime(p["end_date"]),
                     "Priority": p["priority"],
                     "Resources": len(p["assigned_resources"]),
-                    "Budget": p.get("allocated_budget", 0),
+                    "Budget": f"{currency} {p.get('allocated_budget', 0):,.2f}",
                 }
                 for p in st.session_state.data["projects"]
             ]
@@ -213,9 +214,9 @@ def display_home_tab():
                     budget_data.append(
                         {
                             "Project": project["name"],
-                            "Allocated Budget": project["allocated_budget"],
-                            "Actual Cost": actual_cost,
-                            "Variance": project["allocated_budget"] - actual_cost,
+                            "Allocated Budget": f"{currency} {project['allocated_budget']:,.2f}",
+                            "Actual Cost": f"{currency} {actual_cost:,.2f}",
+                            "Variance": f"{currency} {project['allocated_budget'] - actual_cost:,.2f}",
                         }
                     )
 

@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from typing import List
+from color_management import load_currency_settings
 
 
 def display_filtered_resource(
@@ -68,6 +69,9 @@ def display_filtered_resource(
         df = _apply_sorting(df, label)
         df = paginate_dataframe(df, label)
 
+    # Load currency settings
+    currency, _ = load_currency_settings()
+
     st.dataframe(
         df,
         column_config={
@@ -78,12 +82,14 @@ def display_filtered_resource(
             "teams": "Teams",
             "members": "Members",
             "daily_cost": st.column_config.NumberColumn(
-                "Daily Cost (€)", format="€%.2f"
+                f"Daily Cost ({currency})", format="%.2f"
             ),
             "work_days": "Work Days",
             "daily_work_hours": st.column_config.NumberColumn(
                 "Daily Work Hours", format="%.1f hours"
             ),
+            "capacity_hours_per_week": "Capacity (Hours/Week)",
+            "capacity_hours_per_month": "Capacity (Hours/Month)",
         },
         use_container_width=True,
     )

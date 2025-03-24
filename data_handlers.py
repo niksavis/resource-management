@@ -23,6 +23,7 @@ import plotly.express as px
 # Local module imports
 from calculation_helpers import calculate_project_duration
 from utils import paginate_dataframe
+from color_management import load_currency_settings
 
 
 def load_json(file: io.TextIOWrapper) -> Dict[str, any]:
@@ -178,6 +179,8 @@ def calculate_resource_utilization(
         else:
             cost = 0.0
 
+        # Load currency settings
+        currency, _ = load_currency_settings()
         resource_utilization.append(
             {
                 "Resource": resource,
@@ -187,7 +190,7 @@ def calculate_resource_utilization(
                 "Total Period Days": total_period_days,
                 "Utilization %": utilization_percentage,
                 "Overallocation %": overallocation_percentage,
-                "Cost (€)": f"{cost:,.2f}",
+                f"Cost ({currency})": cost,  # Dynamically set column name
             }
         )
 

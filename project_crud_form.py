@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from validation import validate_project_input
+from color_management import load_currency_settings
 
 
 def add_project_form():
@@ -10,7 +11,8 @@ def add_project_form():
         name = st.text_input("Project Name")
         start_date = st.date_input("Start Date")
         end_date = st.date_input("End Date")
-        budget = st.number_input("Budget (€)", min_value=0.0, step=1000.0)
+        currency, _ = load_currency_settings()
+        budget = st.number_input(f"Budget ({currency})", min_value=0.0, step=1000.0)
         assigned_resources = st.multiselect(
             "Assigned Resources",
             options=[
@@ -129,8 +131,9 @@ def edit_project_form():
             end_date = st.date_input(
                 "End Date", value=pd.to_datetime(project["end_date"])
             )
+            currency, _ = load_currency_settings()
             budget = st.number_input(
-                "Budget (€)",
+                f"Budget ({currency})",
                 min_value=0.0,
                 step=1000.0,
                 value=project["allocated_budget"],

@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # Local module imports
-from color_management import manage_visualization_colors
+from color_management import manage_visualization_colors, load_currency_settings
 from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
@@ -200,12 +200,17 @@ def display_utilization_dashboard(
 
         # Display utilization chart
         st.subheader("Utilization by Resource")
+        currency, _ = load_currency_settings()
         fig = px.bar(
             utilization_df,
             x="Resource",
             y="Utilization %",
             color="Type",
-            hover_data=["Department", "Days Utilized", "Cost (€)"],  # Fixed hover_data
+            hover_data={
+                "Department": True,
+                "Days Utilized": True,
+                f"Cost ({currency})": ":,.2f",  # Dynamically set column name
+            },
             title="Resource Utilization",
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -217,7 +222,7 @@ def display_utilization_dashboard(
             x="Resource",
             y="Overallocation %",
             color="Type",
-            hover_data=["Department", "Days Utilized", "Cost (€)"],  # Fixed hover_data
+            hover_data=["Department", "Days Utilized", f"Cost ({currency})"],
             title="Resource Overallocation",
         )
         st.plotly_chart(overallocation_fig, use_container_width=True)
@@ -401,16 +406,16 @@ def display_capacity_planning_dashboard(start_date=None, end_date=None):
             "Type": st.column_config.TextColumn("Type"),
             "Department": st.column_config.TextColumn("Department"),
             "Capacity (hours)": st.column_config.NumberColumn(
-                "Capacity (hours)", format="%.1f"
+                "Capacity (Hours)", format="%.1f"
             ),
             "Allocated (hours)": st.column_config.NumberColumn(
-                "Allocated (hours)", format="%.1f"
+                "Allocated (Hours)", format="%.1f"
             ),
             "Utilization %": st.column_config.ProgressColumn(
-                "Utilization %", format="%.1f%%", min_value=0, max_value=100
+                "Utilization (%)", format="%.1f%%", min_value=0, max_value=100
             ),
             "Available (hours)": st.column_config.NumberColumn(
-                "Available (hours)", format="%.1f"
+                "Available (Hours)", format="%.1f"
             ),
         },
         use_container_width=True,
