@@ -449,8 +449,8 @@ def display_capacity_planning_dashboard(start_date=None, end_date=None):
         barmode="overlay",
         title="Resource Capacity vs Allocation",
         color_discrete_map={
-            "Capacity (hours)": "lightblue",
-            "Allocated (hours)": "darkblue",
+            "Capacity (hours)": "cyan",
+            "Allocated (hours)": "orange",
         },
         labels={"value": "Hours", "variable": "Metric"},
     )
