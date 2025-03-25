@@ -1,17 +1,16 @@
-from datetime import datetime
-from typing import Dict, List, Optional
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from typing import List, Dict
 
-from configuration import manage_visualization_colors, load_currency_settings
+from configuration import manage_visualization_colors
 from data_handlers import (
     calculate_project_cost,
     calculate_resource_utilization,
     calculate_capacity_data,
     find_resource_conflicts,
+    _determine_resource_type,
 )
 
 
@@ -23,10 +22,23 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
         st.warning("No data available to visualize.")
         return
 
-    # Sort by priority to ensure priority 1 projects are at the top
-    df = df.sort_values(by=["Priority", "Finish"], ascending=[False, False])
-
     df_with_utilization = _prepare_gantt_data(df)
+
+    # Calculate utilization and overallocation
+    for resource in df_with_utilization["Resource"].unique():
+        resource_df = df_with_utilization[df_with_utilization["Resource"] == resource]
+        min_date = resource_df["Start"].min()
+        max_date = resource_df["Finish"].max()
+        total_days = (max_date - min_date).days + 1
+        utilization_percentage = (
+            resource_df["Duration (days)"].sum() / total_days
+        ) * 100
+        df_with_utilization.loc[
+            df_with_utilization["Resource"] == resource, "Utilization %"
+        ] = min(utilization_percentage, 100)
+        df_with_utilization.loc[
+            df_with_utilization["Resource"] == resource, "Overallocation %"
+        ] = max(0, utilization_percentage - 100)
 
     department_colors = {
         dept: color.lower()
@@ -57,47 +69,113 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
 
     fig = _add_today_marker(fig)
     fig = _highlight_overallocated_resources(fig, df_with_utilization)
-
     st.plotly_chart(fig, use_container_width=True)
     _display_chart_legend()
 
 
 def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Prepare data for Gantt chart by adding utilization and cost information."""
-    # Calculate utilization for coloring
-    utilization_df = calculate_resource_utilization(df)
+    """Prepare data for Gantt chart with temporary resource assignments."""
+    gantt_data = []
 
-    # Check if 'Overallocation %' column exists, if not, create it with default values
-    if "Overallocation %" not in utilization_df.columns:
-        utilization_df["Overallocation %"] = 0
+    for project in st.session_state.data["projects"]:
+        project_name = project["name"]
+        project_priority = project["priority"]
 
-    # Create utilization mappings
-    utilization_map = utilization_df.set_index("Resource")["Utilization %"].to_dict()
-    overallocation_map = utilization_df.set_index("Resource")[
-        "Overallocation %"
-    ].to_dict()
+        # Get resource allocations
+        resource_allocations = project.get("resource_allocations", [])
 
-    # Add utilization data to the dataframe
-    df = df.copy()
-    df["Utilization %"] = df["Resource"].map(utilization_map)
-    df["Overallocation %"] = df["Resource"].map(overallocation_map)
-    df["Duration (days)"] = (df["Finish"] - df["Start"]).dt.days + 1
-
-    # Ensure the Cost column is calculated
-    if "Cost" not in df.columns:
-        df["Cost"] = df.apply(
-            lambda row: calculate_project_cost(
+        # If no specific allocations, create default ones for all assigned resources
+        if not resource_allocations:
+            resource_allocations = [
                 {
-                    "start_date": row["Start"].strftime(
-                        "%Y-%m-%d"
-                    ),  # Convert to string
-                    "end_date": row["Finish"].strftime("%Y-%m-%d"),  # Convert to string
-                    "assigned_resources": [row["Resource"]],
-                },
-                st.session_state.data["people"],
-                st.session_state.data["teams"],
-            ),
-            axis=1,
+                    "resource": r,
+                    "allocation_percentage": 100,
+                    "start_date": project["start_date"],
+                    "end_date": project["end_date"],
+                }
+                for r in project["assigned_resources"]
+            ]
+
+        # Add each resource allocation as a separate Gantt bar
+        for allocation in resource_allocations:
+            resource = allocation["resource"]
+            r_type, department = _determine_resource_type(
+                resource, st.session_state.data
+            )
+
+            start_date = pd.to_datetime(allocation["start_date"])
+            end_date = pd.to_datetime(allocation["end_date"])
+            duration_days = (end_date - start_date).days + 1
+
+            # Calculate cost
+            cost = 0.0
+            if r_type == "Person":
+                person = next(
+                    (
+                        p
+                        for p in st.session_state.data["people"]
+                        if p["name"] == resource
+                    ),
+                    None,
+                )
+                if person:
+                    cost = person.get("daily_cost", 0) * duration_days
+            elif r_type == "Team":
+                team = next(
+                    (
+                        t
+                        for t in st.session_state.data["teams"]
+                        if t["name"] == resource
+                    ),
+                    None,
+                )
+                if team:
+                    team_cost = sum(
+                        p.get("daily_cost", 0)
+                        for p in st.session_state.data["people"]
+                        if p["name"] in team.get("members", [])
+                    )
+                    cost = team_cost * duration_days
+
+            gantt_data.append(
+                {
+                    "Resource": resource,
+                    "Type": r_type,
+                    "Department": department,
+                    "Project": project_name,
+                    "Start": start_date,
+                    "Finish": end_date,
+                    "Priority": project_priority,
+                    "Duration (days)": duration_days,
+                    "Allocation %": allocation["allocation_percentage"],
+                    "Cost": cost,
+                    "Utilization %": 0,  # Placeholder
+                    "Overallocation %": 0,  # Placeholder
+                }
+            )
+
+    df = pd.DataFrame(gantt_data)
+
+    # Calculate utilization and overallocation for each resource
+    for resource in df["Resource"].unique():
+        resource_df = df[df["Resource"] == resource]
+
+        # Calculate total days in the period
+        min_date = resource_df["Start"].min()
+        max_date = resource_df["Finish"].max()
+        total_days = (max_date - min_date).days + 1
+
+        # Calculate utilization percentage
+        utilization_percentage = (
+            resource_df["Duration (days)"].sum() / total_days
+        ) * 100
+        df.loc[df["Resource"] == resource, "Utilization %"] = min(
+            utilization_percentage, 100
+        )
+
+        # Calculate overallocation percentage
+        df.loc[df["Resource"] == resource, "Overallocation %"] = max(
+            0, utilization_percentage - 100
         )
 
     return df
@@ -127,7 +205,6 @@ def _highlight_overallocated_resources(fig: go.Figure, df: pd.DataFrame) -> go.F
                 fillcolor="rgba(255,0,0,0.1)",
                 layer="below",
             )
-
     return fig
 
 
@@ -150,82 +227,53 @@ def _display_chart_legend() -> None:
             st.markdown("- Pan: Click and drag on the timeline")
 
 
-def display_utilization_dashboard(
-    gantt_data: pd.DataFrame,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-) -> None:
+def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date):
     """
-    Displays a dashboard with resource utilization metrics.
+    Displays a unified utilization dashboard without sub-tabs
     """
-    # Add a tab for capacity-based utilization
-    utilization_tabs = st.tabs(
-        ["Project-Based Utilization", "Capacity-Based Utilization"]
+    if gantt_data.empty:
+        st.warning("No data available for utilization metrics.")
+        return
+
+    # Calculate utilization metrics
+    utilization_df = calculate_resource_utilization(gantt_data, start_date, end_date)
+
+    # Display core metrics
+    st.subheader("Performance Metrics")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Resources", len(utilization_df))
+    col2.metric("Avg Utilization", f"{utilization_df['Utilization %'].mean():.1f}%")
+    col3.metric(
+        "Avg Overallocation", f"{utilization_df['Overallocation %'].mean():.1f}%"
     )
 
-    with utilization_tabs[0]:
-        # Existing utilization code
-        if gantt_data.empty:
-            st.warning("No data available for utilization metrics.")
-            return
+    # Single visualization section
+    st.subheader("Resource Utilization Analysis")
+    fig = px.bar(
+        utilization_df,
+        x="Resource",
+        y=["Utilization %", "Overallocation %"],
+        barmode="group",
+        color="Type",
+        labels={"value": "Percentage"},
+        height=500,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-        # Calculate utilization metrics
-        utilization_df = calculate_resource_utilization(
-            gantt_data, start_date, end_date
-        )
-
-        if utilization_df.empty:
-            st.warning("No utilization data available for the selected period.")
-            return
-
-        # Display summary metrics
-        st.subheader("Project-Based Utilization Summary")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Resources", len(utilization_df))
-        col2.metric(
-            "Average Utilization (%)", f"{utilization_df['Utilization %'].mean():.1f}"
-        )
-        col3.metric(
-            "Average Overallocation (%)",
-            f"{utilization_df['Overallocation %'].mean():.1f}",
-        )
-
-        # Display utilization chart
-        st.subheader("Utilization by Resource")
-        currency, _ = load_currency_settings()
-        fig = px.bar(
-            utilization_df,
-            x="Resource",
-            y="Utilization %",
-            color="Type",
-            hover_data={
-                "Department": True,
-                "Days Utilized": True,
-                f"Cost ({currency})": ":,.2f",  # Dynamically set column name
-            },
-            title="Resource Utilization",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Display overallocation chart
-        st.subheader("Overallocation by Resource")
-        overallocation_fig = px.bar(
-            utilization_df,
-            x="Resource",
-            y="Overallocation %",
-            color="Type",
-            hover_data=["Department", "Days Utilized", f"Cost ({currency})"],
-            title="Resource Overallocation",
-        )
-        st.plotly_chart(overallocation_fig, use_container_width=True)
-
-        # Display detailed utilization table
-        st.subheader("Detailed Utilization Data")
-        st.dataframe(utilization_df, use_container_width=True)
-
-    with utilization_tabs[1]:
-        # Use the new capacity planning dashboard
-        display_capacity_planning_dashboard(start_date, end_date)
+    # Detailed table
+    st.subheader("Detailed Metrics")
+    st.dataframe(
+        utilization_df,
+        column_config={
+            "Utilization %": st.column_config.ProgressColumn(
+                "Utilization %", format="%.1f%%", min_value=0, max_value=100
+            ),
+            "Overallocation %": st.column_config.NumberColumn(
+                "Overallocation %", format="%.1f%%"
+            ),
+        },
+        use_container_width=True,
+    )
 
 
 def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
@@ -247,7 +295,6 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
                 "Actual Cost": actual_cost,
             }
         )
-
     df = pd.DataFrame(data)
 
     # Create bar chart for budget vs. actual cost
@@ -259,7 +306,6 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
         title="Budget vs. Actual Cost by Project",
         labels={"value": "Cost", "variable": "Cost Type"},
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
     # Highlight projects with cost overruns
@@ -448,7 +494,6 @@ def display_capacity_planning_dashboard(start_date=None, end_date=None):
         },
         labels={"value": "Hours", "variable": "Metric"},
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
     # Resource availability heatmap
@@ -499,3 +544,60 @@ def display_overallocation_warnings(capacity_data):
                 f"Allocated: {row['Allocated (hours)']:.1f} hours / "
                 f"Capacity: {row['Capacity (hours)']:.1f} hours"
             )
+
+
+def display_resource_calendar(start_date, end_date):
+    """Display a calendar view of resource allocations."""
+    date_range = pd.date_range(start=start_date, end=end_date, freq="D")
+    resources = []
+    for person in st.session_state.data["people"]:
+        resources.append({"name": person["name"], "type": "Person"})
+    for team in st.session_state.data["teams"]:
+        resources.append({"name": team["name"], "type": "Team"})
+    calendar_data = pd.DataFrame(
+        0, index=[r["name"] for r in resources], columns=date_range
+    )
+    for project in st.session_state.data["projects"]:
+        resource_allocations = project.get("resource_allocations", [])
+        if not resource_allocations:
+            resource_allocations = [
+                {
+                    "resource": r,
+                    "allocation_percentage": 100,
+                    "start_date": project["start_date"],
+                    "end_date": project["end_date"],
+                }
+                for r in project["assigned_resources"]
+            ]
+        for allocation in resource_allocations:
+            res = allocation["resource"]
+            if res not in calendar_data.index:
+                continue
+            alloc_start = pd.to_datetime(allocation["start_date"])
+            alloc_end = pd.to_datetime(allocation["end_date"])
+            overlap_start = max(alloc_start, pd.Timestamp(start_date))
+            overlap_end = min(alloc_end, pd.Timestamp(end_date))
+            if overlap_start <= overlap_end:
+                overlap_dates = pd.date_range(
+                    start=overlap_start, end=overlap_end, freq="D"
+                )
+                for date in overlap_dates:
+                    if date in calendar_data.columns:
+                        calendar_data.at[res, date] += allocation[
+                            "allocation_percentage"
+                        ]
+
+    fig = px.imshow(
+        calendar_data,
+        labels=dict(x="Date", y="Resource", color="Allocation %"),
+        x=calendar_data.columns,
+        y=calendar_data.index,
+        color_continuous_scale=[
+            (0.0, "#ADD8E6"),  # Light blue for low allocation
+            (0.5, "#32CD32"),  # Lime green for moderate allocation
+            (1.0, "#FF4500"),  # Orange red for high allocation
+        ],
+        aspect="auto",
+        height=800,
+    )
+    st.plotly_chart(fig, use_container_width=True)

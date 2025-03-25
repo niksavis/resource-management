@@ -38,6 +38,7 @@ from visualizations import (
     display_gantt_chart,
     display_utilization_dashboard,
     _display_resource_conflicts,
+    display_resource_calendar,
 )
 
 # Set up basic page configuration
@@ -1304,8 +1305,11 @@ def main():
         if st.button("📉 Performance Metrics", use_container_width=True):
             st.session_state["active_tab"] = "Performance Metrics"
             st.rerun()
-        if st.sidebar.button("📊 Availability Forecast", use_container_width=True):
+        if st.button("📊 Availability Forecast", use_container_width=True):
             st.session_state["active_tab"] = "Availability Forecast"
+            st.rerun()
+        if st.button("🗓️ Resource Calendar", use_container_width=True):
+            st.session_state["active_tab"] = "Resource Calendar"
             st.rerun()
 
         st.markdown("#### Tools")
@@ -1334,13 +1338,74 @@ def main():
         display_settings_tab()
     elif st.session_state.get("active_tab") == "Availability Forecast":
         display_capacity_planning_tab()
+    elif st.session_state.get("active_tab") == "Resource Calendar":
+        display_resource_calendar_tab()
     else:
         display_home_tab()
+
+
+def display_resource_calendar_tab():
+    """Display the resource calendar view."""
+    display_action_bar()
+    st.subheader("Resource Calendar")
+
+    # Add date range selector
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start Date", value=pd.to_datetime("today"))
+    with col2:
+        end_date = st.date_input(
+            "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
+        )
+
+    # Display the calendar
+    display_resource_calendar(start_date, end_date)
 
 
 def display_capacity_planning_tab():
     display_action_bar()
     display_capacity_planning_dashboard()
+
+
+def display_visualization_tab():
+    display_action_bar()
+    st.subheader("Resource Insights")
+
+    # Add date filters here at the top level if they should apply to all visualizations
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start Date", value=pd.to_datetime("today"))
+    with col2:
+        end_date = st.date_input(
+            "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
+        )
+
+    # Create gantt data
+    gantt_data = create_gantt_data(
+        st.session_state.data["projects"], st.session_state.data
+    )
+
+    # Define the main navigation tabs
+    viz_tabs = st.tabs(
+        [
+            "Workload Distribution",
+            "Performance Metrics",
+            "Availability Forecast",
+            "Resource Calendar",
+        ]
+    )
+
+    with viz_tabs[0]:
+        display_gantt_chart(gantt_data)
+
+    with viz_tabs[1]:
+        display_utilization_dashboard(gantt_data, start_date, end_date)
+
+    with viz_tabs[2]:
+        display_capacity_planning_dashboard(start_date, end_date)
+
+    with viz_tabs[3]:
+        display_resource_calendar(start_date, end_date)
 
 
 if __name__ == "__main__":

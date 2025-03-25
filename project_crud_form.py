@@ -60,8 +60,16 @@ def add_project_form():
                         )
                         st.write(f"Weekly Hours: {weekly_hours:.1f}")
 
+            resource_start_date = st.date_input(f"Start Date for {resource}")
+            resource_end_date = st.date_input(f"End Date for {resource}")
+
             resource_allocations.append(
-                {"resource": resource, "allocation_percentage": allocation_percentage}
+                {
+                    "resource": resource,
+                    "allocation_percentage": allocation_percentage,
+                    "start_date": resource_start_date.strftime("%Y-%m-%d"),
+                    "end_date": resource_end_date.strftime("%Y-%m-%d"),
+                }
             )
 
         submit = st.form_submit_button("Add Project")
@@ -150,6 +158,64 @@ def edit_project_form():
                 "Priority", min_value=1, step=1, value=project["priority"]
             )
 
+            st.subheader("Edit Resource Allocation")
+            edited_resource_allocations = []
+
+            for resource in project["assigned_resources"]:
+                col1, col2 = st.columns(2)
+                with col1:
+                    allocation_percentage = st.slider(
+                        f"Allocation % for {resource}",
+                        min_value=10,
+                        max_value=100,
+                        value=100,
+                        step=10,
+                        key=f"edit_alloc_{resource}",
+                    )
+
+                with col2:
+                    # Calculate and display weekly hours based on allocation
+                    resource_type = (
+                        "Person"
+                        if resource
+                        in [p["name"] for p in st.session_state.data["people"]]
+                        else "Team"
+                    )
+                    if resource_type == "Person":
+                        person = next(
+                            (
+                                p
+                                for p in st.session_state.data["people"]
+                                if p["name"] == resource
+                            ),
+                            None,
+                        )
+                        if person:
+                            weekly_hours = (
+                                person["daily_work_hours"]
+                                * len(person["work_days"])
+                                * (allocation_percentage / 100)
+                            )
+                            st.write(f"Weekly Hours: {weekly_hours:.1f}")
+
+                resource_start_date = st.date_input(
+                    f"Start Date for {resource}",
+                    value=pd.to_datetime(project["start_date"]),
+                )
+                resource_end_date = st.date_input(
+                    f"End Date for {resource}",
+                    value=pd.to_datetime(project["end_date"]),
+                )
+
+                edited_resource_allocations.append(
+                    {
+                        "resource": resource,
+                        "allocation_percentage": allocation_percentage,
+                        "start_date": resource_start_date.strftime("%Y-%m-%d"),
+                        "end_date": resource_end_date.strftime("%Y-%m-%d"),
+                    }
+                )
+
             submit = st.form_submit_button("Update Project")
             if submit:
                 # Ensure dates are converted to pd.Timestamp
@@ -193,14 +259,7 @@ def edit_project_form():
                         "allocated_budget": budget,
                         "assigned_resources": assigned_resources,
                         "priority": priority,
-                        "resource_allocations": [
-                            {
-                                "resource": resource_name,
-                                "allocation_percentage": 100,  # Default to 100%
-                                "weekly_hours": 0,  # Placeholder, to be calculated later
-                            }
-                            for resource_name in assigned_resources
-                        ],
+                        "resource_allocations": edited_resource_allocations,
                     }
                 )
                 st.success(f"Project '{name}' updated successfully.")

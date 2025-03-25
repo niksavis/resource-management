@@ -421,45 +421,6 @@ def calculate_project_cost(
         return 0.0
 
 
-def display_gantt_chart(gantt_data):
-    """
-    Displays a Gantt chart using the provided data.
-    """
-    if gantt_data.empty:
-        st.warning("No data available to display the Gantt chart.")
-        return
-
-    # Sort resources by type and name
-    gantt_data = gantt_data.sort_values(by=["Type", "Resource"])
-
-    # Create the Gantt chart
-    fig = px.timeline(
-        gantt_data,
-        x_start="Start",
-        x_end="Finish",
-        y="Resource",
-        color="Project",
-        title="Gantt Chart",
-        hover_data=["Type", "Department", "Duration", "Priority"],
-    )
-
-    # Add a vertical line for today's date
-    fig.add_vline(
-        x=pd.Timestamp.now(), line_width=2, line_dash="dash", line_color="red"
-    )
-
-    # Update layout
-    fig.update_layout(
-        xaxis_title="Timeline",
-        yaxis_title="Resources",
-        legend_title="Projects",
-        height=600,
-    )
-
-    # Display the chart
-    st.plotly_chart(fig, use_container_width=True)
-
-
 def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date):
     """
     Displays a dashboard for resource utilization based on the provided Gantt data.
@@ -516,10 +477,14 @@ def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date
 
 
 def sort_projects_by_priority_and_date(projects):
-    """Sort projects by priority (ascending) and end date (ascending)."""
+    """Sort projects by priority (descending) and end date (descending)."""
     return sorted(
         projects,
-        key=lambda p: (p["priority"], pd.to_datetime(p["end_date"])),
+        key=lambda p: (
+            -p["priority"],
+            pd.to_datetime(p["end_date"]),
+        ),
+        reverse=True,
     )
 
 
@@ -560,73 +525,44 @@ def calculate_resource_capacity(resource_name, resource_type, start_date, end_da
 
 
 def calculate_resource_allocation(resource_name, start_date, end_date):
-    """Calculate allocated hours for a resource across all projects."""
+    """Calculate allocated hours for a resource across all projects with temporary assignments."""
     total_allocated_hours = 0
     for project in st.session_state.data["projects"]:
-        project_start = pd.to_datetime(project["start_date"])
-        project_end = pd.to_datetime(project["end_date"])
-
-        if project_end >= pd.Timestamp(start_date) and project_start <= pd.Timestamp(
-            end_date
-        ):
-            assigned_resources = project["assigned_resources"]
-
-            # Check if assigned_resources is a list or string
-            if isinstance(assigned_resources, (list, str)):
-                if resource_name in assigned_resources:
-                    allocation = next(
-                        (
-                            a
-                            for a in project.get("resource_allocations", [])
-                            if a["resource"] == resource_name
-                        ),
-                        {"allocation_percentage": 100},
-                    )
-                    resource_type = (
-                        "Person"
-                        if resource_name
-                        in [p["name"] for p in st.session_state.data["people"]]
-                        else "Team"
-                    )
-                    capacity = calculate_resource_capacity(
-                        resource_name, resource_type, project_start, project_end
-                    )
-                    allocated_hours = capacity * (
-                        allocation["allocation_percentage"] / 100
-                    )
-                    total_allocated_hours += allocated_hours
-
-            # Check if assigned_resources is a DataFrame or Series
-            elif isinstance(assigned_resources, (pd.DataFrame, pd.Series)):
-                if resource_name in assigned_resources.values:
-                    allocation = next(
-                        (
-                            a
-                            for a in project.get("resource_allocations", [])
-                            if a["resource"] == resource_name
-                        ),
-                        {"allocation_percentage": 100},
-                    )
-                    resource_type = (
-                        "Person"
-                        if resource_name
-                        in [p["name"] for p in st.session_state.data["people"]]
-                        else "Team"
-                    )
-                    capacity = calculate_resource_capacity(
-                        resource_name, resource_type, project_start, project_end
-                    )
-                    allocated_hours = capacity * (
-                        allocation["allocation_percentage"] / 100
-                    )
-                    total_allocated_hours += allocated_hours
-
-            # If assigned_resources is neither a list/string nor a DataFrame/Series
-            else:
-                st.warning(
-                    f"Unexpected type for assigned_resources in project {project['name']}"
+        if resource_name not in project["assigned_resources"]:
+            continue
+        resource_allocations = project.get("resource_allocations", [])
+        if not resource_allocations:
+            resource_allocations = [
+                {
+                    "resource": resource_name,
+                    "allocation_percentage": 100,
+                    "start_date": project["start_date"],
+                    "end_date": project["end_date"],
+                }
+            ]
+        else:
+            resource_allocations = [
+                a for a in resource_allocations if a["resource"] == resource_name
+            ]
+        for allocation in resource_allocations:
+            overlap_start = max(
+                pd.to_datetime(start_date), pd.to_datetime(allocation["start_date"])
+            )
+            overlap_end = min(
+                pd.to_datetime(end_date), pd.to_datetime(allocation["end_date"])
+            )
+            if overlap_start <= overlap_end:
+                resource_type = (
+                    "Person"
+                    if resource_name
+                    in [p["name"] for p in st.session_state.data["people"]]
+                    else "Team"
                 )
-
+                capacity = calculate_resource_capacity(
+                    resource_name, resource_type, overlap_start, overlap_end
+                )
+                allocated_hours = capacity * (allocation["allocation_percentage"] / 100)
+                total_allocated_hours += allocated_hours
     return total_allocated_hours
 
 
@@ -685,3 +621,62 @@ def is_resource_overallocated(
 ) -> bool:
     """Determine if a resource is overallocated based on percentage."""
     return (allocation_days / total_days) > threshold
+
+
+def find_temporary_allocation_conflicts():
+    """Find conflicts in temporary resource allocations."""
+    conflicts = []
+
+    for resource_type in ["people", "teams"]:
+        for resource in st.session_state.data[resource_type]:
+            resource_name = resource["name"]
+            allocations = []
+            for project in st.session_state.data["projects"]:
+                if resource_name not in project["assigned_resources"]:
+                    continue
+                resource_allocations = project.get("resource_allocations", [])
+                if not resource_allocations:
+                    allocations.append(
+                        {
+                            "project": project["name"],
+                            "start": pd.to_datetime(project["start_date"]),
+                            "end": pd.to_datetime(project["end_date"]),
+                            "allocation": 100,
+                        }
+                    )
+                else:
+                    for allocation in resource_allocations:
+                        if allocation["resource"] == resource_name:
+                            allocations.append(
+                                {
+                                    "project": project["name"],
+                                    "start": pd.to_datetime(allocation["start_date"]),
+                                    "end": pd.to_datetime(allocation["end_date"]),
+                                    "allocation": allocation["allocation_percentage"],
+                                }
+                            )
+            dates_to_check = set()
+            for alloc in allocations:
+                dates_to_check.update(
+                    pd.date_range(start=alloc["start"], end=alloc["end"])
+                )
+            for check_date in sorted(dates_to_check):
+                total_allocation = sum(
+                    alloc["allocation"]
+                    for alloc in allocations
+                    if alloc["start"] <= check_date <= alloc["end"]
+                )
+                if total_allocation > 100:
+                    conflicts.append(
+                        {
+                            "resource": resource_name,
+                            "date": check_date,
+                            "total_allocation": total_allocation,
+                            "projects": [
+                                alloc["project"]
+                                for alloc in allocations
+                                if alloc["start"] <= check_date <= alloc["end"]
+                            ],
+                        }
+                    )
+    return conflicts

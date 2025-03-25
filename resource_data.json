@@ -1280,7 +1280,27 @@
         "Mia Jackson",
         "Thomas Wilson"
       ],
-      "allocated_budget": 13000000.0
+      "allocated_budget": 13000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Network Planning Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-01"
+        },
+        {
+          "resource": "Mia Jackson",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-01"
+        },
+        {
+          "resource": "Thomas Wilson",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-01"
+        }
+      ]
     },
     {
       "name": "Customer Self-Service Portal",
@@ -1288,7 +1308,21 @@
       "end_date": "2025-06-15",
       "priority": 2,
       "assigned_resources": ["User Experience Team", "John Mitchell"],
-      "allocated_budget": 4000000.0
+      "allocated_budget": 4000000.0,
+      "resource_allocations": [
+        {
+          "resource": "User Experience Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-15",
+          "end_date": "2025-06-15"
+        },
+        {
+          "resource": "John Mitchell",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-15",
+          "end_date": "2025-06-15"
+        }
+      ]
     },
     {
       "name": "Enterprise Billing System Upgrade",
@@ -1296,7 +1330,21 @@
       "end_date": "2025-09-30",
       "priority": 3,
       "assigned_resources": ["Ian Barnes", "Backend Team"],
-      "allocated_budget": 18000000.0
+      "allocated_budget": 18000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Ian Barnes",
+          "allocation_percentage": 100,
+          "start_date": "2025-05-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "Backend Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-05-01",
+          "end_date": "2025-09-30"
+        }
+      ]
     },
     {
       "name": "Network Security Enhancement",
@@ -1304,7 +1352,21 @@
       "end_date": "2025-06-30",
       "priority": 4,
       "assigned_resources": ["Thomas Wilson", "Security Team"],
-      "allocated_budget": 9000000.0
+      "allocated_budget": 9000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Thomas Wilson",
+          "allocation_percentage": 100,
+          "start_date": "2025-02-15",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "Security Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-02-15",
+          "end_date": "2025-06-30"
+        }
+      ]
     },
     {
       "name": "Mobile App Redesign",
@@ -1312,7 +1374,21 @@
       "end_date": "2025-07-31",
       "priority": 5,
       "assigned_resources": ["John Mitchell", "Mobile App Team"],
-      "allocated_budget": 7000000.0
+      "allocated_budget": 7000000.0,
+      "resource_allocations": [
+        {
+          "resource": "John Mitchell",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-15",
+          "end_date": "2025-07-31"
+        },
+        {
+          "resource": "Mobile App Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-15",
+          "end_date": "2025-07-31"
+        }
+      ]
     },
     {
       "name": "AI-Powered Customer Support",
@@ -1320,7 +1396,21 @@
       "end_date": "2025-05-30",
       "priority": 6,
       "assigned_resources": ["Innovation Team", "Technical Support Team"],
-      "allocated_budget": 11000000.0
+      "allocated_budget": 11000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Innovation Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2025-05-30"
+        },
+        {
+          "resource": "Technical Support Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2025-05-30"
+        }
+      ]
     },
     {
       "name": "IoT Service Platform",
@@ -1328,7 +1418,21 @@
       "end_date": "2025-08-15",
       "priority": 7,
       "assigned_resources": ["Technology Research Team", "Backend Team"],
-      "allocated_budget": 15000000.0
+      "allocated_budget": 15000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Technology Research Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-05-15",
+          "end_date": "2025-08-15"
+        },
+        {
+          "resource": "Backend Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-05-15",
+          "end_date": "2025-08-15"
+        }
+      ]
     },
     {
       "name": "Cloud Migration",
@@ -1336,7 +1440,21 @@
       "end_date": "2025-12-31",
       "priority": 8,
       "assigned_resources": ["Oliver Brown", "Infrastructure Team"],
-      "allocated_budget": 20000000.0
+      "allocated_budget": 20000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Oliver Brown",
+          "allocation_percentage": 100,
+          "start_date": "2025-01-01",
+          "end_date": "2025-12-31"
+        },
+        {
+          "resource": "Infrastructure Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-01-01",
+          "end_date": "2025-12-31"
+        }
+      ]
     },
     {
       "name": "E-commerce Platform Upgrade",
@@ -1344,7 +1462,27 @@
       "end_date": "2025-09-30",
       "priority": 9,
       "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"],
-      "allocated_budget": 10000000.0
+      "allocated_budget": 10000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Frontend Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-06-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "Backend Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-06-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "QA Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-06-01",
+          "end_date": "2025-09-30"
+        }
+      ]
     },
     {
       "name": "Data Analytics Platform",
@@ -1352,7 +1490,27 @@
       "end_date": "2026-02-28",
       "priority": 10,
       "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"],
-      "allocated_budget": 25000000.0
+      "allocated_budget": 25000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Innovation Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2026-02-28"
+        },
+        {
+          "resource": "Backend Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2026-02-28"
+        },
+        {
+          "resource": "Oliver Brown",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2026-02-28"
+        }
+      ]
     },
     {
       "name": "Customer Feedback System",
@@ -1360,7 +1518,21 @@
       "end_date": "2025-06-30",
       "priority": 11,
       "assigned_resources": ["Ella Carter", "Service Design Team"],
-      "allocated_budget": 6000000.0
+      "allocated_budget": 6000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Ella Carter",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-01",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "Service Design Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-04-01",
+          "end_date": "2025-06-30"
+        }
+      ]
     },
     {
       "name": "AI Research Initiative",
@@ -1368,7 +1540,21 @@
       "end_date": "2025-11-15",
       "priority": 12,
       "assigned_resources": ["Oliver Brown", "Data Science Team"],
-      "allocated_budget": 30000000.0
+      "allocated_budget": 30000000.0,
+      "resource_allocations": [
+        {
+          "resource": "Oliver Brown",
+          "allocation_percentage": 100,
+          "start_date": "2025-01-15",
+          "end_date": "2025-11-15"
+        },
+        {
+          "resource": "Data Science Team",
+          "allocation_percentage": 100,
+          "start_date": "2025-01-15",
+          "end_date": "2025-11-15"
+        }
+      ]
     }
   ]
 }
