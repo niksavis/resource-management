@@ -40,7 +40,6 @@ from visualizations import (
     display_utilization_dashboard,
     _display_resource_conflicts,
     display_resource_calendar,
-    unified_filter_component,
 )
 
 # Set up basic page configuration

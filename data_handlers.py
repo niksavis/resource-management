@@ -8,7 +8,6 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
 import streamlit as st
-import plotly.express as px
 
 from utils import paginate_dataframe
 from configuration import load_currency_settings
@@ -634,9 +633,6 @@ def filter_gantt_data(
     resource_types: List[str],
     utilization_threshold: float,
 ) -> pd.DataFrame:
-    """
-    Filters the Gantt data based on the unified filter criteria.
-    """
     if df.empty:
         return df
 
@@ -649,20 +645,19 @@ def filter_gantt_data(
 
     # Filter by utilization threshold
     if utilization_threshold > 0:
-        # Calculate utilization % for each resource
         resource_utilization = {}
         for resource in df["Resource"].unique():
             resource_df = df[df["Resource"] == resource]
-            min_date = resource_df["Start"].min()
-            max_date = resource_df["Finish"].max()
-            total_days = (max_date - min_date).days + 1
-            days_utilized = sum(
-                (resource_df["Finish"] - resource_df["Start"]).dt.days + 1
-            )
+            total_days = (end_date - start_date).days + 1
+            days_utilized = 0
+            for _, row in resource_df.iterrows():
+                overlap_start = max(start_date, row["Start"])
+                overlap_end = min(end_date, row["Finish"])
+                if overlap_start <= overlap_end:
+                    days_utilized += (overlap_end - overlap_start).days + 1
             utilization_percentage = (days_utilized / total_days) * 100
             resource_utilization[resource] = utilization_percentage
 
-        # Only keep resources that meet the threshold
         resources_to_keep = [
             r for r, u in resource_utilization.items() if u >= utilization_threshold
         ]
