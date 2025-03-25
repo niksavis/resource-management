@@ -1247,9 +1247,6 @@ def apply_custom_css():
     )
 
 
-apply_custom_css()
-
-
 def check_data_integrity():
     """Checks and fixes data integrity issues."""
     invalid_teams = [
