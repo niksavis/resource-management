@@ -906,7 +906,48 @@ def _apply_visualization_filters(gantt_data, filters):
 
 def _display_gantt_chart_with_filters(gantt_data):
     """Display the Gantt chart with applied filters."""
-    display_gantt_chart(gantt_data)
+    # Get filter values from the correct session state keys
+    filtered_types = st.session_state.get("filter_type_all", [])
+    filtered_departments = st.session_state.get("filter_dept_all", [])
+
+    # Apply filters
+    filtered_data = gantt_data.copy()
+    if filtered_types:
+        filtered_data = filtered_data[filtered_data["Type"].isin(filtered_types)]
+    if filtered_departments:
+        filtered_data = filtered_data[
+            filtered_data["Department"].isin(filtered_departments)
+        ]
+
+    # Get list of projects to show
+    filtered_projects = filtered_data["Project"].unique()
+
+    # Use a modified version of display_gantt_chart that respects filtering
+    _display_filtered_gantt_chart(gantt_data, filtered_projects)
+
+
+def _display_filtered_gantt_chart(gantt_data, projects_to_include):
+    """Display Gantt chart with only specified projects."""
+    # Create a copy of projects for safe modification
+    original_projects = st.session_state.data["projects"].copy()
+    filtered_projects_data = [
+        p for p in original_projects if p["name"] in projects_to_include
+    ]
+
+    # Use a context manager pattern to safely modify session state
+    class SessionStateContext:
+        def __enter__(self):
+            st.session_state.data["_temp_original_projects"] = original_projects
+            st.session_state.data["projects"] = filtered_projects_data
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            st.session_state.data["projects"] = st.session_state.data.pop(
+                "_temp_original_projects"
+            )
+
+    # Apply temporary state change safely
+    with SessionStateContext():
+        display_gantt_chart(gantt_data)
 
 
 def _display_resource_drill_down(gantt_data):
