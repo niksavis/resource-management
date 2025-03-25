@@ -421,61 +421,6 @@ def calculate_project_cost(
         return 0.0
 
 
-def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date):
-    """
-    Displays a dashboard for resource utilization based on the provided Gantt data.
-    """
-    if gantt_data.empty:
-        st.warning("No data available for utilization dashboard.")
-        return
-
-    # Calculate utilization metrics
-    utilization_df = calculate_resource_utilization(gantt_data, start_date, end_date)
-
-    if utilization_df.empty:
-        st.warning("No utilization data available for the selected period.")
-        return
-
-    # Display summary metrics
-    st.subheader("Utilization Summary")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Resources", len(utilization_df))
-    col2.metric(
-        "Average Utilization (%)", f"{utilization_df['Utilization %'].mean():.1f}"
-    )
-    col3.metric(
-        "Average Overallocation (%)", f"{utilization_df['Overallocation %'].mean():.1f}"
-    )
-
-    # Display utilization chart
-    st.subheader("Utilization by Resource")
-    fig = px.bar(
-        utilization_df,
-        x="Resource",
-        y="Utilization %",
-        color="Type",
-        hover_data=["Department", "Projects", "Cost"],
-        title="Resource Utilization",
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Display overallocation chart
-    st.subheader("Overallocation by Resource")
-    overallocation_fig = px.bar(
-        utilization_df,
-        x="Resource",
-        y="Overallocation %",
-        color="Type",
-        hover_data=["Department", "Projects", "Cost"],
-        title="Resource Overallocation",
-    )
-    st.plotly_chart(overallocation_fig, use_container_width=True)
-
-    # Display detailed utilization table
-    st.subheader("Detailed Utilization Data")
-    st.dataframe(utilization_df, use_container_width=True)
-
-
 def sort_projects_by_priority_and_date(projects):
     """Sort projects by priority (descending) and end date (descending)."""
     return sorted(
@@ -680,3 +625,47 @@ def find_temporary_allocation_conflicts():
                         }
                     )
     return conflicts
+
+
+def filter_gantt_data(
+    df: pd.DataFrame,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    resource_types: List[str],
+    utilization_threshold: float,
+) -> pd.DataFrame:
+    """
+    Filters the Gantt data based on the unified filter criteria.
+    """
+    if df.empty:
+        return df
+
+    # Filter by date range
+    df = df[(df["Start"] <= end_date) & (df["Finish"] >= start_date)]
+
+    # Filter by resource type
+    if resource_types:
+        df = df[df["Type"].isin(resource_types)]
+
+    # Filter by utilization threshold
+    if utilization_threshold > 0:
+        # Calculate utilization % for each resource
+        resource_utilization = {}
+        for resource in df["Resource"].unique():
+            resource_df = df[df["Resource"] == resource]
+            min_date = resource_df["Start"].min()
+            max_date = resource_df["Finish"].max()
+            total_days = (max_date - min_date).days + 1
+            days_utilized = sum(
+                (resource_df["Finish"] - resource_df["Start"]).dt.days + 1
+            )
+            utilization_percentage = (days_utilized / total_days) * 100
+            resource_utilization[resource] = utilization_percentage
+
+        # Only keep resources that meet the threshold
+        resources_to_keep = [
+            r for r, u in resource_utilization.items() if u >= utilization_threshold
+        ]
+        df = df[df["Resource"].isin(resources_to_keep)]
+
+    return df

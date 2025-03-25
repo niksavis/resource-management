@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from configuration import manage_visualization_colors
 from data_handlers import (
@@ -227,16 +227,16 @@ def _display_chart_legend() -> None:
             st.markdown("- Pan: Click and drag on the timeline")
 
 
-def display_utilization_dashboard(gantt_data: pd.DataFrame, start_date, end_date):
+def display_utilization_dashboard(filtered_data: pd.DataFrame, start_date, end_date):
     """
-    Displays a unified utilization dashboard without sub-tabs
+    Displays a unified utilization dashboard using pre-filtered data.
     """
-    if gantt_data.empty:
+    if filtered_data.empty:
         st.warning("No data available for utilization metrics.")
         return
 
-    # Calculate utilization metrics
-    utilization_df = calculate_resource_utilization(gantt_data, start_date, end_date)
+    # Use the filtered data directly instead of recalculating
+    utilization_df = calculate_resource_utilization(filtered_data, start_date, end_date)
 
     # Display core metrics
     st.subheader("Performance Metrics")
@@ -431,9 +431,14 @@ def _display_resource_conflicts_chart_legend():
             st.markdown("- **Pan**: Click and drag on the timeline.")
 
 
-def display_capacity_planning_dashboard(start_date=None, end_date=None):
+def display_capacity_planning_dashboard(
+    filtered_data: pd.DataFrame, start_date=None, end_date=None
+):
     """Display capacity planning dashboard with visualizations."""
     st.subheader("Availability Forecast")
+
+    # Get filtered resources
+    filtered_resources = filtered_data["Resource"].unique()
 
     # Date range selector
     col1, col2 = st.columns(2)
@@ -442,7 +447,6 @@ def display_capacity_planning_dashboard(start_date=None, end_date=None):
             start_date = st.date_input("Start Date", value=pd.to_datetime("today"))
         else:
             start_date = st.date_input("Start Date", value=start_date)
-
     with col2:
         if end_date is None:
             end_date = st.date_input(
@@ -454,22 +458,22 @@ def display_capacity_planning_dashboard(start_date=None, end_date=None):
     # Calculate capacity data
     capacity_data = calculate_capacity_data(start_date, end_date)
 
+    # Filter capacity data to only include resources from filtered_data
+    capacity_data = capacity_data[capacity_data["Resource"].isin(filtered_resources)]
+
     if capacity_data.empty:
-        st.warning("No capacity data available for the selected period.")
+        st.warning("No capacity data available for the selected period and filters.")
         return
 
     # Display capacity overview
     st.subheader("Capacity Overview")
     col1, col2, col3 = st.columns(3)
-
     with col1:
         total_capacity = capacity_data["Capacity (hours)"].sum()
         st.metric("Total Capacity (hours)", f"{total_capacity:,.1f}")
-
     with col2:
         total_allocated = capacity_data["Allocated (hours)"].sum()
         st.metric("Total Allocated (hours)", f"{total_allocated:,.1f}")
-
     with col3:
         overall_utilization = (
             (total_allocated / total_capacity * 100) if total_capacity > 0 else 0
@@ -494,10 +498,8 @@ def display_capacity_planning_dashboard(start_date=None, end_date=None):
         },
         labels={"value": "Hours", "variable": "Metric"},
     )
-    st.plotly_chart(fig, use_container_width=True)
 
-    # Resource availability heatmap
-    st.subheader("Resource Availability")
+    st.plotly_chart(fig, use_container_width=True)
 
     # Display detailed capacity table
     st.subheader("Detailed Capacity Data")
@@ -546,19 +548,27 @@ def display_overallocation_warnings(capacity_data):
             )
 
 
-def display_resource_calendar(start_date, end_date):
+def display_resource_calendar(filtered_data: pd.DataFrame, start_date, end_date):
     """Display a calendar view of resource allocations."""
+    if filtered_data.empty:
+        st.warning("No data available for resource calendar.")
+        return
+
+    # Generate date range
     date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-    resources = []
-    for person in st.session_state.data["people"]:
-        resources.append({"name": person["name"], "type": "Person"})
-    for team in st.session_state.data["teams"]:
-        resources.append({"name": team["name"], "type": "Team"})
-    calendar_data = pd.DataFrame(
-        0, index=[r["name"] for r in resources], columns=date_range
-    )
+
+    # Get resources from filtered data
+    resources = filtered_data["Resource"].unique()
+
+    # Create empty calendar DataFrame
+    calendar_data = pd.DataFrame(0, index=resources, columns=date_range)
+
+    # Process project data
     for project in st.session_state.data["projects"]:
+        # Get resource allocations for this project
         resource_allocations = project.get("resource_allocations", [])
+
+        # If no specific allocations, create default ones
         if not resource_allocations:
             resource_allocations = [
                 {
@@ -568,15 +578,24 @@ def display_resource_calendar(start_date, end_date):
                     "end_date": project["end_date"],
                 }
                 for r in project["assigned_resources"]
+                if r in resources
             ]
+
+        # Process each allocation
         for allocation in resource_allocations:
             res = allocation["resource"]
-            if res not in calendar_data.index:
+
+            # Skip if resource is not in filtered resources
+            if res not in resources:
                 continue
+
+            # Calculate overlap with the selected date range
             alloc_start = pd.to_datetime(allocation["start_date"])
             alloc_end = pd.to_datetime(allocation["end_date"])
             overlap_start = max(alloc_start, pd.Timestamp(start_date))
             overlap_end = min(alloc_end, pd.Timestamp(end_date))
+
+            # Update calendar data
             if overlap_start <= overlap_end:
                 overlap_dates = pd.date_range(
                     start=overlap_start, end=overlap_end, freq="D"
@@ -587,6 +606,7 @@ def display_resource_calendar(start_date, end_date):
                             "allocation_percentage"
                         ]
 
+    # Create heatmap visualization
     fig = px.imshow(
         calendar_data,
         labels=dict(x="Date", y="Resource", color="Allocation %"),
@@ -600,4 +620,40 @@ def display_resource_calendar(start_date, end_date):
         aspect="auto",
         height=800,
     )
+
     st.plotly_chart(fig, use_container_width=True)
+
+
+def unified_filter_component() -> Tuple[pd.Timestamp, pd.Timestamp, List[str], float]:
+    """
+    Creates a unified filter component for use across multiple pages.
+
+    Returns:
+    - start_date: The start date for filtering
+    - end_date: The end date for filtering
+    - resource_types: List of selected resource types
+    - utilization_threshold: The minimum utilization percentage to filter by
+    """
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = pd.to_datetime(
+            st.date_input("Start Date", value=pd.to_datetime("today"))
+        )
+    with col2:
+        end_date = pd.to_datetime(
+            st.date_input(
+                "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
+            )
+        )
+
+    resource_types = st.multiselect(
+        "Resource Type",
+        options=["Person", "Team", "Department"],
+        default=["Person", "Team", "Department"],
+    )
+
+    utilization_threshold = st.slider(
+        "Minimum Utilization %", min_value=0, max_value=100, value=0, step=5
+    )
+
+    return start_date, end_date, resource_types, utilization_threshold
