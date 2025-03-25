@@ -10,7 +10,6 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-from calculation_helpers import calculate_project_duration
 from utils import paginate_dataframe
 from configuration import load_currency_settings
 
@@ -674,3 +673,15 @@ def calculate_capacity_data(start_date, end_date):
         )
 
     return pd.DataFrame(capacity_data)
+
+
+def calculate_project_duration(start_date: datetime, end_date: datetime) -> int:
+    """Calculate project duration in days."""
+    return (end_date - start_date).days + 1
+
+
+def is_resource_overallocated(
+    allocation_days: int, total_days: int, threshold: float = 0.8
+) -> bool:
+    """Determine if a resource is overallocated based on percentage."""
+    return (allocation_days / total_days) > threshold
