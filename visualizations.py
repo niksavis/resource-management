@@ -149,8 +149,8 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
                     "Duration (days)": duration_days,
                     "Allocation %": allocation["allocation_percentage"],
                     "Cost": cost,
-                    "Utilization %": 0,  # Placeholder
-                    "Overallocation %": 0,  # Placeholder
+                    "Utilization %": 0.0,
+                    "Overallocation %": 0.0,
                 }
             )
 
