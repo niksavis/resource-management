@@ -1273,21 +1273,21 @@
     {
       "name": "5G Network Expansion",
       "start_date": "2025-04-01",
-      "end_date": "2025-05-15",
+      "end_date": "2025-07-01",
       "priority": 1,
-      "assigned_resources": ["Network Planning Team", "Mia Jackson"],
+      "assigned_resources": [
+        "Network Planning Team",
+        "Mia Jackson",
+        "Thomas Wilson"
+      ],
       "allocated_budget": 13000000.0
     },
     {
       "name": "Customer Self-Service Portal",
       "start_date": "2025-03-15",
-      "end_date": "2025-04-15",
+      "end_date": "2025-06-15",
       "priority": 2,
-      "assigned_resources": [
-        "Frontend Team",
-        "Backend Team",
-        "User Experience Team"
-      ],
+      "assigned_resources": ["User Experience Team", "John Mitchell"],
       "allocated_budget": 4000000.0
     },
     {
@@ -1295,11 +1295,7 @@
       "start_date": "2025-05-01",
       "end_date": "2025-09-30",
       "priority": 3,
-      "assigned_resources": [
-        "Enterprise Systems Team",
-        "Enterprise Products Team",
-        "Ian Barnes"
-      ],
+      "assigned_resources": ["Ian Barnes", "Backend Team"],
       "allocated_budget": 18000000.0
     },
     {
@@ -1307,11 +1303,7 @@
       "start_date": "2025-02-15",
       "end_date": "2025-06-30",
       "priority": 4,
-      "assigned_resources": [
-        "Security Team",
-        "Network Operations Team",
-        "Thomas Wilson"
-      ],
+      "assigned_resources": ["Thomas Wilson", "Security Team"],
       "allocated_budget": 9000000.0
     },
     {
@@ -1319,18 +1311,13 @@
       "start_date": "2025-04-15",
       "end_date": "2025-07-31",
       "priority": 5,
-      "assigned_resources": [
-        "Mobile App Team",
-        "User Experience Team",
-        "Customer Support Team",
-        "John Mitchell"
-      ],
+      "assigned_resources": ["John Mitchell", "Mobile App Team"],
       "allocated_budget": 7000000.0
     },
     {
       "name": "AI-Powered Customer Support",
       "start_date": "2025-03-01",
-      "end_date": "2025-04-15",
+      "end_date": "2025-05-30",
       "priority": 6,
       "assigned_resources": ["Innovation Team", "Technical Support Team"],
       "allocated_budget": 11000000.0
@@ -1338,7 +1325,7 @@
     {
       "name": "IoT Service Platform",
       "start_date": "2025-05-15",
-      "end_date": "2025-06-15",
+      "end_date": "2025-08-15",
       "priority": 7,
       "assigned_resources": ["Technology Research Team", "Backend Team"],
       "allocated_budget": 15000000.0
@@ -1348,11 +1335,7 @@
       "start_date": "2025-01-01",
       "end_date": "2025-12-31",
       "priority": 8,
-      "assigned_resources": [
-        "Backend Team",
-        "Infrastructure Team",
-        "Oliver Brown"
-      ],
+      "assigned_resources": ["Oliver Brown", "Infrastructure Team"],
       "allocated_budget": 20000000.0
     },
     {
@@ -1376,23 +1359,15 @@
       "start_date": "2025-04-01",
       "end_date": "2025-06-30",
       "priority": 11,
-      "assigned_resources": [
-        "Frontend Team",
-        "User Experience Team",
-        "Ella Carter"
-      ],
+      "assigned_resources": ["Ella Carter", "Service Design Team"],
       "allocated_budget": 6000000.0
     },
     {
       "name": "AI Research Initiative",
-      "start_date": "2025-01-01",
-      "end_date": "2026-12-31",
+      "start_date": "2025-01-15",
+      "end_date": "2025-11-15",
       "priority": 12,
-      "assigned_resources": [
-        "Innovation Team",
-        "Technology Research Team",
-        "Oliver Brown"
-      ],
+      "assigned_resources": ["Oliver Brown", "Data Science Team"],
       "allocated_budget": 30000000.0
     }
   ]
