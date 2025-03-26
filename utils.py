@@ -167,7 +167,43 @@ def _apply_all_filters(
 
 
 def _apply_sorting(df: pd.DataFrame, label: str) -> pd.DataFrame:
+    """Apply sorting to the DataFrame with user-friendly column names."""
     if not df.empty:
+        if label == "people":
+            df.rename(
+                columns={
+                    "name": "Name",
+                    "role": "Role",
+                    "department": "Department",
+                    "team": "Team",
+                    "daily_cost": "Daily Cost",
+                    "work_days": "Work Days",
+                    "daily_work_hours": "Daily Work Hours",
+                    "capacity_hours_per_week": "Capacity (Hours/Week)",
+                    "capacity_hours_per_month": "Capacity (Hours/Month)",
+                },
+                inplace=True,
+            )
+        elif label == "teams":
+            df.rename(
+                columns={
+                    "name": "Name",
+                    "department": "Department",
+                    "members": "Members",
+                },
+                inplace=True,
+            )
+        elif label == "departments":
+            df.rename(
+                columns={
+                    "name": "Name",
+                    "teams": "Teams",
+                    "members": "Members",
+                },
+                inplace=True,
+            )
+
+        # Apply sorting logic
         sort_options = ["None"] + list(df.columns)
         sort_col = st.selectbox("Sort by", options=sort_options, key=f"sort_{label}")
         if sort_col != "None":
