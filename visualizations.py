@@ -709,13 +709,13 @@ def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=Non
         freq = "W"
         period_name = "Week"
     else:
-        freq = "M"
+        freq = "ME"
         period_name = "Month"
 
     # Generate time periods
     date_range = pd.date_range(start=start_date, end=end_date, freq=freq)
     if len(date_range) > 30:  # If too many periods, adjust frequency
-        freq = "W" if freq == "D" else "M"
+        freq = "W" if freq == "D" else "ME"
         period_name = "Week" if freq == "W" else "Month"
         date_range = pd.date_range(start=start_date, end=end_date, freq=freq)
 
@@ -725,12 +725,15 @@ def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=Non
     # Create empty matrix (projects × time periods)
     matrix_data = pd.DataFrame(0, index=projects, columns=date_range)
 
+    # Ensure matrix_data is of type float64 to avoid dtype issues
+    matrix_data = matrix_data.astype(float)
+
     # Add metadata for hover info
     hover_data = {}
     for project in projects:
         hover_data[project] = {period: [] for period in date_range}
 
-    # Fill matrix with allocation data
+    # Add weighted allocation to matrix
     for _, row in df.iterrows():
         project = row["Project"]
         resource = row["Resource"]
