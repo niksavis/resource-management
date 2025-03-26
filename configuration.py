@@ -8,6 +8,21 @@ import plotly.express as px
 SETTINGS_FILE = "settings.json"
 
 
+def create_default_settings() -> Dict:
+    """Creates a dictionary with default settings."""
+    return {
+        "currency": "€",
+        "currency_format": {"symbol_position": "prefix", "decimal_places": 2},
+        "department_colors": {},
+        "heatmap_colorscale": [
+            [0.0, "#f0f2f6"],  # No allocation
+            [0.5, "#ffd700"],  # Moderate allocation
+            [1.0, "#4b0082"],  # Full/over allocation
+        ],
+        "max_daily_cost": 2000.0,
+    }
+
+
 def ensure_settings_directory():
     """Ensure the directory for settings.json exists."""
     directory = os.path.dirname(SETTINGS_FILE)
@@ -15,19 +30,73 @@ def ensure_settings_directory():
         os.makedirs(directory)
 
 
+def load_settings_safely() -> Dict:
+    """
+    Loads the settings from the file, with error handling.
+    If loading fails, regenerates default settings.
+    """
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, "r") as file:
+                settings = json.load(file)
+                return settings
+        else:
+            # File doesn't exist, create default settings
+            settings = create_default_settings()
+            save_settings(settings)
+            return settings
+    except json.JSONDecodeError as e:
+        # Handle corrupted JSON
+        st.warning(
+            f"Settings file is corrupted: {str(e)}. Regenerating default settings."
+        )
+
+        # Create backup of corrupted file
+        try:
+            backup_file = f"{SETTINGS_FILE}.backup"
+            with open(SETTINGS_FILE, "r") as src, open(backup_file, "w") as dst:
+                dst.write(src.read())
+            st.info(f"Backup of corrupted settings saved to {backup_file}")
+        except Exception:
+            pass
+
+        # Generate and save default settings
+        settings = create_default_settings()
+        save_settings(settings)
+        return settings
+    except (FileNotFoundError, PermissionError) as e:
+        # Handle file access issues
+        st.warning(f"Cannot access settings file: {str(e)}. Using default settings.")
+        settings = create_default_settings()
+        try:
+            save_settings(settings)
+        except Exception:
+            pass
+        return settings
+    except Exception as e:
+        # Catch any other unexpected errors
+        st.error(
+            f"Unexpected error loading settings: {str(e)}. Using default settings."
+        )
+        return create_default_settings()
+
+
 def load_settings() -> Dict:
-    """Loads the settings from the settings file."""
-    if os.path.exists(SETTINGS_FILE):
-        with open(SETTINGS_FILE, "r") as file:
-            return json.load(file)
-    return {}
+    """
+    Loads the settings from file, with fallback to safe loading if it fails.
+    This maintains compatibility with existing code.
+    """
+    return load_settings_safely()
 
 
 def save_settings(settings: Dict) -> None:
-    """Saves the settings to the settings file."""
-    ensure_settings_directory()
-    with open(SETTINGS_FILE, "w") as file:
-        json.dump(settings, file, indent=4)
+    """Saves the settings to the settings file with error handling."""
+    try:
+        ensure_settings_directory()
+        with open(SETTINGS_FILE, "w") as file:
+            json.dump(settings, file, indent=4)
+    except Exception as e:
+        st.error(f"Failed to save settings: {str(e)}")
 
 
 def regenerate_department_colors(departments: List[str]) -> None:
@@ -133,10 +202,11 @@ def display_color_settings():
         departments = [d["name"] for d in st.session_state.data["departments"]]
         dept_colors = load_department_colors()
 
+        st.markdown("**Department Color Configuratrion**")
         new_colors = {}
         for dept in departments:
             new_colors[dept] = st.color_picker(
-                f"Color for {dept}",
+                f"{dept}",
                 value=dept_colors.get(dept, "#4B0082"),
             )
 
