@@ -1,52 +1,38 @@
 {
-    "department_colors": {
-        "Network Engineering": "#636efa",
-        "Software Development": "#ef553b",
-        "Information Technology": "#00cc96",
-        "Product Management": "#ab63fa",
-        "Customer Experience": "#ffa15a",
-        "Operations": "#19d3f3",
-        "Research and Development": "#ff6692"
-    },
-    "utilization_colorscale": [
-        [
-            0,
-            "#00FF00"
-        ],
-        [
-            0.5,
-            "#FFFF00"
-        ],
-        [
-            1,
-            "#FF0000"
-        ]
-    ],
-    "heatmap_colorscale": [
-        [
-            0.0,
-            "#c7dcff"
-        ],
-        [
-            0.5,
-            "#ffa900"
-        ],
-        [
-            1.0,
-            "#d20b0e"
-        ]
-    ],
     "currency": "EUR",
     "currency_format": {
         "symbol_position": "prefix",
         "decimal_places": 2
     },
+    "department_colors": {
+        "Customer Experience": "#008203",
+        "Information Technology": "#002e82",
+        "Network Engineering": "#82007c",
+        "Operations": "#005082",
+        "Product Management": "#820013",
+        "Research and Development": "#008250",
+        "Software Development": "#700082"
+    },
+    "heatmap_colorscale": [
+        [
+            0.0,
+            "#b6d5f5"
+        ],
+        [
+            0.5,
+            "#ffb200"
+        ],
+        [
+            1.0,
+            "#d81618"
+        ]
+    ],
     "max_daily_cost": 2000.0,
     "gantt_chart_colors": {
-        "priority_1": "#6e868c",
-        "priority_2": "#831b76",
-        "priority_3": "#fcd9b6",
-        "priority_4": "#c49df4",
-        "priority_5": "#056b7c"
+        "priority_1": "#a30e0c",
+        "priority_2": "#fd1f45",
+        "priority_3": "#13eac8",
+        "priority_4": "#8d9830",
+        "priority_5": "#a4eba9"
     }
 }
