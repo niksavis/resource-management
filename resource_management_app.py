@@ -40,7 +40,8 @@ from visualizations import (
     display_gantt_chart,
     display_utilization_dashboard,
     _display_resource_conflicts,
-    display_resource_calendar,  # Import the new implementation
+    display_resource_calendar,
+    display_resource_matrix_view,
 )
 
 # Set up basic page configuration
@@ -835,13 +836,14 @@ def display_visualize_data_tab():
     # Apply filters to data
     filtered_data = apply_filters(gantt_data, filters)
 
-    # Extract filtered projects for the main Gantt chart
-    filtered_projects = filtered_data["Project"].unique().tolist()
+    # Extract date range from filters
+    start_date = filters["date_range"][0] if len(filters["date_range"]) > 0 else None
+    end_date = filters["date_range"][1] if len(filters["date_range"]) > 1 else None
 
-    # Display the Gantt chart with filtered projects
-    display_gantt_chart(gantt_data, projects_to_include=filtered_projects)
+    # Display the matrix view with filtered data
+    display_resource_matrix_view(filtered_data, start_date, end_date)
 
-    # Display resource conflicts based on filtered data (this already works correctly)
+    # Display resource conflicts section
     _display_resource_conflicts(filtered_data)
 
 

@@ -2,9 +2,9 @@
     "department_colors": {
         "Network Engineering": "#636efa",
         "Software Development": "#ef553b",
-        "Customer Experience": "#00cc96",
-        "Information Technology": "#ab63fa",
-        "Product Management": "#ffa15a",
+        "Information Technology": "#00cc96",
+        "Product Management": "#ab63fa",
+        "Customer Experience": "#ffa15a",
         "Operations": "#19d3f3",
         "Research and Development": "#ff6692"
     },
@@ -22,10 +22,31 @@
             "#FF0000"
         ]
     ],
+    "heatmap_colorscale": [
+        [
+            0.0,
+            "#c7dcff"
+        ],
+        [
+            0.5,
+            "#ffa900"
+        ],
+        [
+            1.0,
+            "#d20b0e"
+        ]
+    ],
     "currency": "EUR",
     "currency_format": {
         "symbol_position": "prefix",
         "decimal_places": 2
     },
-    "max_daily_cost": 2000.0
+    "max_daily_cost": 2000.0,
+    "gantt_chart_colors": {
+        "priority_1": "#6e868c",
+        "priority_2": "#831b76",
+        "priority_3": "#fcd9b6",
+        "priority_4": "#c49df4",
+        "priority_5": "#056b7c"
+    }
 }

@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import streamlit as st
 from typing import Dict, List
 import plotly.express as px
@@ -27,19 +28,6 @@ def save_settings(settings: Dict) -> None:
     ensure_settings_directory()
     with open(SETTINGS_FILE, "w") as file:
         json.dump(settings, file, indent=4)
-
-
-def load_department_colors() -> Dict[str, str]:
-    """Loads department colors from the settings file."""
-    settings = load_settings()
-    return settings.get("department_colors", {})
-
-
-def save_department_colors(colors: Dict[str, str]) -> None:
-    """Save department colors to settings."""
-    settings = load_settings()
-    settings["department_colors"] = colors
-    save_settings(settings)
 
 
 def regenerate_department_colors(departments: List[str]) -> None:
@@ -137,49 +125,130 @@ def save_daily_cost_settings(max_daily_cost: float) -> None:
 
 
 def display_color_settings():
-    """Allow users to customize visualization colors."""
-    st.subheader("Colors Settings")
+    """Display and configure color settings for visualizations."""
+    st.subheader("Color Settings")
 
-    # Load current colors
-    department_colors = load_department_colors()
-    utilization_colorscale = load_utilization_colorscale()
+    # Department Colors Section
+    with st.expander("Department Colors", expanded=False):
+        departments = [d["name"] for d in st.session_state.data["departments"]]
+        dept_colors = load_department_colors()
 
-    with st.expander("Customize Department Colors", expanded=False):
-        modified = False
-        with st.form("color_settings"):
-            for dept, color in department_colors.items():
-                new_color = st.color_picker(
-                    f"{dept}", color
-                ).lower()  # Ensure lowercase
-                if new_color != color:
-                    department_colors[dept] = new_color
-                    modified = True
+        new_colors = {}
+        for dept in departments:
+            new_colors[dept] = st.color_picker(
+                f"Color for {dept}",
+                value=dept_colors.get(dept, "#4B0082"),
+            )
 
-            submit = st.form_submit_button("Save Colors")
-            if submit and modified:
-                save_department_colors(department_colors)
-                st.success("Department colors updated")
+        if st.button("Save Department Colors"):
+            save_department_colors(new_colors)
+            st.success("Department colors updated")
 
-    with st.expander("Customize Utilization Colors", expanded=False):
-        modified = False
-        with st.form("utilization_color_settings"):
-            new_utilization_colorscale = []
-            for i, (value, color) in enumerate(utilization_colorscale):
-                new_color = st.color_picker(
-                    f"Value {value * 100:.0f}%", color
-                ).lower()  # Ensure lowercase
+    # Gantt Chart Colors Section
+    with st.expander("Gantt Chart Colors", expanded=False):
+        colors = load_gantt_chart_colors()
 
-                if not new_color.startswith("#") or len(new_color) not in [4, 7]:
-                    st.error(
-                        f"Invalid hex color: {new_color}. Please use a valid hex code."
-                    )
-                    continue
+        st.markdown("**Project Colors by Priority**")
+        priority_colors = {}
+        for priority in range(1, 6):
+            priority_colors[priority] = st.color_picker(
+                f"Priority {priority}",
+                value=colors.get(
+                    f"priority_{priority}",
+                    "#" + "".join([f"{random.randint(0, 255):02x}" for _ in range(3)]),
+                ),
+            )
 
-                new_utilization_colorscale.append([value, new_color])
-                if new_color != color:
-                    modified = True
+        if st.button("Save Chart Colors"):
+            # Convert the priority colors to the expected format
+            colors_dict = {f"priority_{p}": c for p, c in priority_colors.items()}
+            save_gantt_chart_colors(colors_dict)
+            st.success("Chart colors updated")
 
-            submit = st.form_submit_button("Save Utilization Colors")
-            if submit and modified:
-                save_utilization_colorscale(new_utilization_colorscale)
-                st.success("Utilization colors updated")
+    # Matrix View Colors Section - FIXED FORM IMPLEMENTATION
+    with st.expander("Matrix View Colors", expanded=False):
+        heatmap_colorscale = load_heatmap_colorscale()
+
+        # Single form for matrix colors
+        with st.form(key="matrix_color_form"):
+            st.markdown("**Matrix View Color Configuration**")
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                low_color = st.color_picker(
+                    "No Allocation (0%)",
+                    value=heatmap_colorscale[0][1]
+                    if len(heatmap_colorscale) > 0
+                    else "#f0f2f6",
+                )
+
+            with col2:
+                medium_color = st.color_picker(
+                    "Medium Allocation (50%)",
+                    value=heatmap_colorscale[1][1]
+                    if len(heatmap_colorscale) > 1
+                    else "#ffd700",
+                )
+
+            with col3:
+                high_color = st.color_picker(
+                    "Full Allocation (100%+)",
+                    value=heatmap_colorscale[2][1]
+                    if len(heatmap_colorscale) > 2
+                    else "#4b0082",
+                )
+
+            # Submit button within the form
+            submit = st.form_submit_button("Save Matrix Colors")
+
+        # Process form submission outside the form
+        if submit:
+            new_colorscale = [[0.0, low_color], [0.5, medium_color], [1.0, high_color]]
+            save_heatmap_colorscale(new_colorscale)
+            st.success("Matrix view colors updated")
+
+
+def save_gantt_chart_colors(colors_dict):
+    """Save Gantt chart colors to settings."""
+    settings = load_settings()
+    settings["gantt_chart_colors"] = colors_dict
+    save_settings(settings)
+
+
+def save_department_colors(colors_dict):
+    """Save department colors to settings."""
+    settings = load_settings()
+    settings["department_colors"] = colors_dict
+    save_settings(settings)
+
+
+def load_heatmap_colorscale():
+    """Load heatmap colorscale from settings"""
+    settings = load_settings()
+    return settings.get(
+        "heatmap_colorscale",
+        [
+            (0.0, "#f0f2f6"),  # No allocation
+            (0.5, "#ffd700"),  # Moderate allocation
+            (1.0, "#4b0082"),  # Full/over allocation
+        ],
+    )
+
+
+def save_heatmap_colorscale(colorscale):
+    """Save heatmap colorscale to settings"""
+    settings = load_settings()
+    settings["heatmap_colorscale"] = colorscale
+    save_settings(settings)
+
+
+def load_gantt_chart_colors():
+    """Load Gantt chart colors from settings."""
+    settings = load_settings()
+    return settings.get("gantt_chart_colors", {})
+
+
+def load_department_colors():
+    """Load department colors from settings."""
+    settings = load_settings()
+    return settings.get("department_colors", {})

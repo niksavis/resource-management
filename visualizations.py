@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -681,3 +682,176 @@ def display_standard_filters(update_session_state=True):
             )
 
     return start_date, end_date, resource_types, departments, utilization_threshold
+
+
+def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=None):
+    """Display a resource matrix view showing project allocations over time."""
+    if df.empty:
+        st.warning("No data available to visualize.")
+        return
+
+    # If dates not provided, use min/max from data
+    if start_date is None:
+        start_date = df["Start"].min()
+    if end_date is None:
+        end_date = df["Finish"].max()
+
+    # Convert to pandas timestamps if needed
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    # Calculate appropriate time periods based on date range
+    range_days = (end_date - start_date).days
+    if range_days <= 14:
+        freq = "D"
+        period_name = "Day"
+    elif range_days <= 60:
+        freq = "W"
+        period_name = "Week"
+    else:
+        freq = "M"
+        period_name = "Month"
+
+    # Generate time periods
+    date_range = pd.date_range(start=start_date, end=end_date, freq=freq)
+    if len(date_range) > 30:  # If too many periods, adjust frequency
+        freq = "W" if freq == "D" else "M"
+        period_name = "Week" if freq == "W" else "Month"
+        date_range = pd.date_range(start=start_date, end=end_date, freq=freq)
+
+    # Get unique projects sorted by priority
+    projects = df.sort_values(by="Priority", ascending=False)["Project"].unique()
+
+    # Create empty matrix (projects × time periods)
+    matrix_data = pd.DataFrame(0, index=projects, columns=date_range)
+
+    # Add metadata for hover info
+    hover_data = {}
+    for project in projects:
+        hover_data[project] = {period: [] for period in date_range}
+
+    # Fill matrix with allocation data
+    for _, row in df.iterrows():
+        project = row["Project"]
+        resource = row["Resource"]
+        resource_type = row["Type"]
+
+        # Check if 'Allocation %' column exists, if not use default 100
+        if "Allocation %" in row:
+            allocation = row["Allocation %"]
+        else:
+            allocation = 100  # Default allocation percentage if not provided
+
+        # Calculate period duration based on frequency
+        if freq == "D":
+            period_duration = pd.Timedelta(days=1)
+        elif freq == "W":
+            period_duration = pd.Timedelta(days=7)
+        else:
+            period_duration = pd.Timedelta(days=30)
+
+        # Calculate overlap with each time period
+        for period_start in date_range:
+            period_end = period_start + period_duration - pd.Timedelta(seconds=1)
+
+            # Check if allocation overlaps with period
+            if (row["Start"] <= period_end) and (row["Finish"] >= period_start):
+                # Calculate weighted allocation based on overlap
+                start_overlap = max(row["Start"], period_start)
+                end_overlap = min(row["Finish"], period_end)
+                overlap_days = (end_overlap - start_overlap).days + 1
+                period_days = (period_end - period_start).days + 1
+                overlap_factor = min(1.0, overlap_days / period_days)
+
+                # Add weighted allocation to matrix
+                matrix_data.at[project, period_start] += allocation * overlap_factor
+
+                # Store resource details for hover information
+                hover_data[project][period_start].append(
+                    {
+                        "resource": resource,
+                        "type": resource_type,
+                        "allocation": allocation,
+                        "dept": row["Department"],
+                    }
+                )
+
+    # Generate hover text
+    hover_text = []
+    for project in projects:
+        project_hover = []
+        for period in date_range:
+            period_text = (
+                f"Project: {project}<br>{period_name}: {period.strftime('%b %d')}<br>"
+            )
+            period_text += (
+                f"Total Allocation: {matrix_data.loc[project, period]:.1f}%<br>"
+            )
+
+            if hover_data[project][period]:
+                period_text += "<br><b>Resources:</b><br>"
+                for res in hover_data[project][period]:
+                    period_text += f"• {res['resource']} ({res['type']}, {res['dept']}): {res['allocation']}%<br>"
+            else:
+                period_text += "<br>No resources allocated"
+
+            project_hover.append(period_text)
+        hover_text.append(project_hover)
+
+    # Create color scale from configuration
+    try:
+        from configuration import load_heatmap_colorscale
+
+        colorscale = load_heatmap_colorscale()
+    except (ImportError, AttributeError):
+        colorscale = [
+            (0.0, "#f0f2f6"),  # No allocation
+            (0.5, "#ffd700"),  # Moderate allocation
+            (1.0, "#4b0082"),  # Full/over allocation
+        ]
+
+    # Create heatmap visualization
+    fig = px.imshow(
+        matrix_data,
+        labels=dict(x=period_name, y="Project", color="Resource Allocation %"),
+        x=[period.strftime("%b %d") for period in date_range],
+        y=projects,
+        color_continuous_scale=colorscale,
+        aspect="auto",
+        zmin=0,
+        zmax=150,  # Allow visualization of overallocation
+    )
+
+    # Add custom hover information
+    fig.update_traces(hovertemplate="%{hovertext}", hovertext=np.array(hover_text))
+
+    # Add today marker line
+    today = pd.Timestamp("today")
+    if start_date <= today <= end_date:
+        # Find the nearest date period
+        nearest_period = min(date_range, key=lambda x: abs(x - today))
+        period_idx = list(date_range).index(nearest_period)
+
+        fig.add_vline(
+            x=period_idx,
+            line_width=2,
+            line_color="red",
+            line_dash="dash",
+            annotation_text="Today",
+            annotation_position="top",
+        )
+
+    # Customize layout
+    fig.update_layout(
+        height=max(400, len(projects) * 30),  # Dynamic height based on projects
+        margin=dict(l=150, r=30, t=30, b=50),
+        coloraxis_colorbar=dict(
+            title="Allocation %",
+            tickvals=[0, 50, 100, 150],
+            ticktext=["0%", "50%", "100%", ">150%"],
+        ),
+        xaxis_title=f"{period_name}s",
+        yaxis_title="Projects",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
