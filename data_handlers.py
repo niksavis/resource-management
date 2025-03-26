@@ -57,11 +57,15 @@ def create_gantt_data(
     try:
         df_data = []
         for project in projects:
+            if "assigned_resources" not in project or not project["assigned_resources"]:
+                st.warning(f"Project '{project['name']}' has no assigned resources.")
+                continue  # Skip projects with no assigned resources
+
             for resource in project["assigned_resources"]:
                 r_type, department = _determine_resource_type(resource, resources)
                 df_data.append(
                     {
-                        "Resource": resource,
+                        "Resource": resource,  # Ensure 'Resource' column is included
                         "Type": r_type,
                         "Department": department,
                         "Project": project["name"],
@@ -74,6 +78,8 @@ def create_gantt_data(
                         ),
                     }
                 )
+        if not df_data:
+            st.warning("No valid data available for Gantt chart.")
         return pd.DataFrame(df_data)
     except KeyError as e:
         st.error(f"Missing key in project or resource data: {e}")
@@ -645,6 +651,53 @@ def filter_gantt_data(
 
     # Filter by utilization threshold
     if utilization_threshold > 0:
+        resource_utilization = calculate_resource_utilization(df, start_date, end_date)
+        resources_to_keep = resource_utilization[
+            resource_utilization["Utilization %"] >= utilization_threshold
+        ]["Resource"].tolist()
+        df = df[df["Resource"].isin(resources_to_keep)]
+
+    return df
+
+
+def apply_filters(
+    df: pd.DataFrame,
+    filters: Dict[str, any],
+) -> pd.DataFrame:
+    """
+    Apply unified filters to a DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to filter.
+        filters (Dict[str, any]): A dictionary containing filter criteria.
+
+    Returns:
+        pd.DataFrame: The filtered DataFrame.
+    """
+    if df.empty:
+        return df
+
+    # Filter by department
+    if filters.get("dept_filter"):
+        df = df[df["Department"].isin(filters["dept_filter"])]
+
+    # Filter by resource type
+    if filters.get("resource_type_filter"):
+        df = df[df["Type"].isin(filters["resource_type_filter"])]
+
+    # Filter by project
+    if filters.get("project_filter"):
+        df = df[df["Project"].isin(filters["project_filter"])]
+
+    # Filter by date range
+    if "date_range" in filters and len(filters["date_range"]) == 2:
+        start_date, end_date = filters["date_range"]
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+        df = df[(df["Start"] <= end_date) & (df["Finish"] >= start_date)]
+
+    # Filter by utilization threshold
+    if filters.get("utilization_threshold", 0) > 0:
         resource_utilization = {}
         for resource in df["Resource"].unique():
             resource_df = df[df["Resource"] == resource]
@@ -659,7 +712,9 @@ def filter_gantt_data(
             resource_utilization[resource] = utilization_percentage
 
         resources_to_keep = [
-            r for r, u in resource_utilization.items() if u >= utilization_threshold
+            r
+            for r, u in resource_utilization.items()
+            if u >= filters["utilization_threshold"]
         ]
         df = df[df["Resource"].isin(resources_to_keep)]
 

@@ -14,15 +14,21 @@ from data_handlers import (
 )
 
 
-def display_gantt_chart(df: pd.DataFrame) -> None:
+def display_gantt_chart(df: pd.DataFrame, projects_to_include=None) -> None:
     """
-    Displays an interactive Gantt chart using Plotly.
+    Displays an interactive Gantt chart using Plotly with optional project filtering.
     """
     if df.empty:
         st.warning("No data available to visualize.")
         return
 
-    df_with_utilization = _prepare_gantt_data(df)
+    # Prepare Gantt data with filtering support
+    df_with_utilization = _prepare_gantt_data(df, projects_to_include)
+
+    # Check if the DataFrame is empty or missing the Resource column
+    if df_with_utilization.empty or "Resource" not in df_with_utilization.columns:
+        st.warning("No data available to display after filtering.")
+        return
 
     # Calculate utilization and overallocation
     for resource in df_with_utilization["Resource"].unique():
@@ -73,11 +79,19 @@ def display_gantt_chart(df: pd.DataFrame) -> None:
     _display_chart_legend()
 
 
-def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Prepare data for Gantt chart with temporary resource assignments."""
+def _prepare_gantt_data(df: pd.DataFrame, projects_to_include=None) -> pd.DataFrame:
+    """Prepare data for Gantt chart visualization with filtering support."""
     gantt_data = []
 
     for project in st.session_state.data["projects"]:
+        # Skip projects not in the filter list if provided AND non-empty
+        if (
+            projects_to_include is not None
+            and len(projects_to_include) > 0  # Only apply filter if list has items
+            and project["name"] not in projects_to_include
+        ):
+            continue
+
         project_name = project["name"]
         project_priority = project["priority"]
 
@@ -86,6 +100,10 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
 
         # If no specific allocations, create default ones for all assigned resources
         if not resource_allocations:
+            if "assigned_resources" not in project or not project["assigned_resources"]:
+                st.warning(f"Project '{project_name}' has no assigned resources.")
+                continue  # Skip projects with no assigned resources
+
             resource_allocations = [
                 {
                     "resource": r,
@@ -153,6 +171,26 @@ def _prepare_gantt_data(df: pd.DataFrame) -> pd.DataFrame:
                     "Overallocation %": 0.0,
                 }
             )
+
+    # Return an empty DataFrame with the expected columns if no data
+    if not gantt_data:
+        st.warning("No valid data available for Gantt chart.")
+        return pd.DataFrame(
+            columns=[
+                "Resource",
+                "Type",
+                "Department",
+                "Project",
+                "Start",
+                "Finish",
+                "Priority",
+                "Duration (days)",
+                "Allocation %",
+                "Cost",
+                "Utilization %",
+                "Overallocation %",
+            ]
+        )
 
     df = pd.DataFrame(gantt_data)
 
@@ -321,8 +359,10 @@ def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
         st.dataframe(overruns, use_container_width=True)
 
 
-def _display_resource_conflicts(gantt_data):
-    """Check and display resource conflicts."""
+def _display_resource_conflicts(gantt_data: pd.DataFrame) -> None:
+    """
+    Check and display resource conflicts using filtered Gantt data.
+    """
     conflicts = find_resource_conflicts(gantt_data)
     if conflicts:
         st.subheader("Resource Conflicts")
@@ -359,62 +399,9 @@ def _display_resource_conflicts(gantt_data):
         _display_resource_conflicts_chart_legend()
 
         st.subheader("Conflict Details")
-
-        # Add search and filter inputs
-        with st.expander("Search and Filter Conflicts", expanded=False):
-            search_term = st.text_input("Search Conflicts", key="search_conflicts")
-            resource_filter = st.multiselect(
-                "Filter Resource",
-                options=conflicts_df["resource"].unique(),
-                key="filter_resource",
-            )
-            project1_filter = st.multiselect(
-                "Filter Project 1",
-                options=conflicts_df["project1"].unique(),
-                key="filter_project1",
-            )
-            project2_filter = st.multiselect(
-                "Filter Project 2",
-                options=conflicts_df["project2"].unique(),
-                key="filter_project2",
-            )
-
-        # Apply search and filters
-        filtered_conflicts = conflicts_df.rename(
-            columns={
-                "resource": "Resource",
-                "project1": "Project 1",
-                "project2": "Project 2",
-                "overlap_start": "Overlap Start",
-                "overlap_end": "Overlap End",
-                "overlap_days": "Overlapping Days",
-            }
-        )
-
-        if search_term:
-            mask = filtered_conflicts.apply(
-                lambda row: search_term.lower()
-                in row.astype(str).str.lower().to_string(),
-                axis=1,
-            )
-            filtered_conflicts = filtered_conflicts[mask]
-
-        if resource_filter:
-            filtered_conflicts = filtered_conflicts[
-                filtered_conflicts["Resource"].isin(resource_filter)
-            ]
-        if project1_filter:
-            filtered_conflicts = filtered_conflicts[
-                filtered_conflicts["Project 1"].isin(project1_filter)
-            ]
-        if project2_filter:
-            filtered_conflicts = filtered_conflicts[
-                filtered_conflicts["Project 2"].isin(project2_filter)
-            ]
-
-        st.dataframe(filtered_conflicts, use_container_width=True)
+        st.dataframe(conflicts_df, use_container_width=True)
     else:
-        st.success("No resource conflicts detected")
+        st.success("No resource conflicts detected.")
 
 
 def _display_resource_conflicts_chart_legend():
@@ -657,3 +644,109 @@ def unified_filter_component() -> Tuple[pd.Timestamp, pd.Timestamp, List[str], f
     )
 
     return start_date, end_date, resource_types, utilization_threshold
+
+
+def display_standard_filters(update_session_state=True):
+    """Display standard filters consistently across app."""
+    with st.expander("Filter Options", expanded=True):
+        col1, col2 = st.columns(2)
+
+        # Date range selection
+        with col1:
+            start_date = st.date_input(
+                "From",
+                value=st.session_state.filter_state["date_range"]["start"],
+            )
+        with col2:
+            end_date = st.date_input(
+                "To",
+                value=st.session_state.filter_state["date_range"]["end"],
+            )
+
+        # Resource type and department filters
+        resource_types = st.multiselect(
+            "Resource Types",
+            options=["Person", "Team", "Department"],
+            default=st.session_state.filter_state["resource_types"],
+            key="filter_resource_types",
+        )
+
+        departments = st.multiselect(
+            "Departments",
+            options=sorted([d["name"] for d in st.session_state.data["departments"]]),
+            default=st.session_state.filter_state["departments"],
+            key="filter_departments",
+        )
+
+        # Utilization threshold
+        utilization_threshold = st.slider(
+            "Minimum Utilization %",
+            min_value=0,
+            max_value=100,
+            value=st.session_state.filter_state["utilization_threshold"],
+            step=5,
+            key="filter_utilization",
+        )
+
+        # Update session state if requested
+        if update_session_state:
+            st.session_state.filter_state["date_range"]["start"] = start_date
+            st.session_state.filter_state["date_range"]["end"] = end_date
+            st.session_state.filter_state["resource_types"] = resource_types
+            st.session_state.filter_state["departments"] = departments
+            st.session_state.filter_state["utilization_threshold"] = (
+                utilization_threshold
+            )
+
+    return start_date, end_date, resource_types, departments, utilization_threshold
+
+
+def _display_gantt_chart_with_filters(gantt_data):
+    """
+    Displays the Gantt chart with filters that already exist on the page.
+    This function should not create any new filter UI elements.
+    """
+    # Get the current filter values from the page UI
+    filtered_types = st.session_state.get("filter_type_all", [])
+    filtered_departments = st.session_state.get("filter_dept_all", [])
+
+    # If no filters are selected, default to showing all
+    if not filtered_types:
+        filtered_types = gantt_data["Type"].unique().tolist()
+    if not filtered_departments:
+        filtered_departments = gantt_data["Department"].unique().tolist()
+
+    # Apply the filters
+    filtered_data = gantt_data.copy()
+    filtered_data = filtered_data[filtered_data["Type"].isin(filtered_types)]
+    filtered_data = filtered_data[
+        filtered_data["Department"].isin(filtered_departments)
+    ]
+
+    # Get list of projects that should appear after filtering
+    filtered_projects = filtered_data["Project"].unique()
+
+    # If no projects match the filter, show all projects
+    if len(filtered_projects) == 0:
+        filtered_projects = gantt_data["Project"].unique()
+
+    # Temporarily modify session state to only show filtered projects
+    original_projects = st.session_state.data["projects"].copy()
+    filtered_projects_data = [
+        p for p in original_projects if p["name"] in filtered_projects
+    ]
+
+    # Store original state
+    st.session_state.data["_temp_original_projects"] = original_projects
+
+    # Apply filtered projects
+    st.session_state.data["projects"] = filtered_projects_data
+
+    try:
+        # Display filtered Gantt chart
+        display_gantt_chart(gantt_data)
+    finally:
+        # Restore original projects to session state
+        st.session_state.data["projects"] = st.session_state.data.pop(
+            "_temp_original_projects"
+        )

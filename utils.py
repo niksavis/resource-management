@@ -197,11 +197,10 @@ def confirm_action(action_name: str, key_suffix: str) -> bool:
     """Displays a confirmation dialog for an action."""
     confirm = st.checkbox(f"Confirm {action_name}", key=f"confirm_{key_suffix}")
     proceed = st.button(f"Proceed with {action_name}", key=f"proceed_{key_suffix}")
-    if proceed:
-        if confirm:
-            return True
-        else:
-            st.warning(f"Please confirm {action_name} by checking the box")
+    if proceed and confirm:
+        return True
+    elif proceed:
+        st.warning(f"Please confirm {action_name} by checking the box")
     return False
 
 
