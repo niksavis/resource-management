@@ -421,26 +421,8 @@ def _display_resource_conflicts_chart_legend():
 def display_capacity_planning_dashboard(
     filtered_data: pd.DataFrame, start_date=None, end_date=None
 ):
-    """Display capacity planning dashboard with visualizations."""
-    st.subheader("Availability Forecast")
-
     # Get filtered resources
     filtered_resources = filtered_data["Resource"].unique()
-
-    # Date range selector
-    col1, col2 = st.columns(2)
-    with col1:
-        if start_date is None:
-            start_date = st.date_input("Start Date", value=pd.to_datetime("today"))
-        else:
-            start_date = st.date_input("Start Date", value=start_date)
-    with col2:
-        if end_date is None:
-            end_date = st.date_input(
-                "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
-            )
-        else:
-            end_date = st.date_input("End Date", value=end_date)
 
     # Calculate capacity data
     capacity_data = calculate_capacity_data(start_date, end_date)
