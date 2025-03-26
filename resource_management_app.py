@@ -816,6 +816,7 @@ def display_visualize_data_tab():
         )
         return
 
+    # Get current filters
     filters = _get_visualization_filters()
 
     # Sort projects by priority and end date
@@ -831,12 +832,17 @@ def display_visualize_data_tab():
         )
         return
 
-    # Apply unified filters
-    gantt_data = apply_filters(gantt_data, filters)
+    # Apply filters to data
+    filtered_data = apply_filters(gantt_data, filters)
 
-    # Pass filtered data to visualization functions
-    display_gantt_chart(gantt_data, projects_to_include=filters["project_filter"])
-    _display_resource_conflicts(gantt_data)
+    # Extract filtered projects for the main Gantt chart
+    filtered_projects = filtered_data["Project"].unique().tolist()
+
+    # Display the Gantt chart with filtered projects
+    display_gantt_chart(gantt_data, projects_to_include=filtered_projects)
+
+    # Display resource conflicts based on filtered data (this already works correctly)
+    _display_resource_conflicts(filtered_data)
 
 
 def _get_visualization_filters():
