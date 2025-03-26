@@ -38,7 +38,7 @@ def display_gantt_chart(df: pd.DataFrame, projects_to_include=None) -> None:
         max_date = resource_df["Finish"].max()
         total_days = (max_date - min_date).days + 1
         utilization_percentage = (
-            resource_df["Duration (days)"].sum() / total_days
+            resource_df["Duration (Days)"].sum() / total_days
         ) * 100
         df_with_utilization.loc[
             df_with_utilization["Resource"] == resource, "Utilization %"
@@ -64,7 +64,7 @@ def display_gantt_chart(df: pd.DataFrame, projects_to_include=None) -> None:
             "Type",
             "Department",
             "Priority",
-            "Duration (days)",
+            "Duration (Days)",
             "Utilization %",
             "Overallocation %",
             "Cost",
@@ -165,7 +165,7 @@ def _prepare_gantt_data(df: pd.DataFrame, projects_to_include=None) -> pd.DataFr
                     "Start": start_date,
                     "Finish": end_date,
                     "Priority": project_priority,
-                    "Duration (days)": duration_days,
+                    "Duration (Days)": duration_days,
                     "Allocation %": allocation["allocation_percentage"],
                     "Cost": cost,
                     "Utilization %": 0.0,
@@ -185,7 +185,7 @@ def _prepare_gantt_data(df: pd.DataFrame, projects_to_include=None) -> pd.DataFr
                 "Start",
                 "Finish",
                 "Priority",
-                "Duration (days)",
+                "Duration (Days)",
                 "Allocation %",
                 "Cost",
                 "Utilization %",
@@ -206,7 +206,7 @@ def _prepare_gantt_data(df: pd.DataFrame, projects_to_include=None) -> pd.DataFr
 
         # Calculate utilization percentage
         utilization_percentage = (
-            resource_df["Duration (days)"].sum() / total_days
+            resource_df["Duration (Days)"].sum() / total_days
         ) * 100
         df.loc[df["Resource"] == resource, "Utilization %"] = min(
             utilization_percentage, 100

@@ -645,8 +645,8 @@ def _create_projects_dataframe():
                 "Name": p["name"],
                 "Start Date": pd.to_datetime(p["start_date"]).strftime("%Y-%m-%d"),
                 "End Date": pd.to_datetime(p["end_date"]).strftime("%Y-%m-%d"),
-                "Priority": p["priority"],  # Directly use Priority
-                "Duration (days)": (
+                "Priority": p["priority"],
+                "Duration (Days)": (
                     pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
                 ).days
                 + 1,
@@ -1042,7 +1042,7 @@ def _display_resource_drill_down(gantt_data):
 
             st.markdown("**Project Assignments:**")
             projects_data = resource_data.copy()
-            projects_data["Duration (days)"] = (
+            projects_data["Duration (Days)"] = (
                 projects_data["Finish"] - projects_data["Start"]
             ).dt.days + 1
             projects_data["Start"] = projects_data["Start"].dt.strftime("%Y-%m-%d")
@@ -1055,7 +1055,7 @@ def _display_resource_drill_down(gantt_data):
                         "Start",
                         "Finish",
                         "Priority",
-                        "Duration (days)",
+                        "Duration (Days)",
                     ]
                 ],
                 use_container_width=True,
