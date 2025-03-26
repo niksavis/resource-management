@@ -196,6 +196,10 @@ def display_home_tab():
 
     with summary_tabs[2]:
         if st.session_state.data["projects"]:
+            # Load currency settings
+            currency, _ = load_currency_settings()
+
+            # Prepare data for visualization
             budget_data = []
             for project in st.session_state.data["projects"]:
                 if "allocated_budget" in project:
@@ -207,20 +211,28 @@ def display_home_tab():
                     budget_data.append(
                         {
                             "Project": project["name"],
-                            "Allocated Budget": f"{currency} {project['allocated_budget']:,.2f}",
-                            "Actual Cost": f"{currency} {actual_cost:,.2f}",
-                            "Variance": f"{currency} {project['allocated_budget'] - actual_cost:,.2f}",
+                            f"Allocated Budget ({currency})": project[
+                                "allocated_budget"
+                            ],
+                            f"Actual Cost ({currency})": actual_cost,
                         }
                     )
 
             if budget_data:
                 budget_df = pd.DataFrame(budget_data)
+
+                # Create overlapping bar chart for budget vs. actual cost
                 fig = px.bar(
                     budget_df,
                     x="Project",
-                    y=["Allocated Budget", "Actual Cost"],
-                    barmode="group",
+                    y=[f"Allocated Budget ({currency})", f"Actual Cost ({currency})"],
+                    barmode="overlay",  # Overlapping bars
                     title="Budget vs. Actual Cost by Project",
+                    color_discrete_map={
+                        f"Allocated Budget ({currency})": "teal",
+                        f"Actual Cost ({currency})": "orange",
+                    },
+                    labels={"value": f"Cost ({currency})", "variable": "Metric"},
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
