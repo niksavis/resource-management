@@ -191,7 +191,7 @@ def display_home_tab():
 
                 # Group by resource type and category
                 category_counts = (
-                    utilization_df.groupby(["Type", "Category"])
+                    utilization_df.groupby(["Type", "Category"], observed=True)
                     .size()
                     .reset_index(name="Count")
                 )
