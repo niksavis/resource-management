@@ -952,7 +952,7 @@ def display_resource_utilization_tab():
         resource_types = st.multiselect(
             "Resource Types",
             options=["Person", "Team", "Department"],
-            default=["Person", "Team", "Department"],
+            default=[],
         )
 
         utilization_threshold = st.slider(
@@ -1440,7 +1440,7 @@ def display_resource_calendar_tab():
         resource_types = st.multiselect(
             "Resource Types",
             options=["Person", "Team", "Department"],
-            default=["Person", "Team", "Department"],
+            default=[],
         )
 
         utilization_threshold = st.slider(
@@ -1514,7 +1514,7 @@ def display_capacity_planning_tab():
         resource_types = st.multiselect(
             "Resource Types",
             options=["Person", "Team", "Department"],
-            default=["Person", "Team", "Department"],
+            default=[],
         )
 
         utilization_threshold = st.slider(
