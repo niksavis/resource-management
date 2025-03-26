@@ -182,15 +182,33 @@ def display_home_tab():
             utilization_df = calculate_resource_utilization(gantt_data)
 
             if not utilization_df.empty:
-                type_util = (
-                    utilization_df.groupby("Type")["Utilization %"].mean().reset_index()
+                # Define thresholds for utilization categories
+                utilization_df["Category"] = pd.cut(
+                    utilization_df["Utilization %"],
+                    bins=[-float("inf"), 50, 100, float("inf")],
+                    labels=["Underutilized", "Optimal", "Overutilized"],
                 )
+
+                # Group by resource type and category
+                category_counts = (
+                    utilization_df.groupby(["Type", "Category"])
+                    .size()
+                    .reset_index(name="Count")
+                )
+
+                # Create a stacked bar chart
                 fig = px.bar(
-                    type_util,
+                    category_counts,
                     x="Type",
-                    y="Utilization %",
-                    color="Type",
-                    title="Average Utilization by Resource Type",
+                    y="Count",
+                    color="Category",
+                    title="Utilization by Resource Type",
+                    labels={"Count": "Number of Resources", "Type": "Resource Type"},
+                    color_discrete_map={
+                        "Underutilized": "teal",
+                        "Optimal": "lightgreen",
+                        "Overutilized": "orange",
+                    },
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
