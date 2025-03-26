@@ -146,7 +146,7 @@ def display_home_tab():
         st.plotly_chart(fig, use_container_width=True)
 
     # Resource Allocation Summary
-    st.markdown("### Resource Allocation")
+    st.markdown("### Resource Overview")
     summary_tabs = st.tabs(
         ["Department Allocation", "Resource Utilization", "Budget Overview"]
     )
