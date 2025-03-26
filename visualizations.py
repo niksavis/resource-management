@@ -3,17 +3,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 from configuration import manage_visualization_colors
 from data_handlers import (
-    calculate_project_cost,
     calculate_resource_utilization,
     calculate_capacity_data,
     find_resource_conflicts,
     _determine_resource_type,
 )
-from configuration import load_currency_settings  # Add this import
 
 
 def display_gantt_chart(df: pd.DataFrame, projects_to_include=None) -> None:
@@ -314,64 +312,6 @@ def display_utilization_dashboard(filtered_data: pd.DataFrame, start_date, end_d
         },
         use_container_width=True,
     )
-
-
-def display_budget_vs_actual_cost(projects: List[Dict]) -> None:
-    """
-    Displays a budget vs. actual cost visualization for all projects.
-    """
-    st.subheader("Budget vs. Actual Cost")
-
-    # Load currency settings
-    currency, _ = load_currency_settings()
-
-    # Prepare data for visualization
-    data = []
-    for project in projects:
-        actual_cost = calculate_project_cost(
-            project, st.session_state.data["people"], st.session_state.data["teams"]
-        )
-        data.append(
-            {
-                "Project": project["name"],
-                f"Allocated Budget ({currency})": project["allocated_budget"],
-                f"Actual Cost ({currency})": actual_cost,
-            }
-        )
-    df = pd.DataFrame(data)
-
-    # Create overlapping bar chart for budget vs. actual cost
-    fig = px.bar(
-        df,
-        x="Project",
-        y=[f"Allocated Budget ({currency})", f"Actual Cost ({currency})"],
-        barmode="overlay",  # Overlapping bars
-        title="Budget vs. Actual Cost by Project",
-        color_discrete_map={
-            f"Allocated Budget ({currency})": "blue",
-            f"Actual Cost ({currency})": "orange",
-        },
-        labels={"value": f"Cost ({currency})", "variable": "Metric"},
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Highlight projects with cost overruns
-    overruns = df[
-        df[f"Actual Cost ({currency})"] > df[f"Allocated Budget ({currency})"]
-    ]
-    if not overruns.empty:
-        overruns[f"Allocated Budget ({currency})"] = overruns[
-            f"Allocated Budget ({currency})"
-        ].apply(
-            lambda x: f"{x:,.2f}"  # Format with commas
-        )
-        overruns[f"Actual Cost ({currency})"] = overruns[
-            f"Actual Cost ({currency})"
-        ].apply(
-            lambda x: f"{x:,.2f}"  # Format with commas
-        )
-        st.warning("The following projects have cost overruns:")
-        st.dataframe(overruns, use_container_width=True)
 
 
 def _display_resource_conflicts(gantt_data: pd.DataFrame) -> None:
