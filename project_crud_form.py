@@ -7,68 +7,120 @@ from configuration import load_currency_settings
 def add_project_form():
     st.subheader("Add Project")
 
-    with st.form("add_project"):
-        # Group project details in a single row
-        st.markdown("### Project Details")
-        col1, col2 = st.columns(2)
-        with col1:
-            name = st.text_input("Project Name")
-        with col2:
-            currency, _ = load_currency_settings()
-            budget = st.number_input(f"Budget ({currency})", min_value=0.0, step=1000.0)
+    # Initialize session state for resources and allocations
+    if "new_project_resources" not in st.session_state:
+        st.session_state.new_project_resources = []
+    if "new_project_allocations" not in st.session_state:
+        st.session_state.new_project_allocations = {}
 
-        # Group date inputs in another row
-        st.markdown("### Project Timeline")
-        col3, col4 = st.columns(2)
-        with col3:
-            start_date = st.date_input("Start Date")
-        with col4:
-            end_date = st.date_input("End Date")
+    # Function to update resource allocations dynamically
+    def update_new_project_allocations():
+        for resource in st.session_state.new_project_resources:
+            if resource not in st.session_state.new_project_allocations:
+                st.session_state.new_project_allocations[resource] = {
+                    "allocation_percentage": 100,
+                    "start_date": st.session_state.get("add_project_start_date"),
+                    "end_date": st.session_state.get("add_project_end_date"),
+                }
+        # Remove allocations for unselected resources
+        for resource in list(st.session_state.new_project_allocations.keys()):
+            if resource not in st.session_state.new_project_resources:
+                del st.session_state.new_project_allocations[resource]
 
-        # Assigned resources section
-        st.markdown("### Assigned Resources")
-        assigned_resources = st.multiselect(
-            "Select Resources",
-            options=[
-                *[p["name"] for p in st.session_state.data["people"]],
-                *[t["name"] for t in st.session_state.data["teams"]],
-            ],
+    # Group project details in a single row
+    st.markdown("### Project Details")
+    col1, col2 = st.columns(2)
+    with col1:
+        name = st.text_input("Project Name")
+    with col2:
+        currency, _ = load_currency_settings()
+        budget = st.number_input(f"Budget ({currency})", min_value=0.0, step=1000.0)
+
+    # Group date inputs in another row
+    st.markdown("### Project Timeline")
+    col3, col4 = st.columns(2)
+    with col3:
+        start_date = st.date_input(
+            "Start Date",
+            key="add_project_start_date",
+        )
+    with col4:
+        end_date = st.date_input(
+            "End Date",
+            key="add_project_end_date",
         )
 
-        # Resource allocation section
-        st.markdown("### Resource Allocation")
-        resource_allocations = []
-        for resource in assigned_resources:
-            st.markdown(f"**{resource}**")
-            col5, col6, col7 = st.columns([1, 1, 2])
-            with col5:
-                allocation_percentage = st.slider(
-                    f"Allocation % for {resource}",
-                    min_value=10,
-                    max_value=100,
-                    value=100,
-                    step=10,
-                    key=f"alloc_{resource}",
-                )
-            with col6:
-                resource_start_date = st.date_input(
-                    f"Start Date for {resource}", key=f"start_{resource}"
-                )
-            with col7:
-                resource_end_date = st.date_input(
-                    f"End Date for {resource}", key=f"end_{resource}"
-                )
+    # Assigned resources section
+    st.markdown("### Assigned Resources")
+    selected_resources = st.multiselect(
+        "Select Resources",
+        options=[
+            *[p["name"] for p in st.session_state.data["people"]],
+            *[t["name"] for t in st.session_state.data["teams"]],
+        ],
+        default=st.session_state.new_project_resources,
+        key="add_assigned_resources",
+    )
 
-            resource_allocations.append(
-                {
-                    "resource": resource,
-                    "allocation_percentage": allocation_percentage,
-                    "start_date": resource_start_date.strftime("%Y-%m-%d"),
-                    "end_date": resource_end_date.strftime("%Y-%m-%d"),
-                }
+    # Update session state for assigned resources and allocations
+    if selected_resources != st.session_state.new_project_resources:
+        st.session_state.new_project_resources = selected_resources
+        update_new_project_allocations()
+        st.rerun()  # Force rerun to immediately reflect changes
+
+    # Resource allocation section
+    st.markdown("### Resource Allocation")
+    resource_allocations = []
+    for resource in st.session_state.new_project_resources:
+        st.markdown(f"**{resource}**")
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            allocation_percentage = st.slider(
+                f"Allocation % for {resource}",
+                min_value=10,
+                max_value=100,
+                value=st.session_state.new_project_allocations[resource][
+                    "allocation_percentage"
+                ],
+                step=10,
+                key=f"add_alloc_{resource}",
+            )
+        with col2:
+            resource_start_date = st.date_input(
+                f"Start Date for {resource}",
+                value=st.session_state.new_project_allocations[resource]["start_date"],
+                min_value=start_date,
+                max_value=end_date,
+                key=f"add_start_{resource}",
+            )
+        with col3:
+            resource_end_date = st.date_input(
+                f"End Date for {resource}",
+                value=st.session_state.new_project_allocations[resource]["end_date"],
+                min_value=start_date,
+                max_value=end_date,
+                key=f"add_end_{resource}",
             )
 
-        # Submit button
+        # Update session state with the latest values
+        st.session_state.new_project_allocations[resource] = {
+            "allocation_percentage": allocation_percentage,
+            "start_date": resource_start_date,
+            "end_date": resource_end_date,
+        }
+
+        resource_allocations.append(
+            {
+                "resource": resource,
+                "allocation_percentage": allocation_percentage,
+                "start_date": resource_start_date.strftime("%Y-%m-%d"),
+                "end_date": resource_end_date.strftime("%Y-%m-%d"),
+            }
+        )
+
+    # Submit button
+    st.markdown("### Submit Project")
+    with st.form("add_project"):
         submit = st.form_submit_button("Add Project")
         if submit:
             # Ensure dates are converted to pd.Timestamp
@@ -101,7 +153,7 @@ def add_project_form():
                     "start_date": start_date.strftime("%Y-%m-%d"),
                     "end_date": end_date.strftime("%Y-%m-%d"),
                     "priority": new_priority,
-                    "assigned_resources": assigned_resources,
+                    "assigned_resources": st.session_state.new_project_resources,
                     "allocated_budget": budget,
                     "resource_allocations": resource_allocations,
                 }
