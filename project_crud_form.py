@@ -118,49 +118,45 @@ def add_project_form():
             }
         )
 
-    # Submit button
-    with st.form("add_project"):
-        submit = st.form_submit_button("Add Project")
-        if submit:
-            # Ensure dates are converted to pd.Timestamp
-            start_date = pd.to_datetime(start_date)
-            end_date = pd.to_datetime(end_date)
+    # Submit button (no form wrapper)
+    if st.button("Add Project", key="add_project_button"):
+        # Ensure dates are converted to pd.Timestamp
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
 
-            # Pass all fields as a dictionary to match validate_project_input's expected input
-            project_data = {
+        # Pass all fields as a dictionary to match validate_project_input's expected input
+        project_data = {
+            "name": name,
+            "start_date": start_date,
+            "end_date": end_date,
+            "budget": budget,
+        }
+        if not validate_project_input(project_data):
+            st.error("Invalid project details. Please try again.")
+            return
+
+        # Assign the lowest priority (highest number)
+        new_priority = (
+            max(
+                [p["priority"] for p in st.session_state.data["projects"]],
+                default=0,
+            )
+            + 1
+        )
+
+        st.session_state.data["projects"].append(
+            {
                 "name": name,
-                "start_date": start_date,
-                "end_date": end_date,
-                "budget": budget,
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": end_date.strftime("%Y-%m-%d"),
+                "priority": new_priority,
+                "assigned_resources": st.session_state.new_project_resources,
+                "allocated_budget": budget,
+                "resource_allocations": resource_allocations,
             }
-            if not validate_project_input(project_data):
-                st.error("Invalid project details. Please try again.")
-                return
-
-            # Assign the lowest priority (highest number)
-            new_priority = (
-                max(
-                    [p["priority"] for p in st.session_state.data["projects"]],
-                    default=0,
-                )
-                + 1
-            )
-
-            st.session_state.data["projects"].append(
-                {
-                    "name": name,
-                    "start_date": start_date.strftime("%Y-%m-%d"),
-                    "end_date": end_date.strftime("%Y-%m-%d"),
-                    "priority": new_priority,
-                    "assigned_resources": st.session_state.new_project_resources,
-                    "allocated_budget": budget,
-                    "resource_allocations": resource_allocations,
-                }
-            )
-            st.success(
-                f"Project '{name}' added successfully with priority {new_priority}."
-            )
-            st.rerun()
+        )
+        st.success(f"Project '{name}' added successfully with priority {new_priority}.")
+        st.rerun()
 
 
 def edit_project_form():
