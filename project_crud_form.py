@@ -119,7 +119,6 @@ def add_project_form():
         )
 
     # Submit button
-    st.markdown("### Submit Project")
     with st.form("add_project"):
         submit = st.form_submit_button("Add Project")
         if submit:
