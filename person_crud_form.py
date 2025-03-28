@@ -6,6 +6,7 @@ from validation import (
     validate_work_hours,
     validate_name_field,
 )
+from utils import confirm_action
 
 
 def person_crud_form():
@@ -207,12 +208,22 @@ def person_crud_form():
                     st.success(f"Person '{name}' updated successfully.")
                     st.rerun()
 
-            # Delete person
-            delete = st.button("Delete Person")
-            if delete:
-                st.session_state.data["people"] = [
-                    p
-                    for p in st.session_state.data["people"]
-                    if p["name"] != person["name"]
-                ]
-                st.rerun()
+    # Delete Person Form
+    with st.expander("Delete Person", expanded=False):
+        if not st.session_state.data["people"]:
+            st.info("No people available to delete.")
+            return
+
+        person_names = [p["name"] for p in st.session_state.data["people"]]
+        selected_person = st.selectbox("Select Person to Delete", [""] + person_names)
+
+        if selected_person and confirm_action(
+            f"deleting person {selected_person}", "delete_person"
+        ):
+            st.session_state.data["people"] = [
+                p
+                for p in st.session_state.data["people"]
+                if p["name"] != selected_person
+            ]
+            st.success(f"Person '{selected_person}' deleted successfully.")
+            st.rerun()
