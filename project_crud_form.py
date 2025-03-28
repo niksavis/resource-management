@@ -196,6 +196,32 @@ def edit_project_form():
         edited_resource_allocations = []
         for resource in st.session_state.selected_resources:
             st.markdown(f"**{resource}**")
+
+            # Validate and adjust resource allocation dates
+            resource_allocation = next(
+                (
+                    alloc
+                    for alloc in project["resource_allocations"]
+                    if alloc["resource"] == resource
+                ),
+                None,
+            )
+            if resource_allocation:
+                resource_start_date = pd.to_datetime(resource_allocation["start_date"])
+                resource_end_date = pd.to_datetime(resource_allocation["end_date"])
+
+                # Adjust dates to fit within project bounds
+                resource_start_date = max(
+                    resource_start_date, pd.to_datetime(project["start_date"])
+                )
+                resource_end_date = min(
+                    resource_end_date, pd.to_datetime(project["end_date"])
+                )
+            else:
+                # Default to project start and end dates if no allocation exists
+                resource_start_date = pd.to_datetime(project["start_date"])
+                resource_end_date = pd.to_datetime(project["end_date"])
+
             col1, col2, col3 = st.columns([2, 1, 1])
             with col1:
                 allocation_percentage = st.slider(
@@ -211,10 +237,7 @@ def edit_project_form():
             with col2:
                 resource_start_date = st.date_input(
                     f"Start Date for {resource}",
-                    value=st.session_state.get(
-                        f"edit_start_{resource}",
-                        pd.to_datetime(project["start_date"]),
-                    ),
+                    value=resource_start_date,
                     min_value=pd.to_datetime(project["start_date"]),
                     max_value=pd.to_datetime(project["end_date"]),
                     key=f"edit_start_{resource}",
@@ -222,10 +245,7 @@ def edit_project_form():
             with col3:
                 resource_end_date = st.date_input(
                     f"End Date for {resource}",
-                    value=st.session_state.get(
-                        f"edit_end_{resource}",
-                        pd.to_datetime(project["end_date"]),
-                    ),
+                    value=resource_end_date,
                     min_value=pd.to_datetime(project["start_date"]),
                     max_value=pd.to_datetime(project["end_date"]),
                     key=f"edit_end_{resource}",
