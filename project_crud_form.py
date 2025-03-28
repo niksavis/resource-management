@@ -8,25 +8,40 @@ def add_project_form():
     st.subheader("Add Project")
 
     with st.form("add_project"):
-        name = st.text_input("Project Name")
-        start_date = st.date_input("Start Date")
-        end_date = st.date_input("End Date")
-        currency, _ = load_currency_settings()
-        budget = st.number_input(f"Budget ({currency})", min_value=0.0, step=1000.0)
+        # Group project details in a single row
+        st.markdown("### Project Details")
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("Project Name")
+        with col2:
+            currency, _ = load_currency_settings()
+            budget = st.number_input(f"Budget ({currency})", min_value=0.0, step=1000.0)
+
+        # Group date inputs in another row
+        st.markdown("### Project Timeline")
+        col3, col4 = st.columns(2)
+        with col3:
+            start_date = st.date_input("Start Date")
+        with col4:
+            end_date = st.date_input("End Date")
+
+        # Assigned resources section
+        st.markdown("### Assigned Resources")
         assigned_resources = st.multiselect(
-            "Assigned Resources",
+            "Select Resources",
             options=[
                 *[p["name"] for p in st.session_state.data["people"]],
                 *[t["name"] for t in st.session_state.data["teams"]],
             ],
         )
 
-        st.subheader("Resource Allocation")
+        # Resource allocation section
+        st.markdown("### Resource Allocation")
         resource_allocations = []
-
         for resource in assigned_resources:
-            col1, col2 = st.columns(2)
-            with col1:
+            st.markdown(f"**{resource}**")
+            col5, col6, col7 = st.columns([1, 1, 2])
+            with col5:
                 allocation_percentage = st.slider(
                     f"Allocation % for {resource}",
                     min_value=10,
@@ -35,33 +50,14 @@ def add_project_form():
                     step=10,
                     key=f"alloc_{resource}",
                 )
-
-            with col2:
-                # Calculate and display weekly hours based on allocation
-                resource_type = (
-                    "Person"
-                    if resource in [p["name"] for p in st.session_state.data["people"]]
-                    else "Team"
+            with col6:
+                resource_start_date = st.date_input(
+                    f"Start Date for {resource}", key=f"start_{resource}"
                 )
-                if resource_type == "Person":
-                    person = next(
-                        (
-                            p
-                            for p in st.session_state.data["people"]
-                            if p["name"] == resource
-                        ),
-                        None,
-                    )
-                    if person:
-                        weekly_hours = (
-                            person["daily_work_hours"]
-                            * len(person["work_days"])
-                            * (allocation_percentage / 100)
-                        )
-                        st.write(f"Weekly Hours: {weekly_hours:.1f}")
-
-            resource_start_date = st.date_input(f"Start Date for {resource}")
-            resource_end_date = st.date_input(f"End Date for {resource}")
+            with col7:
+                resource_end_date = st.date_input(
+                    f"End Date for {resource}", key=f"end_{resource}"
+                )
 
             resource_allocations.append(
                 {
@@ -72,6 +68,7 @@ def add_project_form():
                 }
             )
 
+        # Submit button
         submit = st.form_submit_button("Add Project")
         if submit:
             # Ensure dates are converted to pd.Timestamp
@@ -106,7 +103,7 @@ def add_project_form():
                     "priority": new_priority,
                     "assigned_resources": assigned_resources,
                     "allocated_budget": budget,
-                    "resource_allocations": resource_allocations,  # Add this line
+                    "resource_allocations": resource_allocations,
                 }
             )
             st.success(
@@ -132,38 +129,50 @@ def edit_project_form():
 
     if project:
         with st.form("edit_project"):
-            name = st.text_input("Project Name", value=project["name"])
-            start_date = st.date_input(
-                "Start Date", value=pd.to_datetime(project["start_date"])
-            )
-            end_date = st.date_input(
-                "End Date", value=pd.to_datetime(project["end_date"])
-            )
-            currency, _ = load_currency_settings()
-            budget = st.number_input(
-                f"Budget ({currency})",
-                min_value=0.0,
-                step=1000.0,
-                value=project["allocated_budget"],
-            )
+            # Group project details in a single row
+            st.markdown("### Project Details")
+            col1, col2 = st.columns(2)
+            with col1:
+                name = st.text_input("Project Name", value=project["name"])
+            with col2:
+                currency, _ = load_currency_settings()
+                budget = st.number_input(
+                    f"Budget ({currency})",
+                    min_value=0.0,
+                    step=1000.0,
+                    value=project["allocated_budget"],
+                )
+
+            # Group date inputs in another row
+            st.markdown("### Project Timeline")
+            col3, col4 = st.columns(2)
+            with col3:
+                start_date = st.date_input(
+                    "Start Date", value=pd.to_datetime(project["start_date"])
+                )
+            with col4:
+                end_date = st.date_input(
+                    "End Date", value=pd.to_datetime(project["end_date"])
+                )
+
+            # Assigned resources section
+            st.markdown("### Assigned Resources")
             assigned_resources = st.multiselect(
-                "Assigned Resources",
+                "Select Resources",
                 options=[
                     *[p["name"] for p in st.session_state.data["people"]],
                     *[t["name"] for t in st.session_state.data["teams"]],
                 ],
                 default=project["assigned_resources"],
             )
-            priority = st.number_input(
-                "Priority", min_value=1, step=1, value=project["priority"]
-            )
 
-            st.subheader("Edit Resource Allocation")
+            # Resource allocation section
+            st.markdown("### Resource Allocation")
             edited_resource_allocations = []
-
-            for resource in project["assigned_resources"]:
-                col1, col2 = st.columns(2)
-                with col1:
+            for resource in assigned_resources:
+                st.markdown(f"**{resource}**")
+                col5, col6, col7 = st.columns([2, 1, 1])  # Adjusted column widths
+                with col5:
                     allocation_percentage = st.slider(
                         f"Allocation % for {resource}",
                         min_value=10,
@@ -172,40 +181,18 @@ def edit_project_form():
                         step=10,
                         key=f"edit_alloc_{resource}",
                     )
-
-                with col2:
-                    # Calculate and display weekly hours based on allocation
-                    resource_type = (
-                        "Person"
-                        if resource
-                        in [p["name"] for p in st.session_state.data["people"]]
-                        else "Team"
+                with col6:
+                    resource_start_date = st.date_input(
+                        f"Start Date for {resource}",
+                        value=pd.to_datetime(project["start_date"]),
+                        key=f"edit_start_{resource}",
                     )
-                    if resource_type == "Person":
-                        person = next(
-                            (
-                                p
-                                for p in st.session_state.data["people"]
-                                if p["name"] == resource
-                            ),
-                            None,
-                        )
-                        if person:
-                            weekly_hours = (
-                                person["daily_work_hours"]
-                                * len(person["work_days"])
-                                * (allocation_percentage / 100)
-                            )
-                            st.write(f"Weekly Hours: {weekly_hours:.1f}")
-
-                resource_start_date = st.date_input(
-                    f"Start Date for {resource}",
-                    value=pd.to_datetime(project["start_date"]),
-                )
-                resource_end_date = st.date_input(
-                    f"End Date for {resource}",
-                    value=pd.to_datetime(project["end_date"]),
-                )
+                with col7:
+                    resource_end_date = st.date_input(
+                        f"End Date for {resource}",
+                        value=pd.to_datetime(project["end_date"]),
+                        key=f"edit_end_{resource}",
+                    )
 
                 edited_resource_allocations.append(
                     {
@@ -216,6 +203,13 @@ def edit_project_form():
                     }
                 )
 
+            # Priority input
+            st.markdown("### Project Priority")
+            priority = st.number_input(
+                "Priority", min_value=1, step=1, value=project["priority"]
+            )
+
+            # Submit button
             submit = st.form_submit_button("Update Project")
             if submit:
                 # Ensure dates are converted to pd.Timestamp
@@ -251,6 +245,7 @@ def edit_project_form():
                         st.info("Please assign a unique priority to each project.")
                     return
 
+                # Update project details
                 project.update(
                     {
                         "name": name,
