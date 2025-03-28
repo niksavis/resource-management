@@ -25,12 +25,11 @@ from data_handlers import (
 from person_crud_form import person_crud_form
 from team_crud_form import team_crud_form
 from department_crud_form import department_crud_form
-from project_crud_form import add_project_form, edit_project_form
+from project_crud_form import add_project_form, edit_project_form, delete_project_form
 from utils import (
     delete_resource,
     _apply_sorting,
     check_circular_dependencies,
-    confirm_action,
     display_filtered_resource,
     paginate_dataframe,
     format_circular_dependency_message,
@@ -661,8 +660,7 @@ def display_manage_projects_tab():
 
     add_project_form()
     edit_project_form()
-
-    _handle_project_deletion()
+    delete_project_form()
 
 
 def _create_projects_dataframe():
@@ -805,27 +803,6 @@ def _apply_resource_filters(projects_df, resource_filters):
         ]
 
     return projects_df
-
-
-def _handle_project_deletion():
-    """Helper function to handle project deletion."""
-    if not st.session_state.data["projects"]:
-        return
-
-    st.subheader("Delete Project")
-    delete_project = st.selectbox(
-        "Select project to delete",
-        [p["name"] for p in st.session_state.data["projects"]],
-        key="delete_project",
-    )
-
-    if confirm_action(f"deleting project {delete_project}", "delete_project"):
-        st.session_state.data["projects"] = [
-            p for p in st.session_state.data["projects"] if p["name"] != delete_project
-        ]
-
-        st.success(f"Deleted project {delete_project}")
-        st.rerun()
 
 
 def display_visualize_data_tab():
