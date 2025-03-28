@@ -320,6 +320,8 @@ def display_consolidated_resources():
     teams = st.session_state.data["teams"]
     departments = st.session_state.data["departments"]
 
+    st.write("### Resources Overview")
+
     with st.expander("Search, Sort, and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
@@ -376,8 +378,6 @@ def display_consolidated_resources():
             ),
             reverse=not ascending,
         )
-
-    st.write("### Resources Overview")
 
     view_option = st.radio("View As:", ["Cards", "Visual Map"], horizontal=True)
 
