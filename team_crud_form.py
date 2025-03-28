@@ -24,24 +24,21 @@ def team_crud_form():
             if submit:
                 if not validate_name_field(name, "team"):
                     st.error("Invalid team name. Please try again.")
-                    return
-
-                if len(members) < 2:
+                elif len(members) < 2:
                     st.error("A team must have at least 2 members.")
-                    return
+                else:
+                    st.session_state.data["teams"].append(
+                        {"name": name, "department": department, "members": members}
+                    )
 
-                st.session_state.data["teams"].append(
-                    {"name": name, "department": department, "members": members}
-                )
+                    # Update department teams
+                    for dept in st.session_state.data["departments"]:
+                        if dept["name"] == department:
+                            if name not in dept["teams"]:
+                                dept["teams"].append(name)
 
-                # Update department teams
-                for dept in st.session_state.data["departments"]:
-                    if dept["name"] == department:
-                        if name not in dept["teams"]:
-                            dept["teams"].append(name)
-
-                st.success(f"Team '{name}' added successfully.")
-                st.rerun()
+                    st.success(f"Team '{name}' added successfully.")
+                    st.rerun()
 
     # Edit Team Form
     with st.expander("Edit Team", expanded=False):
@@ -90,12 +87,12 @@ def team_crud_form():
                             st.error(
                                 "A team must have at least 2 members. Please add more members or delete the team instead."
                             )
-                            st.stop()
-                        team["name"] = name
-                        team["department"] = department
-                        team["members"] = new_members
-                        st.success(f"Team '{name}' updated successfully.")
-                        st.rerun()
+                        else:
+                            team["name"] = name
+                            team["department"] = department
+                            team["members"] = new_members
+                            st.success(f"Team '{name}' updated successfully.")
+                            st.rerun()
 
     # Delete Team Form
     with st.expander("Delete Team", expanded=False):
