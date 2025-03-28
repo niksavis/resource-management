@@ -933,7 +933,8 @@ def display_resource_utilization_tab():
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add projects first.")
         return
-    elif not (
+
+    if not (
         st.session_state.data["people"]
         or st.session_state.data["teams"]
         or st.session_state.data["departments"]
@@ -1500,7 +1501,8 @@ def display_capacity_planning_tab():
     if not st.session_state.data["projects"]:
         st.warning("No projects found. Please add projects first.")
         return
-    elif not (
+
+    if not (
         st.session_state.data["people"]
         or st.session_state.data["teams"]
         or st.session_state.data["departments"]

@@ -318,6 +318,10 @@ def _display_resource_conflicts(gantt_data: pd.DataFrame) -> None:
     """
     Check and display resource conflicts using filtered Gantt data.
     """
+    if gantt_data.empty:
+        st.warning("No data available to check for resource conflicts.")
+        return
+
     conflicts = find_resource_conflicts(gantt_data)
     if conflicts:
         st.subheader("Resource Conflicts")
@@ -376,6 +380,13 @@ def _display_resource_conflicts_chart_legend():
 def display_capacity_planning_dashboard(
     filtered_data: pd.DataFrame, start_date=None, end_date=None
 ):
+    """
+    Displays the capacity planning dashboard.
+    """
+    if filtered_data.empty:
+        st.warning("No data available for capacity planning.")
+        return
+
     # Get filtered resources
     filtered_resources = filtered_data["Resource"].unique()
 
