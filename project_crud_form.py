@@ -6,7 +6,7 @@ from utils import confirm_action
 
 
 def add_project_form():
-    with st.expander("Add Project", expanded=True):
+    with st.expander("Add Project", expanded=False):  # Set expanded=False
         # Initialize session state for resources and allocations
         if "new_project_resources" not in st.session_state:
             st.session_state.new_project_resources = []
@@ -166,7 +166,7 @@ def add_project_form():
 
 
 def edit_project_form():
-    with st.expander("Edit Project", expanded=True):
+    with st.expander("Edit Project", expanded=False):  # Set expanded=False
         if not st.session_state.data["projects"]:
             st.info("No projects available to edit.")
             return
@@ -428,7 +428,7 @@ def reset_edit_project_state():
 
 
 def delete_project_form():
-    with st.expander("Delete Project", expanded=True):
+    with st.expander("Delete Project", expanded=False):  # Set expanded=False
         if not st.session_state.data["projects"]:
             st.info("No projects available to delete.")
             return
