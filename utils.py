@@ -15,7 +15,6 @@ def display_filtered_resource(
 ) -> None:
     """
     Converts session data to a DataFrame, applies filtering, and displays the results.
-    Refactored to improve readability and maintainability.
     """
     # If no data, show a helpful empty state message
     if not st.session_state.data.get(data_key, []):
@@ -30,18 +29,70 @@ def display_filtered_resource(
     df = pd.DataFrame(data)
 
     with st.expander(f"Search and Filter {label.title()}", expanded=False):
-        search_term = st.text_input(f"Search {label.title()}", key=f"search_{label}")
-
-        col1, col2 = st.columns(2)
-        team_filter = []
-        dept_filter = []
-        member_filter = []
-
-        with col1:
-            dept_filter, team_filter, member_filter = _display_filters(
-                data_key, label, distinct_filters, filter_by
+        # First row: Search and Sort by
+        row1_col1, row1_col2 = st.columns(2)
+        with row1_col1:
+            search_term = st.text_input(
+                f"Search {label.title()}", key=f"search_{label}"
             )
+        with row1_col2:
+            sort_options = ["None"] + list(df.columns)
+            sort_col = st.selectbox(
+                "Sort by", options=sort_options, key=f"sort_{label}"
+            )
+            ascending = st.checkbox("Ascending", True, key=f"asc_{label}")
 
+        # Second row: Filter by options
+        row2_col1, row2_col2 = st.columns(2)
+        dept_filter, team_filter, member_filter = [], [], []
+
+        with row2_col1:
+            if label == "people":
+                dept_filter = st.multiselect(
+                    "Filter by Department",
+                    options=[d["name"] for d in st.session_state.data["departments"]],
+                    default=[],
+                    key=f"filter_dept_{label}",
+                )
+            elif label == "teams":
+                dept_filter = st.multiselect(
+                    "Filter by Department",
+                    options=[d["name"] for d in st.session_state.data["departments"]],
+                    default=[],
+                    key=f"filter_dept_{label}",
+                )
+            elif label == "departments":
+                team_filter = st.multiselect(
+                    "Filter by Team",
+                    options=[t["name"] for t in st.session_state.data["teams"]],
+                    default=[],
+                    key=f"filter_team_{label}",
+                )
+
+        with row2_col2:
+            if label == "people":
+                team_filter = st.multiselect(
+                    "Filter by Team",
+                    options=[t["name"] for t in st.session_state.data["teams"]],
+                    default=[],
+                    key=f"filter_team_{label}",
+                )
+            elif label == "teams":
+                member_filter = st.multiselect(
+                    "Filter by Member",
+                    options=[p["name"] for p in st.session_state.data["people"]],
+                    default=[],
+                    key=f"filter_member_{label}",
+                )
+            elif label == "departments":
+                member_filter = st.multiselect(
+                    "Filter by Member",
+                    options=[p["name"] for p in st.session_state.data["people"]],
+                    default=[],
+                    key=f"filter_member_{label}",
+                )
+
+        # Apply filters and sorting
         df = _apply_all_filters(
             df,
             search_term,
@@ -51,8 +102,9 @@ def display_filtered_resource(
             distinct_filters,
             data_key,
         )
+        if sort_col != "None":
+            df = df.sort_values(by=sort_col, ascending=ascending, na_position="first")
 
-        df = _apply_sorting(df, label)
         df = paginate_dataframe(df, label)
 
     currency, _ = load_currency_settings()
