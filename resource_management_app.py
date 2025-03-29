@@ -575,7 +575,7 @@ def _create_projects_dataframe():
 
 
 def _filter_projects_dataframe(projects_df):
-    with st.expander("Search and Filter Projects", expanded=False):
+    with st.expander("Search, Sort, and Filter Projects", expanded=False):
         search_term = _handle_search_input()
         date_filter = _handle_date_filter(projects_df)
         resource_filters = _handle_resource_filters()

@@ -213,7 +213,7 @@ def filter_dataframe(
             )
 
     with st.expander(
-        f"Search and Filter {key.replace('_', ' ').title()}", expanded=False
+        f"Search, Sort, and Filter {key.replace('_', ' ').title()}", expanded=False
     ):
         search_term = st.text_input(
             f"Search {key.replace('_', ' ').title()}", key=f"search_{unique_prefix}"
