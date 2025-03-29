@@ -882,9 +882,10 @@ def display_sunburst_organization(data):
 
     # Customize text and hover information
     fig.update_traces(
+        insidetextorientation="auto",
         textinfo="label",
-        textfont=dict(size=14),
-        hovertemplate="<b>%{label}</b><br>Parent: %{parent}<br>Value: %{value}",
+        textfont=dict(size=16),
+        hovertemplate="<b>%{label}</b><br>Parent: %{parent}",
     )
 
     # Update layout for better readability
