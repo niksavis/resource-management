@@ -235,6 +235,15 @@ def edit_project_form():
                     max_value=pd.to_datetime(project["end_date"]),
                     key="edit_end_date",
                 )
+            # Priority input
+            st.markdown("### Project Priority")
+            priority = st.number_input(
+                "Priority",
+                min_value=1,
+                step=1,
+                value=project["priority"],
+                key="edit_priority",
+            )
 
             # Assigned resources section
             st.markdown("### Assigned Resources")
@@ -319,16 +328,6 @@ def edit_project_form():
                         "end_date": resource_end_date.strftime("%Y-%m-%d"),
                     }
                 )
-
-            # Priority input
-            st.markdown("### Project Priority")
-            priority = st.number_input(
-                "Priority",
-                min_value=1,
-                step=1,
-                value=project["priority"],
-                key="edit_priority",
-            )
 
             # Submit button
             if st.button("Update Project", key="update_project"):
