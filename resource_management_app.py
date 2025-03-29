@@ -41,6 +41,7 @@ from visualizations import (
     _display_resource_conflicts,
     display_resource_calendar,
     display_resource_matrix_view,
+    display_sunburst_organization,
 )
 
 # Set up basic page configuration
@@ -516,129 +517,15 @@ def _display_department_cards(departments, people, currency):
 
 
 def _display_resource_visual_map(people, teams, departments, type_filter):
-    """Display resources as an organizational chart or network graph."""
-    import networkx as nx
-    import plotly.graph_objects as go
+    """Display resources as a network using sunburst visualization."""
+    # Prepare filtered data for the visualization
+    filtered_data = {
+        "people": [p for p in people if "Person" in type_filter],
+        "teams": [t for t in teams if "Team" in type_filter],
+        "departments": [d for d in departments if "Department" in type_filter],
+    }
 
-    st.write("### Organizational Structure")
-
-    nodes = []
-    edges = []
-
-    if "Department" in type_filter:
-        for dept in departments:
-            nodes.append(
-                {
-                    "id": f"dept_{dept['name']}",
-                    "label": dept["name"],
-                    "group": "department",
-                }
-            )
-
-    if "Team" in type_filter:
-        for team in teams:
-            nodes.append(
-                {"id": f"team_{team['name']}", "label": team["name"], "group": "team"}
-            )
-            edges.append(
-                {"from": f"dept_{team['department']}", "to": f"team_{team['name']}"}
-            )
-
-    if "Person" in type_filter:
-        for person in people:
-            nodes.append(
-                {
-                    "id": f"person_{person['name']}",
-                    "label": person["name"],
-                    "group": "person",
-                }
-            )
-            if person["team"]:
-                edges.append(
-                    {"from": f"team_{person['team']}", "to": f"person_{person['name']}"}
-                )
-            else:
-                edges.append(
-                    {
-                        "from": f"dept_{person['department']}",
-                        "to": f"person_{person['name']}",
-                    }
-                )
-
-    G = nx.Graph()
-
-    for node in nodes:
-        G.add_node(node["id"], label=node["label"], group=node["group"])
-
-    for edge in edges:
-        G.add_edge(edge["from"], edge["to"])
-
-    pos = nx.spring_layout(G)
-
-    node_x = []
-    node_y = []
-    node_text = []
-    node_color = []
-
-    for node in G.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        node_text.append(G.nodes[node]["label"])
-
-        if G.nodes[node]["group"] == "department":
-            node_color.append("blue")
-        elif G.nodes[node]["group"] == "team":
-            node_color.append("green")
-        else:
-            node_color.append("red")
-
-    node_trace = go.Scatter(
-        x=node_x,
-        y=node_y,
-        mode="markers+text",
-        text=node_text,
-        hoverinfo="text",
-        marker=dict(color=node_color, size=15, line=dict(width=2)),
-    )
-
-    edge_x = []
-    edge_y = []
-
-    for edge in G.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-
-    edge_trace = go.Scatter(
-        x=edge_x,
-        y=edge_y,
-        line=dict(width=1, color="#888"),
-        hoverinfo="none",
-        mode="lines",
-    )
-
-    fig = go.Figure(
-        data=[edge_trace, node_trace],
-        layout=go.Layout(
-            showlegend=False,
-            hovermode="closest",
-            margin=dict(b=20, l=5, r=5, t=40),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        ),
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown("🔵 Department")
-    with col2:
-        st.markdown("🟢 Team")
-    with col3:
-        st.markdown("🔴 Person")
+    display_sunburst_organization(filtered_data)
 
 
 def display_manage_projects_tab():

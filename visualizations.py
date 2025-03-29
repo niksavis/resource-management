@@ -823,3 +823,72 @@ def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=Non
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+
+def display_sunburst_organization(data):
+    """Creates a sunburst chart showing organizational hierarchy with clear text labels."""
+    import plotly.express as px
+    import streamlit as st
+
+    # Prepare data for sunburst chart
+    labels = []
+    parents = []
+    values = []
+
+    # Add root
+    labels.append("Organization")
+    parents.append("")  # Empty string is crucial for root node
+    values.append(1)
+
+    # Add departments
+    for dept in data["departments"]:
+        labels.append(dept["name"])
+        parents.append("Organization")  # Connect to root
+        values.append(
+            len([t for t in data["teams"] if t.get("department") == dept["name"]]) + 1
+        )
+
+    # Add teams
+    for team in data["teams"]:
+        labels.append(team["name"])
+        parents.append(
+            team.get("department", "Organization")
+        )  # Fallback to root if no department
+        values.append(
+            len([p for p in data["people"] if p.get("team") == team["name"]]) + 1
+        )
+
+    # Add people
+    for person in data["people"]:
+        if person.get("team"):
+            labels.append(person["name"])
+            parents.append(person["team"])
+            values.append(1)
+        elif person.get("department"):
+            # People directly in department (not in any team)
+            labels.append(person["name"])
+            parents.append(person["department"])
+            values.append(1)
+
+    # Try branchvalues='remainder' instead of 'total' if chart is empty
+    fig = px.sunburst(
+        names=labels,
+        parents=parents,
+        values=values,
+        branchvalues="remainder",
+        color_discrete_sequence=px.colors.qualitative.Bold,
+        height=1000,
+    )
+
+    # Customize text and hover information
+    fig.update_traces(
+        textinfo="label",
+        textfont=dict(size=14),
+        hovertemplate="<b>%{label}</b><br>Parent: %{parent}<br>Value: %{value}",
+    )
+
+    # Update layout for better readability
+    fig.update_layout(margin=dict(t=30, l=0, r=0, b=0))
+
+    # Display the chart with Streamlit theme
+    st.plotly_chart(fig, use_container_width=True, theme="streamlit")
