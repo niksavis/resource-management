@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
+from configuration import load_display_preferences
 
 
 def load_demo_data() -> Dict[str, List[Dict[str, Any]]]:
@@ -540,3 +541,234 @@ def sort_projects_by_priority_and_date(
             ),  # Default far future date if missing
         ),
     )
+
+
+def paginate_dataframe(
+    df: pd.DataFrame, key_prefix: str, items_per_page: Optional[int] = None
+) -> pd.DataFrame:
+    """
+    Paginate a DataFrame and provide navigation.
+
+    Args:
+        df: DataFrame to paginate
+        key_prefix: Prefix for session state keys
+        items_per_page: Number of items per page. If None, uses settings.
+
+    Returns:
+        Paginated DataFrame
+    """
+    if items_per_page is None:
+        # Get page size from settings
+        display_prefs = load_display_preferences()
+        items_per_page = display_prefs.get("page_size", 10)
+
+    # Initialize page number in session state if not exists
+    if f"{key_prefix}_page" not in st.session_state:
+        st.session_state[f"{key_prefix}_page"] = 0
+
+    # Calculate total pages
+    n_pages = max(1, len(df) // items_per_page)
+
+    # Only show pagination if needed
+    if len(df) > items_per_page:
+        # Create pagination controls
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col1:
+            if st.button("◀️ Previous", key=f"{key_prefix}_prev"):
+                st.session_state[f"{key_prefix}_page"] = max(
+                    0, st.session_state[f"{key_prefix}_page"] - 1
+                )
+
+        with col2:
+            st.write(f"Page {st.session_state[f'{key_prefix}_page'] + 1} of {n_pages}")
+
+        with col3:
+            if st.button("Next ▶️", key=f"{key_prefix}_next"):
+                st.session_state[f"{key_prefix}_page"] = min(
+                    n_pages - 1, st.session_state[f"{key_prefix}_page"] + 1
+                )
+
+    # Get current page number
+    current_page = st.session_state[f"{key_prefix}_page"]
+
+    # Calculate start and end indices
+    start_idx = current_page * items_per_page
+    end_idx = min(start_idx + items_per_page, len(df))
+
+    # Return the sliced DataFrame
+    return df.iloc[start_idx:end_idx].reset_index(drop=True)
+
+
+def check_circular_dependencies() -> Tuple[
+    List[str], Dict[str, List[str]], Dict[str, List[str]], Dict[str, List[str]]
+]:
+    """
+    Check for circular dependencies between teams and report individuals in multiple teams,
+    multiple departments, and teams in multiple departments.
+
+    Returns:
+        Tuple containing:
+        - List of circular dependency paths
+        - Dict of people in multiple teams
+        - Dict of people in multiple departments
+        - Dict of teams in multiple departments
+    """
+    dependency_graph = {}
+    multi_team_members = {}
+    multi_department_members = {}
+    multi_department_teams = {}
+
+    # Build dependency graph and check for multi-team or multi-department members
+    team_membership = {}
+    department_membership = {}
+    team_departments = {}
+
+    for team in st.session_state.data["teams"]:
+        dependency_graph[team["name"]] = set()
+        team_departments[team["name"]] = team["department"]
+
+        for member in team["members"]:
+            if member in team_membership:
+                if member not in multi_team_members:
+                    multi_team_members[member] = [team_membership[member]]
+                multi_team_members[member].append(team["name"])
+            team_membership[member] = team["name"]
+
+        for other_team in st.session_state.data["teams"]:
+            if team != other_team and any(
+                member in other_team["members"] for member in team["members"]
+            ):
+                dependency_graph[team["name"]].add(other_team["name"])
+
+    for department in st.session_state.data["departments"]:
+        for member in department["members"]:
+            if member in department_membership:
+                if member not in multi_department_members:
+                    multi_department_members[member] = [department_membership[member]]
+                multi_department_members[member].append(department["name"])
+            department_membership[member] = department["name"]
+
+        for team in department["teams"]:
+            if team in team_departments:
+                if team_departments[team] != department["name"]:
+                    if team not in multi_department_teams:
+                        multi_department_teams[team] = [team_departments[team]]
+                    multi_department_teams[team].append(department["name"])
+
+    # Check for cycles
+    visited = set()
+    path = set()
+    cycle_paths = []
+
+    def dfs(node, current_path=None):
+        if current_path is None:
+            current_path = []
+
+        if node in path:
+            # Cycle detected - capture the full path
+            cycle_path = current_path + [node]
+            cycle_paths.append(" → ".join(cycle_path))
+            return True
+
+        if node in visited:
+            return False
+
+        visited.add(node)
+        path.add(node)
+        current_path.append(node)
+
+        for neighbor in dependency_graph.get(node, []):
+            if dfs(neighbor, current_path):
+                return True
+
+        path.remove(node)
+        current_path.pop()
+        return False
+
+    for node in dependency_graph:
+        dfs(node, [])
+
+    return (
+        cycle_paths,
+        multi_team_members,
+        multi_department_members,
+        multi_department_teams,
+    )
+
+
+def get_resource_type(resource_name: str) -> str:
+    """
+    Determine the type of a resource by name.
+
+    Args:
+        resource_name: Name of the resource
+
+    Returns:
+        Resource type ('person', 'team', 'department', or 'unknown')
+    """
+    # Check if it's a person
+    if any(p["name"] == resource_name for p in st.session_state.data["people"]):
+        return "person"
+
+    # Check if it's a team
+    if any(t["name"] == resource_name for t in st.session_state.data["teams"]):
+        return "team"
+
+    # Check if it's a department
+    if any(d["name"] == resource_name for d in st.session_state.data["departments"]):
+        return "department"
+
+    return "unknown"
+
+
+def _apply_all_filters(
+    df: pd.DataFrame,
+    search_term: str,
+    team_filter: List[str],
+    dept_filter: List[str],
+    member_filter: List[str],
+    distinct_filters: bool,
+    data_key: str,
+) -> pd.DataFrame:
+    """
+    Apply all filters to a DataFrame.
+
+    Args:
+        df: DataFrame to filter
+        search_term: Search term to filter by
+        team_filter: List of teams to filter by
+        dept_filter: List of departments to filter by
+        member_filter: List of members to filter by
+        distinct_filters: Whether to use distinct filters
+        data_key: Key in session state data
+
+    Returns:
+        Filtered DataFrame
+    """
+    if search_term:
+        mask = np.column_stack(
+            [
+                df[col]
+                .fillna("")
+                .astype(str)
+                .str.contains(search_term, case=False, na=False)
+                for col in df.columns
+            ]
+        )
+        df = df[mask.any(axis=1)]
+
+    if team_filter:
+        if distinct_filters and data_key == "departments":
+            df = df[df["teams"].apply(lambda x: any(team in x for team in team_filter))]
+        else:
+            df = df[df["team"].isin(team_filter)]
+
+    if distinct_filters and data_key in ["departments", "teams"] and member_filter:
+        df = df[
+            df["members"].apply(lambda x: any(member in x for member in member_filter))
+        ]
+
+    if dept_filter:
+        df = df[df["department"].isin(dept_filter)]
+
+    return df
