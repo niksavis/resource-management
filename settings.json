@@ -34,5 +34,29 @@
         "priority_3": "#13eac8",
         "priority_4": "#8d9830",
         "priority_5": "#a4eba9"
+    },
+    "work_schedule": {
+        "work_days": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+        ],
+        "work_hours": 8.0
+    },
+    "display_preferences": {
+        "page_size": 10,
+        "default_view": "Cards",
+        "chart_height": 600
+    },
+    "date_ranges": {
+        "short": 30,
+        "medium": 90,
+        "long": 180
+    },
+    "utilization_thresholds": {
+        "under": 50,
+        "over": 100
     }
 }

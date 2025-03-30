@@ -4,12 +4,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from typing import List, Tuple
-
 from data_handlers import (
     calculate_resource_utilization,
     calculate_capacity_data,
     find_resource_conflicts,
     _determine_resource_type,
+)
+from configuration import (
+    load_utilization_thresholds,
+    load_display_preferences,
+    load_heatmap_colorscale,
 )
 
 
@@ -199,43 +203,58 @@ def _display_chart_legend() -> None:
             st.markdown("- Pan: Click and drag on the timeline")
 
 
-def display_utilization_dashboard(filtered_data: pd.DataFrame, start_date, end_date):
+def display_utilization_dashboard(data, start_date=None, end_date=None):
     """
-    Displays a unified utilization dashboard using pre-filtered data.
+    Display utilization metrics dashboard
     """
-    if filtered_data.empty:
-        st.warning("No data available for utilization metrics.")
+
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
+    # Load utilization thresholds
+    thresholds = load_utilization_thresholds()
+    under_threshold = thresholds.get("under", 50)
+    over_threshold = thresholds.get("over", 100)
+
+    # Create utilization dataframe
+    util_df = calculate_resource_utilization(data)
+
+    if util_df.empty:
+        st.warning("No utilization data available for the selected filters.")
         return
 
-    # Use the filtered data directly instead of recalculating
-    utilization_df = calculate_resource_utilization(filtered_data, start_date, end_date)
+    # Add category based on configurable thresholds
+    util_df["Utilization Category"] = pd.cut(
+        util_df["Utilization %"],
+        bins=[-float("inf"), under_threshold, over_threshold, float("inf")],
+        labels=["Underutilized", "Optimal", "Overutilized"],
+    )
 
     # Display core metrics
     st.subheader("Performance Metrics")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Resources", len(utilization_df))
-    col2.metric("Avg Utilization", f"{utilization_df['Utilization %'].mean():.1f}%")
-    col3.metric(
-        "Avg Overallocation", f"{utilization_df['Overallocation %'].mean():.1f}%"
-    )
+    col1.metric("Total Resources", len(util_df))
+    col2.metric("Avg Utilization", f"{util_df['Utilization %'].mean():.1f}%")
+    col3.metric("Avg Overallocation", f"{util_df['Overallocation %'].mean():.1f}%")
 
     # Single visualization section
     st.subheader("Resource Utilization Analysis")
     fig = px.bar(
-        utilization_df,
+        util_df,
         x="Resource",
         y=["Utilization %", "Overallocation %"],
         barmode="group",
         color="Type",
         labels={"value": "Percentage"},
-        height=500,
+        height=chart_height,
     )
     st.plotly_chart(fig, use_container_width=True)
 
     # Detailed table
     st.subheader("Detailed Metrics")
     st.dataframe(
-        utilization_df,
+        util_df,
         column_config={
             "Utilization %": st.column_config.ProgressColumn(
                 "Utilization %", format="%.1f%%", min_value=0, max_value=100
@@ -702,8 +721,6 @@ def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=Non
 
     # Create color scale from configuration
     try:
-        from configuration import load_heatmap_colorscale
-
         colorscale = load_heatmap_colorscale()
     except (ImportError, AttributeError):
         colorscale = [
@@ -761,8 +778,6 @@ def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=Non
 
 def display_sunburst_organization(data):
     """Creates a sunburst chart showing organizational hierarchy with clear text labels."""
-    import plotly.express as px
-    import streamlit as st
 
     # Prepare data for sunburst chart
     labels = []

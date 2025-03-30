@@ -2,13 +2,11 @@ import base64
 import io
 import json
 import uuid
-from datetime import datetime
-from typing import Dict, List, Tuple, Optional
-
 import numpy as np
 import pandas as pd
 import streamlit as st
-
+from datetime import datetime
+from typing import Dict, List, Tuple, Optional
 from utils import paginate_dataframe
 from configuration import load_currency_settings
 

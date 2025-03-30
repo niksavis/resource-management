@@ -1,11 +1,9 @@
-import math
-
 import numpy as np
 import pandas as pd
 import streamlit as st
-from typing import List, Optional
-from configuration import load_currency_settings
 import uuid
+from typing import List, Optional
+from configuration import load_currency_settings, load_display_preferences
 
 
 def display_filtered_resource(
@@ -348,21 +346,58 @@ def _apply_all_filters(
     return df
 
 
-def paginate_dataframe(df: pd.DataFrame, key_prefix: str) -> pd.DataFrame:
-    """Paginate a dataframe for display."""
-    if len(df) > 20:
-        page_size = st.slider(
-            "Rows per page", 10, 100, 20, 10, key=f"page_size_{key_prefix}"
-        )
-        total_pages = math.ceil(len(df) / page_size)
-        page_num = st.number_input(
-            "Page", 1, total_pages, 1, 1, key=f"page_num_{key_prefix}"
-        )
-        start_idx = (page_num - 1) * page_size
-        end_idx = min(start_idx + page_size, len(df))
-        st.write(f"Showing {start_idx + 1} to {end_idx} of {len(df)} entries")
-        return df.iloc[start_idx:end_idx]
-    return df
+def paginate_dataframe(df, key_prefix, items_per_page=None):
+    """
+    Paginate a DataFrame and provide navigation.
+
+    Args:
+        df (pd.DataFrame): DataFrame to paginate
+        key_prefix (str): Prefix for session state keys
+        items_per_page (int, optional): Number of items per page. If None, uses settings.
+
+    Returns:
+        pd.DataFrame: Paginated DataFrame
+    """
+    if items_per_page is None:
+        # Get page size from settings
+        display_prefs = load_display_preferences()
+        items_per_page = display_prefs.get("page_size", 10)
+
+    # Initialize page number in session state if not exists
+    if f"{key_prefix}_page" not in st.session_state:
+        st.session_state[f"{key_prefix}_page"] = 0
+
+    # Calculate total pages
+    n_pages = max(1, len(df) // items_per_page)
+
+    # Only show pagination if needed
+    if len(df) > items_per_page:
+        # Create pagination controls
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col1:
+            if st.button("◀️ Previous", key=f"{key_prefix}_prev"):
+                st.session_state[f"{key_prefix}_page"] = max(
+                    0, st.session_state[f"{key_prefix}_page"] - 1
+                )
+
+        with col2:
+            st.write(f"Page {st.session_state[f'{key_prefix}_page'] + 1} of {n_pages}")
+
+        with col3:
+            if st.button("Next ▶️", key=f"{key_prefix}_next"):
+                st.session_state[f"{key_prefix}_page"] = min(
+                    n_pages - 1, st.session_state[f"{key_prefix}_page"] + 1
+                )
+
+    # Get current page number
+    current_page = st.session_state[f"{key_prefix}_page"]
+
+    # Calculate start and end indices
+    start_idx = current_page * items_per_page
+    end_idx = min(start_idx + items_per_page, len(df))
+
+    # Return the sliced DataFrame
+    return df.iloc[start_idx:end_idx].reset_index(drop=True)
 
 
 def confirm_action(action_name: str, key_suffix: str) -> bool:

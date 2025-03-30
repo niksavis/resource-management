@@ -2,8 +2,8 @@ import json
 import os
 import random
 import streamlit as st
-from typing import Dict, List
 import plotly.express as px
+from typing import Dict, List
 
 SETTINGS_FILE = "settings.json"
 
@@ -20,6 +20,17 @@ def create_default_settings() -> Dict:
             [1.0, "#4b0082"],  # Full/over allocation
         ],
         "max_daily_cost": 2000.0,
+        "work_schedule": {
+            "work_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            "work_hours": 8.0,
+        },
+        "utilization_thresholds": {"under": 50, "over": 100},
+        "display_preferences": {
+            "page_size": 10,
+            "default_view": "Cards",
+            "chart_height": 600,
+        },
+        "date_ranges": {"short": 30, "medium": 90, "long": 180},
     }
 
 
@@ -322,3 +333,64 @@ def load_department_colors():
     """Load department colors from settings."""
     settings = load_settings()
     return settings.get("department_colors", {})
+
+
+def load_work_schedule_settings():
+    """Load default work schedule settings from the settings file."""
+    settings = load_settings()
+    return settings.get(
+        "work_schedule",
+        {
+            "work_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            "work_hours": 8.0,
+        },
+    )
+
+
+def save_work_schedule_settings(work_schedule):
+    """Save default work schedule settings to the settings file."""
+    settings = load_settings()
+    settings["work_schedule"] = work_schedule
+    save_settings(settings)
+
+
+def load_utilization_thresholds():
+    """Load utilization threshold settings from the settings file."""
+    settings = load_settings()
+    return settings.get("utilization_thresholds", {"under": 50, "over": 100})
+
+
+def save_utilization_thresholds(thresholds):
+    """Save utilization threshold settings to the settings file."""
+    settings = load_settings()
+    settings["utilization_thresholds"] = thresholds
+    save_settings(settings)
+
+
+def load_display_preferences():
+    """Load display preference settings from the settings file."""
+    settings = load_settings()
+    return settings.get(
+        "display_preferences",
+        {"page_size": 10, "default_view": "Cards", "chart_height": 600},
+    )
+
+
+def save_display_preferences(preferences):
+    """Save display preference settings to the settings file."""
+    settings = load_settings()
+    settings["display_preferences"] = preferences
+    save_settings(settings)
+
+
+def load_date_range_settings():
+    """Load default date range settings from the settings file."""
+    settings = load_settings()
+    return settings.get("date_ranges", {"short": 30, "medium": 90, "long": 180})
+
+
+def save_date_range_settings(date_ranges):
+    """Save default date range settings to the settings file."""
+    settings = load_settings()
+    settings["date_ranges"] = date_ranges
+    save_settings(settings)

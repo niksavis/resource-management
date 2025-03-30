@@ -1,16 +1,24 @@
 import json
 import os
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-
 from configuration import (
     display_color_settings,
     load_currency_settings,
     regenerate_department_colors,
     save_currency_settings,
+    load_work_schedule_settings,
+    save_work_schedule_settings,
+    load_utilization_thresholds,
+    save_utilization_thresholds,
+    load_display_preferences,
+    save_display_preferences,
+    load_date_range_settings,
+    save_date_range_settings,
+    save_daily_cost_settings,
+    load_daily_cost_settings,
 )
 from data_handlers import (
     calculate_project_cost,
@@ -20,6 +28,7 @@ from data_handlers import (
     save_json,
     sort_projects_by_priority_and_date,
     apply_filters,
+    parse_resources,
 )
 from person_crud_form import person_crud_form
 from team_crud_form import team_crud_form
@@ -122,6 +131,10 @@ def display_home_tab():
             by=["Priority", "Finish"], ascending=[False, False]
         )
 
+        # Get chart height from display preferences
+        display_prefs = load_display_preferences()
+        chart_height = display_prefs.get("chart_height", 600)
+
         today = pd.Timestamp.now()
         fig = px.timeline(
             projects_df,
@@ -138,7 +151,7 @@ def display_home_tab():
             xaxis_title="Timeline",
             yaxis_title="Projects",
             legend_title="Priority",
-            height=600,
+            height=chart_height,
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -179,10 +192,15 @@ def display_home_tab():
             utilization_df = calculate_resource_utilization(gantt_data)
 
             if not utilization_df.empty:
-                # Define thresholds for utilization categories
+                # Load utilization thresholds from settings
+                thresholds = load_utilization_thresholds()
+                under_threshold = thresholds.get("under", 50)
+                over_threshold = thresholds.get("over", 100)
+
+                # Define thresholds for utilization categories using configured values
                 utilization_df["Category"] = pd.cut(
                     utilization_df["Utilization %"],
-                    bins=[-float("inf"), 50, 100, float("inf")],
+                    bins=[-float("inf"), under_threshold, over_threshold, float("inf")],
                     labels=["Underutilized", "Optimal", "Overutilized"],
                 )
 
@@ -386,7 +404,16 @@ def display_consolidated_resources():
             reverse=not ascending,
         )
 
-    view_option = st.radio("View As:", ["Cards", "Visual Map"], horizontal=True)
+    # Get default view from display preferences
+    display_prefs = load_display_preferences()
+    default_view = display_prefs.get("default_view", "Cards")
+
+    view_option = st.radio(
+        "View As:",
+        ["Cards", "Visual Map"],
+        index=0 if default_view == "Cards" else 1,
+        horizontal=True,
+    )
 
     if view_option == "Cards":
         _display_resource_cards(
@@ -568,7 +595,6 @@ def display_manage_projects_tab():
 
 def _create_projects_dataframe():
     """Helper function to create a DataFrame from project data."""
-    from data_handlers import parse_resources
 
     return pd.DataFrame(
         [
@@ -682,7 +708,12 @@ def _filter_projects_dataframe(projects_df):
                 )
             ]
 
-        projects_df = paginate_dataframe(projects_df, "projects")
+        # Apply filters and pagination with configured page size
+        display_prefs = load_display_preferences()
+        page_size = display_prefs.get("page_size", 10)
+        projects_df = paginate_dataframe(
+            projects_df, "projects", items_per_page=page_size
+        )
 
     return projects_df
 
@@ -699,19 +730,25 @@ def create_resource_analytics_filters(page_key):
             )
 
         with col3:
-            # Date range selection with predefined options
+            # Load date range settings
+            date_ranges = load_date_range_settings()
+            short_range = date_ranges.get("short", 30)
+            medium_range = date_ranges.get("medium", 90)
+            long_range = date_ranges.get("long", 180)
+
+            # Date range selection with predefined options from settings
             date_options = {
-                "Next 30 days": (
+                f"Next {short_range} days": (
                     pd.to_datetime("today"),
-                    pd.to_datetime("today") + pd.Timedelta(days=30),
+                    pd.to_datetime("today") + pd.Timedelta(days=short_range),
                 ),
-                "Next 90 days": (
+                f"Next {medium_range} days": (
                     pd.to_datetime("today"),
-                    pd.to_datetime("today") + pd.Timedelta(days=90),
+                    pd.to_datetime("today") + pd.Timedelta(days=medium_range),
                 ),
-                "Next 180 days": (
+                f"Next {long_range} days": (
                     pd.to_datetime("today"),
-                    pd.to_datetime("today") + pd.Timedelta(days=180),
+                    pd.to_datetime("today") + pd.Timedelta(days=long_range),
                 ),
                 "All time": (None, None),
                 "Custom range": (None, None),
@@ -720,7 +757,7 @@ def create_resource_analytics_filters(page_key):
             date_selection = st.selectbox(
                 "Date Range",
                 options=list(date_options.keys()),
-                index=1,  # Default to Next 90 days
+                index=1,  # Default to medium range
                 key=f"date_range_{page_key}",
             )
 
@@ -1064,9 +1101,6 @@ def display_settings_tab():
             st.success("Currency settings updated.")
 
     st.subheader("Daily Cost Settings")
-    from configuration import save_daily_cost_settings
-    from configuration import load_daily_cost_settings
-
     max_daily_cost = load_daily_cost_settings()
     with st.form("daily_cost_form"):
         new_max_cost = st.number_input(
@@ -1075,6 +1109,149 @@ def display_settings_tab():
         if st.form_submit_button("Save Max Daily Cost"):
             save_daily_cost_settings(new_max_cost)
             st.success("Max daily cost updated.")
+
+    # New settings sections
+    st.subheader("Default Work Schedule")
+    work_schedule = load_work_schedule_settings()
+    with st.form("work_schedule_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            work_days = st.multiselect(
+                "Default Work Days",
+                options=[
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                ],
+                default=work_schedule.get(
+                    "work_days",
+                    ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                ),
+            )
+        with col2:
+            work_hours = st.number_input(
+                "Default Daily Work Hours",
+                min_value=1.0,
+                max_value=24.0,
+                value=float(work_schedule.get("work_hours", 8.0)),
+                step=0.5,
+            )
+        if st.form_submit_button("Save Work Schedule Settings"):
+            save_work_schedule_settings(
+                {"work_days": work_days, "work_hours": work_hours}
+            )
+            st.success("Default work schedule updated.")
+
+    st.subheader("Utilization Thresholds")
+    thresholds = load_utilization_thresholds()
+    with st.form("utilization_thresholds_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            under_threshold = st.slider(
+                "Underutilized Threshold (%)",
+                min_value=0,
+                max_value=100,
+                value=thresholds.get("under", 50),
+                step=5,
+                help="Resources below this utilization are considered underutilized",
+            )
+        with col2:
+            over_threshold = st.slider(
+                "Overutilized Threshold (%)",
+                min_value=0,
+                max_value=200,
+                value=thresholds.get("over", 100),
+                step=5,
+                help="Resources above this utilization are considered overutilized",
+            )
+        if st.form_submit_button("Save Utilization Thresholds"):
+            save_utilization_thresholds(
+                {"under": under_threshold, "over": over_threshold}
+            )
+            st.success("Utilization thresholds updated.")
+
+    st.subheader("Display Preferences")
+    display_prefs = load_display_preferences()
+    with st.form("display_preferences_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            page_size = st.number_input(
+                "Items Per Page",
+                min_value=5,
+                max_value=100,
+                value=display_prefs.get("page_size", 10),
+                step=5,
+                help="Number of items to display per page in tables",
+            )
+        with col2:
+            default_view = st.selectbox(
+                "Default Resource View",
+                options=["Cards", "Visual Map"],
+                index=0 if display_prefs.get("default_view", "Cards") == "Cards" else 1,
+                help="Default view for resources display",
+            )
+
+        chart_height = st.slider(
+            "Default Chart Height (px)",
+            min_value=300,
+            max_value=1200,
+            value=display_prefs.get("chart_height", 600),
+            step=50,
+            help="Default height for charts in pixels",
+        )
+
+        if st.form_submit_button("Save Display Preferences"):
+            save_display_preferences(
+                {
+                    "page_size": page_size,
+                    "default_view": default_view,
+                    "chart_height": chart_height,
+                }
+            )
+            st.success("Display preferences updated.")
+
+    st.subheader("Default Date Ranges")
+    date_ranges = load_date_range_settings()
+    with st.form("date_range_form"):
+        st.write("Configure default date range options (days)")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            short_range = st.number_input(
+                "Short Range",
+                min_value=1,
+                max_value=90,
+                value=date_ranges.get("short", 30),
+                step=1,
+                help="Short-term date range in days",
+            )
+        with col2:
+            medium_range = st.number_input(
+                "Medium Range",
+                min_value=30,
+                max_value=180,
+                value=date_ranges.get("medium", 90),
+                step=1,
+                help="Medium-term date range in days",
+            )
+        with col3:
+            long_range = st.number_input(
+                "Long Range",
+                min_value=90,
+                max_value=365,
+                value=date_ranges.get("long", 180),
+                step=1,
+                help="Long-term date range in days",
+            )
+
+        if st.form_submit_button("Save Date Range Settings"):
+            save_date_range_settings(
+                {"short": short_range, "medium": medium_range, "long": long_range}
+            )
+            st.success("Default date ranges updated.")
 
 
 def initialize_session_state():
