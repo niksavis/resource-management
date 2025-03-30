@@ -18,7 +18,7 @@ from app.services.config_service import (
     load_department_colors,
     load_utilization_thresholds,
     load_heatmap_colorscale,
-    load_date_range_settings,  # Added missing import
+    load_date_range_settings,
 )
 
 from app.ui.visualizations import (
@@ -32,10 +32,13 @@ from app.services.visualization_service import (
     prepare_budget_data,
 )
 from app.utils.ui_components import display_action_bar
-from app.services.data_service import sort_projects_by_priority_and_date
-from data_handlers import (
+from app.services.data_service import (
+    sort_projects_by_priority_and_date,
     create_gantt_data,
     apply_filters,
+    calculate_resource_utilization,
+    calculate_capacity_data,
+    find_resource_conflicts,
 )
 
 
@@ -398,8 +401,6 @@ def _display_resource_conflicts(filtered_data: pd.DataFrame) -> None:
     Args:
         filtered_data: Filtered DataFrame of resource allocation data
     """
-    from data_handlers import find_resource_conflicts
-
     st.subheader("Resource Conflicts")
     conflicts = find_resource_conflicts(filtered_data)
 
@@ -440,8 +441,6 @@ def display_utilization_dashboard(
         start_date: Start date for the visualization
         end_date: End date for the visualization
     """
-    from data_handlers import calculate_resource_utilization
-
     st.subheader("Utilization Dashboard")
 
     # Calculate utilization metrics
@@ -492,8 +491,6 @@ def display_capacity_planning_dashboard(
         start_date: Start date for the visualization
         end_date: End date for the visualization
     """
-    from data_handlers import calculate_capacity_data
-
     st.subheader("Capacity Planning Dashboard")
 
     # Generate capacity data

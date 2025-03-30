@@ -12,10 +12,17 @@ from typing import List, Dict, Any, Optional
 from app.utils.ui_components import display_action_bar, paginate_dataframe
 from app.services.config_service import load_currency_settings, load_display_preferences
 from app.utils.resource_utils import calculate_team_cost, calculate_department_cost
-from person_crud_form import person_crud_form
-from team_crud_form import team_crud_form
+
+# Fix imports to use full path
+from app.ui.forms.person_form import display_person_form as person_crud_form
+from app.ui.forms.team_form import display_team_form as team_crud_form
 from app.ui.forms.department_form import display_department_form as department_crud_form
 from app.utils.validation import validate_team_integrity
+
+# Import app.ui.components instead of utils module
+from app.ui.components import display_filtered_resource
+from app.utils.formatting import format_circular_dependency_message
+from app.services.data_service import check_circular_dependencies
 
 
 def display_manage_resources_tab():
@@ -40,8 +47,6 @@ def display_manage_resources_tab():
             st.info("No people found. Please add people to manage them.")
         else:
             st.subheader("Manage People")
-            from utils import display_filtered_resource
-
             display_filtered_resource("people", "people")
             person_crud_form()
 
@@ -50,8 +55,6 @@ def display_manage_resources_tab():
             st.info("No teams found. Please add teams to manage them.")
         else:
             st.subheader("Manage Teams")
-            from utils import display_filtered_resource
-
             display_filtered_resource("teams", "teams", distinct_filters=True)
             team_crud_form()
 
@@ -60,8 +63,6 @@ def display_manage_resources_tab():
             st.info("No departments found. Please add departments to manage them.")
         else:
             st.subheader("Manage Departments")
-            from utils import display_filtered_resource
-
             display_filtered_resource(
                 "departments", "departments", distinct_filters=True, filter_by="teams"
             )
@@ -72,8 +73,6 @@ def display_manage_resources_tab():
 
 def _check_and_display_dependency_warnings():
     """Check for circular dependencies and display warnings if found."""
-    from utils import check_circular_dependencies, format_circular_dependency_message
-
     cycles, multi_team_members, multi_department_members, multi_department_teams = (
         check_circular_dependencies()
     )

@@ -772,3 +772,61 @@ def _apply_all_filters(
         df = df[df["department"].isin(dept_filter)]
 
     return df
+
+
+def find_resource_conflicts(
+    gantt_data: pd.DataFrame, threshold: float = 1.0
+) -> pd.DataFrame:
+    """
+    Find resource allocation conflicts (overallocations).
+
+    Args:
+        gantt_data: DataFrame containing Gantt chart data
+        threshold: Allocation threshold above which a conflict is detected (default: 1.0)
+
+    Returns:
+        DataFrame with resource conflicts
+    """
+    if gantt_data.empty:
+        return pd.DataFrame(
+            columns=["Resource", "Type", "Department", "Date", "Allocation", "Projects"]
+        )
+
+    # Get the min and max dates
+    min_date = gantt_data["Start"].min()
+    max_date = gantt_data["End"].max()
+
+    # Create a date range for all dates
+    dates = pd.date_range(start=min_date, end=max_date)
+
+    conflicts = []
+
+    # For each resource, check daily allocations
+    for resource in gantt_data["Resource"].unique():
+        resource_data = gantt_data[gantt_data["Resource"] == resource]
+        resource_type = resource_data["Type"].iloc[0]
+        department = resource_data["Department"].iloc[0]
+
+        # For each day, calculate total allocation and collect projects
+        for date in dates:
+            # Find allocations that include this date
+            allocations = resource_data[
+                (resource_data["Start"] <= date) & (resource_data["End"] >= date)
+            ]
+
+            total_allocation = allocations["Allocation %"].sum() / 100
+
+            # If allocation exceeds threshold, report as conflict
+            if total_allocation > threshold:
+                conflicts.append(
+                    {
+                        "Resource": resource,
+                        "Type": resource_type,
+                        "Department": department,
+                        "Date": date,
+                        "Allocation": total_allocation * 100,  # As percentage
+                        "Projects": ", ".join(allocations["Project"].tolist()),
+                    }
+                )
+
+    return pd.DataFrame(conflicts)

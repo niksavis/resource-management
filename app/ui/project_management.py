@@ -11,8 +11,10 @@ from typing import List, Dict, Any
 
 from app.utils.ui_components import display_action_bar, paginate_dataframe
 from app.services.config_service import load_display_preferences
-from project_crud_form import add_project_form, edit_project_form, delete_project_form
-from data_handlers import parse_resources
+from app.ui.forms.project_form import display_project_form as add_project_form
+from app.ui.forms.project_form import display_project_form as edit_project_form
+from app.ui.forms.project_form import display_project_form as delete_project_form
+from app.services.data_service import parse_resources
 
 
 def display_manage_projects_tab():
