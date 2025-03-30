@@ -530,7 +530,10 @@ def _update_person(person, old_name=None):
 def _add_person(person):
     from app.utils.resource_utils import add_resource
 
-    add_resource(st.session_state.data["people"], person)
+    if add_resource(st.session_state.data["people"], person):
+        st.success(f"Person {person['name']} added successfully!")
+    else:
+        st.error(f"Person {person['name']} already exists!")
 
 
 def _delete_person(name):

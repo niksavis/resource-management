@@ -11,9 +11,7 @@ from typing import List, Dict, Any
 
 from app.utils.ui_components import display_action_bar, paginate_dataframe
 from app.services.config_service import load_display_preferences
-from app.ui.forms.project_form import display_project_form as add_project_form
-from app.ui.forms.project_form import display_project_form as edit_project_form
-from app.ui.forms.project_form import display_project_form as delete_project_form
+from app.ui.forms.project_form import display_project_form
 from app.services.data_service import parse_resources
 
 
@@ -22,22 +20,66 @@ def display_manage_projects_tab():
     display_action_bar()
     st.subheader("Project Management")
 
-    if not st.session_state.data["projects"]:
-        st.warning("No projects found. Please add a project first.")
-        add_project_form()
-        return
-
     # Create and filter projects dataframe
-    projects_df = _create_projects_dataframe()
-    projects_df = _filter_projects_dataframe(projects_df)
+    if st.session_state.data["projects"]:
+        projects_df = _create_projects_dataframe()
+        projects_df = _filter_projects_dataframe(projects_df)
+        st.dataframe(projects_df, use_container_width=True)
+    else:
+        st.warning("No projects found. Please add a project first.")
 
-    # Display projects in a dataframe
-    st.dataframe(projects_df, use_container_width=True)
+    # Project CRUD Forms in expanders
+    with st.expander("➕ Add Project"):
+        display_project_form(form_type="add", on_submit=_add_project)
 
-    # Project CRUD Forms
-    add_project_form()
-    edit_project_form()
-    delete_project_form()
+    if st.session_state.data["projects"]:
+        with st.expander("✏️ Edit Project"):
+            # Project selection for editing
+            project_to_edit = st.selectbox(
+                "Select Project to Edit",
+                options=[p["name"] for p in st.session_state.data["projects"]],
+                key="select_project_to_edit",
+            )
+            selected_project = next(
+                (
+                    p
+                    for p in st.session_state.data["projects"]
+                    if p["name"] == project_to_edit
+                ),
+                None,
+            )
+            if selected_project:
+                display_project_form(
+                    project_data=selected_project,
+                    on_submit=lambda project: _update_project(project, project_to_edit),
+                    form_type="edit",
+                )
+
+        with st.expander("🗑️ Delete Project"):
+            # Project selection for deletion
+            project_to_delete = st.selectbox(
+                "Select Project to Delete",
+                options=[p["name"] for p in st.session_state.data["projects"]],
+                key="select_project_to_delete",
+            )
+            selected_project = next(
+                (
+                    p
+                    for p in st.session_state.data["projects"]
+                    if p["name"] == project_to_delete
+                ),
+                None,
+            )
+            if selected_project:
+                st.write(f"You are about to delete: **{project_to_delete}**")
+                if st.button(
+                    "Delete Project",
+                    key="delete_project_button",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    _delete_project(project_to_delete)
+                    st.rerun()
 
 
 def _create_projects_dataframe() -> pd.DataFrame:
@@ -176,3 +218,29 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
         )
 
     return projects_df
+
+
+def _add_project(project):
+    """Add a new project."""
+    st.session_state.data["projects"].append(project)
+    st.success(f"Project '{project['name']}' added successfully!")
+
+
+def _update_project(project, old_name):
+    """Update an existing project."""
+    for i, p in enumerate(st.session_state.data["projects"]):
+        if p["name"] == old_name:
+            st.session_state.data["projects"][i] = project
+            st.success(f"Project '{project['name']}' updated successfully!")
+            return
+    st.error(f"Project '{old_name}' not found.")
+
+
+def _delete_project(name):
+    """Delete a project."""
+    for i, p in enumerate(st.session_state.data["projects"]):
+        if p["name"] == name:
+            del st.session_state.data["projects"][i]
+            st.success(f"Project '{name}' deleted successfully!")
+            return
+    st.error(f"Project '{name}' not found.")

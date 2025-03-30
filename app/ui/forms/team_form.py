@@ -31,6 +31,7 @@ def display_team_form(
     # Pre-fill form fields if editing an existing team
     team_name = team_data.get("name", "") if team_data else ""
     department = team_data.get("department", "") if team_data else ""
+    description = team_data.get("description", "") if team_data else ""
     members = team_data.get("members", []) if team_data else []
 
     # Get available people options
@@ -62,6 +63,14 @@ def display_team_form(
         options=department_options,
         index=dept_index,
         key=f"{form_key}_department",
+        disabled=form_type == "delete",
+    )
+
+    # Add description field
+    description = st.text_area(
+        "Description",
+        value=description,
+        key=f"{form_key}_description",
         disabled=form_type == "delete",
     )
 
@@ -101,6 +110,7 @@ def display_team_form(
             team_info = {
                 "name": team_name,
                 "department": department,
+                "description": description,  # Add description to team info
                 "members": members,
             }
             if on_submit:

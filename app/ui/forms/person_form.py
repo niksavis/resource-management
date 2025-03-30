@@ -96,23 +96,49 @@ def display_person_form(
         disabled=form_type == "delete",
     )
 
-    # Add team selection (optional)
-    team_options = [""] + [t["name"] for t in st.session_state.data["teams"]]
+    # Filter teams by selected department
+    department_teams = [""] + [
+        t["name"]
+        for t in st.session_state.data["teams"]
+        if t["department"] == department
+    ]
+
+    # Handle case when the person's current team is not in the filtered list
     team_index = 0
-    if person_data and person_data.get("team") in team_options:
-        team_index = team_options.index(person_data.get("team", ""))
+    if person_data and person_data.get("team"):
+        if person_data["team"] in department_teams:
+            team_index = department_teams.index(person_data["team"])
+        else:
+            # Add the team to options if it's valid but from a different department
+            if any(
+                t["name"] == person_data["team"] for t in st.session_state.data["teams"]
+            ):
+                department_teams.append(person_data["team"])
+                team_index = len(department_teams) - 1
+                st.warning(
+                    f"Team '{person_data['team']}' is not from department '{department}'. "
+                    f"Changing departments will reset this selection."
+                )
 
     team = st.selectbox(
         "Team (Optional)",
-        options=team_options,
+        options=department_teams,
         index=team_index,
         key=f"{form_key}_team",
         disabled=form_type == "delete",
     )
 
+    # Ensure the daily_cost is always a float
+    cost_value = 0.0
+    if person_data and "daily_cost" in person_data:
+        # Convert to float explicitly to handle any integer values
+        cost_value = float(person_data["daily_cost"])
+
     daily_cost = st.number_input(
         "Daily Cost",
-        value=person_data.get("daily_cost", 0.0) if person_data else 0.0,
+        value=cost_value,  # Explicitly use float
+        min_value=0.0,  # Explicitly use float
+        step=50.0,  # Already float
         format="%.2f",
         key=f"{form_key}_daily_cost",
         disabled=form_type == "delete",
@@ -171,6 +197,48 @@ def display_person_form(
         disabled=form_type == "delete",
     )
 
+    # Skills field - maintain list of all skills in session state
+    if "all_skills" not in st.session_state:
+        st.session_state.all_skills = []
+
+    # Get skills from person if editing
+    person_skills = person_data.get("skills", []) if person_data else []
+
+    # Ensure all person skills are in the all_skills list
+    for skill in person_skills:
+        if skill not in st.session_state.all_skills:
+            st.session_state.all_skills.append(skill)
+
+    # Option to select existing skills
+    selected_skills = st.multiselect(
+        "Skills",
+        options=st.session_state.all_skills,
+        default=person_skills,
+        key=f"{form_key}_skills",
+        disabled=form_type == "delete",
+    )
+
+    # Option to add new skills
+    new_skill = st.text_input(
+        "Add New Skill",
+        key=f"{form_key}_new_skill",
+        disabled=form_type == "delete",
+    )
+
+    if new_skill and new_skill not in st.session_state.all_skills:
+        if st.button("Add Skill", key=f"{form_key}_add_skill"):
+            st.session_state.all_skills.append(new_skill)
+            selected_skills.append(new_skill)
+            st.rerun()
+
+    # Calculate capacity based on selected work days and hours
+    if work_days and daily_work_hours > 0:
+        capacity_week = len(work_days) * daily_work_hours
+        capacity_month = capacity_week * 4.33  # Average weeks in a month
+
+        st.metric("Capacity (Hours/Week)", f"{capacity_week:.1f}")
+        st.metric("Capacity (Hours/Month)", f"{capacity_month:.1f}")
+
     # Submit button
     if form_type == "delete":
         button_label = "Delete Person"
@@ -196,6 +264,11 @@ def display_person_form(
                     "daily_cost": daily_cost,
                     "work_days": day_codes,  # Use day codes for storage
                     "daily_work_hours": daily_work_hours,
+                    "skills": selected_skills,
+                    "capacity_hours_per_week": len(work_days) * daily_work_hours,
+                    "capacity_hours_per_month": len(work_days)
+                    * daily_work_hours
+                    * 4.33,
                 }
 
                 validation_result, validation_errors = validate_person(person)

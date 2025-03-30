@@ -51,12 +51,14 @@ def display_filtered_resource(
             "daily_cost": "Daily Cost",
             "work_days": "Work Days",
             "daily_work_hours": "Daily Work Hours",
+            "skills": "Skills",
             "capacity_hours_per_week": "Capacity (Hours/Week)",
             "capacity_hours_per_month": "Capacity (Hours/Month)",
         }
     elif label == "teams":
         friendly_names = {
             "name": "Name",
+            "description": "Description",
             "department": "Department",
             "members": "Members",
         }
@@ -167,25 +169,35 @@ def display_filtered_resource(
     currency, _ = load_currency_settings()
 
     # Use the same friendly_names for display
+    column_config = {col: friendly_names.get(col, col) for col in df.columns}
+
+    # Add special formatting for certain columns
+    if "daily_cost" in df.columns:
+        column_config["daily_cost"] = st.column_config.NumberColumn(
+            f"Daily Cost ({currency})", format="%.2f"
+        )
+
+    if "daily_work_hours" in df.columns:
+        column_config["daily_work_hours"] = st.column_config.NumberColumn(
+            "Daily Work Hours", format="%.1f hours"
+        )
+
+    if "capacity_hours_per_week" in df.columns:
+        column_config["capacity_hours_per_week"] = st.column_config.NumberColumn(
+            "Capacity (Hours/Week)", format="%.1f hours"
+        )
+
+    if "capacity_hours_per_month" in df.columns:
+        column_config["capacity_hours_per_month"] = st.column_config.NumberColumn(
+            "Capacity (Hours/Month)", format="%.1f hours"
+        )
+
+    if "skills" in df.columns:
+        column_config["skills"] = st.column_config.ListColumn("Skills")
+
     st.dataframe(
         df,
-        column_config={
-            "name": "Name",
-            "role": "Role",
-            "department": "Department",
-            "team": "Team",
-            "teams": "Teams",
-            "members": "Members",
-            "daily_cost": st.column_config.NumberColumn(
-                f"Daily Cost ({currency})", format="%.2f"
-            ),
-            "work_days": "Work Days",
-            "daily_work_hours": st.column_config.NumberColumn(
-                "Daily Work Hours", format="%.1f hours"
-            ),
-            "capacity_hours_per_week": "Capacity (Hours/Week)",
-            "capacity_hours_per_month": "Capacity (Hours/Month)",
-        },
+        column_config=column_config,
         use_container_width=True,
     )
 

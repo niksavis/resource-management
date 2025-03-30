@@ -15,6 +15,7 @@ from app.utils.resource_utils import (
     find_resource_by_name,
     update_resource,
 )
+from app.services.validation_service import validate_department
 
 
 def display_department_form(
@@ -112,6 +113,30 @@ def display_department_form(
             cost = calculate_department_cost(temp_department, teams_data, people_data)
             st.info(f"Total Daily Cost: {format_currency(cost)}")
 
+    # Check for conflicts between direct members and team members
+    temp_department = {"name": name, "teams": teams, "members": members}
+    _, _, conflicts = validate_department(temp_department)
+
+    if conflicts:
+        st.warning("⚠️ **Member-Team Conflict Detected**")
+        st.markdown(
+            "The following members are both direct members and part of teams in this department:"
+        )
+
+        for conflict in conflicts:
+            st.markdown(
+                f"- **{conflict['member']}** is in teams: {', '.join(conflict['teams'])}"
+            )
+
+        st.markdown("**Solution Options:**")
+        st.markdown("1. Remove the person from direct members")
+        st.markdown("2. Remove the teams containing this person")
+        st.markdown("3. Remove the person from the teams in Team Management")
+
+        st.info(
+            "Having a person both as a direct member and as part of a team will result in double allocation."
+        )
+
     # Form buttons
     if form_type == "delete":
         button_label = "Delete Department"
@@ -125,9 +150,19 @@ def display_department_form(
     if st.button(button_label, key=f"{form_key}_submit", use_container_width=True):
         if confirm:
             # Basic validation
-            if not name and form_type != "delete":
-                st.error("Department name is required")
+            validation_result, validation_errors, conflicts = validate_department(
+                {"name": name, "teams": teams, "members": members}
+            )
+
+            if not validation_result:
+                st.error("Validation Errors: " + ", ".join(validation_errors))
                 return
+
+            # Warn about conflicts but allow submission
+            if conflicts and form_type != "delete":
+                st.warning(
+                    f"Note: {len(conflicts)} member-team conflicts detected. These may cause double allocation."
+                )
 
             # Prepare department data
             department_info = {
