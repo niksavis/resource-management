@@ -173,3 +173,60 @@ def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None
 
     # Display the chart
     st.plotly_chart(fig, use_container_width=True)
+
+
+def display_department_distribution(
+    departments: List[Dict[str, Any]], department_colors: Dict[str, str] = None
+) -> None:
+    """
+    Display department distribution visualization.
+
+    Args:
+        departments: List of department dictionaries
+        department_colors: Dictionary mapping department names to colors
+    """
+    if not departments:
+        st.info("No department data available for visualization.")
+        return
+
+    # Get department colors if not provided
+    if department_colors is None:
+        department_colors = load_department_colors()
+
+    # Calculate department stats
+    dept_stats = []
+    for dept in departments:
+        dept_name = dept["name"]
+        team_count = len(dept.get("teams", []))
+        member_count = len(dept.get("members", []))
+
+        dept_stats.append(
+            {
+                "Department": dept_name,
+                "Teams": team_count,
+                "Members": member_count,
+                "Color": department_colors.get(dept_name, "#1f77b4"),
+            }
+        )
+
+    if not dept_stats:
+        st.info("No department data to display.")
+        return
+
+    # Create DataFrame
+    dept_df = pd.DataFrame(dept_stats)
+
+    # Create visualization
+    fig = px.bar(
+        dept_df,
+        x="Department",
+        y=["Teams", "Members"],
+        title="Department Distribution",
+        labels={"value": "Count", "variable": "Type"},
+        color="Department",
+        color_discrete_map={
+            dept: color for dept, color in zip(dept_df["Department"], dept_df["Color"])
+        },
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
