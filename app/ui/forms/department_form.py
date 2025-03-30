@@ -16,6 +16,13 @@ from app.utils.resource_utils import (
     update_resource,
 )
 from app.services.validation_service import validate_department
+from app.utils.form_utils import (
+    display_form_header,
+    display_form_feedback,
+    display_confirm_checkbox,
+    display_form_actions,
+    display_form_section,
+)
 
 
 def display_department_form(
@@ -36,8 +43,8 @@ def display_department_form(
     # Generate a unique form key based on the department data to avoid duplicate element IDs
     form_key = f"dept_form_{id(department_data)}_{form_type}"
 
-    # Don't show a header since we're using expanders in the parent
-    # st.header("Department Form")
+    # Display appropriate form header
+    display_form_header("Department", form_type)
 
     # Pre-fill form fields if editing
     name = st.text_input(
@@ -100,7 +107,7 @@ def display_department_form(
 
     # Cost calculation and display
     if teams or members:
-        st.subheader("Department Cost")
+        display_form_section("Department Cost")
 
         # Calculate the cost if editing an existing department
         if department_data:
@@ -139,15 +146,23 @@ def display_department_form(
 
     # Form buttons
     if form_type == "delete":
-        button_label = "Delete Department"
-        confirm = st.checkbox(
+        confirm = display_confirm_checkbox(
             "I confirm I want to delete this department", key=f"{form_key}_confirm"
         )
+        button_label = "Delete Department"
     else:
-        button_label = "Submit"
         confirm = True
+        button_label = "Save" if form_type == "edit" else "Add Department"
 
-    if st.button(button_label, key=f"{form_key}_submit", use_container_width=True):
+    if display_form_actions(
+        primary_label=button_label,
+        primary_key=f"{form_key}_submit",
+        is_delete=form_type == "delete",
+        is_disabled=form_type == "delete" and not confirm,
+        secondary_label="Cancel" if on_cancel else None,
+        secondary_key=f"{form_key}_cancel" if on_cancel else None,
+        secondary_action=on_cancel,
+    ):
         if confirm:
             # Basic validation
             validation_result, validation_errors, conflicts = validate_department(
@@ -155,7 +170,7 @@ def display_department_form(
             )
 
             if not validation_result:
-                st.error("Validation Errors: " + ", ".join(validation_errors))
+                display_form_feedback(False, "Validation failed", validation_errors)
                 return
 
             # Warn about conflicts but allow submission
@@ -179,4 +194,6 @@ def display_department_form(
             if on_submit:
                 on_submit(department_info)
         else:
-            st.error("Please confirm the deletion by checking the box.")
+            display_form_feedback(
+                False, "Please confirm the deletion by checking the box."
+            )

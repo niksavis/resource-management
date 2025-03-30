@@ -11,6 +11,14 @@ from datetime import datetime, timedelta
 from app.services.validation_service import validate_project
 from app.services.data_service import parse_resources
 from app.utils.formatting import format_currency
+from app.utils.form_utils import (
+    display_form_header,
+    display_form_feedback,
+    display_confirm_checkbox,
+    display_form_actions,
+    display_form_section,
+    display_resource_icon,
+)
 
 
 def display_project_form(
@@ -36,7 +44,10 @@ def display_project_form(
         st.session_state.form_counter = 0
     st.session_state.form_counter += 1
 
-    # No header or expander needed as parent component handles that
+    # Display appropriate form header
+    display_form_header("Project", form_type)
+
+    # Use a form container
     with st.form(key=form_key):
         name = st.text_input(
             "Project Name",
@@ -78,15 +89,14 @@ def display_project_form(
             "Allocated Budget",
             value=project_data.get("allocated_budget", 0.0) if project_data else 0.0,
             min_value=0.0,
-            step=1000.0,  # Changed from default to 1000
+            step=1000.0,
             format="%.2f",
             disabled=is_deleting,
         )
 
-        # Assign resources with visual distinction between types
-        st.subheader("Assign Resources")
+        # Resource assignment - match other forms' style
+        display_form_section("Resource Assignment")
 
-        # Group resources by type for easier selection
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -145,7 +155,7 @@ def display_project_form(
 
         # Resource allocation section - dynamic based on selected resources
         if not is_deleting and assigned_resources:
-            st.subheader("Resource Allocation")
+            display_form_section("Resource Allocation")
             st.info(
                 "Set allocation percentage and time period for each resource. Time periods must be within project dates."
             )
@@ -236,19 +246,26 @@ def display_project_form(
 
         # Form submission
         if is_deleting:
-            confirm = st.checkbox(
+            confirm = display_confirm_checkbox(
                 "I confirm I want to delete this project", key=f"{form_key}_confirm"
             )
             submit_label = "Delete Project"
         else:
             confirm = True
-            submit_label = "Save Project"
+            submit_label = "Save" if form_type == "edit" else "Add Project"
 
-        submitted = st.form_submit_button(submit_label)
+        submit_button = st.form_submit_button(
+            label=f"{display_resource_icon('project')} {submit_label}",
+            type="primary" if not is_deleting else "danger",
+            disabled=is_deleting and not confirm,
+            use_container_width=True,
+        )
 
-        if submitted:
+        if submit_button:
             if not confirm and is_deleting:
-                st.error("Please confirm the deletion by checking the box.")
+                display_form_feedback(
+                    False, "Please confirm the deletion by checking the box."
+                )
                 return
 
             if not is_deleting:
@@ -264,9 +281,7 @@ def display_project_form(
                 )
 
                 if not validation_result:
-                    st.error("Validation Errors:")
-                    for error in validation_errors:
-                        st.error(f"- {error}")
+                    display_form_feedback(False, "Validation failed", validation_errors)
                     return
 
                 # Prepare project data
@@ -287,9 +302,15 @@ def display_project_form(
                 # Execute callback if provided
                 if on_submit:
                     on_submit(new_project_data)
-                    st.success(f"Project {form_type}d successfully!")
+                    display_form_feedback(
+                        True,
+                        f"Project {name} successfully {'updated' if is_editing else 'created'}!",
+                    )
 
             # For delete, just pass the name
             elif on_submit:
                 on_submit({"name": project_data.get("name", "")})
-                st.success("Project deleted successfully!")
+                display_form_feedback(
+                    True,
+                    f"Project {project_data.get('name', '')} successfully deleted!",
+                )

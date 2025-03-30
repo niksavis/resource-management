@@ -6,6 +6,14 @@ This module provides form components for creating, reading, updating, and deleti
 
 import streamlit as st
 from typing import Dict, Any, Optional, List
+from app.services.validation_service import validate_team
+from app.utils.form_utils import (
+    display_form_header,
+    display_form_feedback,
+    display_confirm_checkbox,
+    display_form_actions,
+    display_form_section,
+)
 
 
 def display_team_form(
@@ -26,7 +34,8 @@ def display_team_form(
     # Generate a unique form key to avoid duplicate element IDs
     form_key = f"team_form_{id(team_data)}_{form_type}"
 
-    # No header needed since the parent component uses expanders
+    # Display appropriate form header
+    display_form_header("Team", form_type)
 
     # Pre-fill form fields if editing an existing team
     team_name = team_data.get("name", "") if team_data else ""
@@ -88,20 +97,24 @@ def display_team_form(
 
     # Form buttons
     if form_type == "delete":
-        confirm = st.checkbox(
+        confirm = display_confirm_checkbox(
             "I confirm I want to delete this team", key=f"{form_key}_confirm"
         )
-        submit_disabled = not confirm
         button_label = "Delete Team"
+        is_disabled = not confirm
     else:
-        submit_disabled = len(members) < 2
-        button_label = "Submit"
+        confirm = True
+        button_label = "Save" if form_type == "edit" else "Add Team"
+        is_disabled = len(members) < 2
 
-    if st.button(
-        button_label,
-        key=f"{form_key}_submit",
-        disabled=submit_disabled,
-        use_container_width=True,
+    if display_form_actions(
+        primary_label=button_label,
+        primary_key=f"{form_key}_submit",
+        is_delete=form_type == "delete",
+        is_disabled=is_disabled,
+        secondary_label="Cancel" if on_cancel else None,
+        secondary_key=f"{form_key}_cancel" if on_cancel else None,
+        secondary_action=on_cancel,
     ):
         if form_type == "delete":
             if on_submit:
@@ -110,8 +123,13 @@ def display_team_form(
             team_info = {
                 "name": team_name,
                 "department": department,
-                "description": description,  # Add description to team info
+                "description": description,
                 "members": members,
             }
-            if on_submit:
+
+            # Add validation before submitting
+            validation_result, validation_errors = validate_team(team_info)
+            if not validation_result:
+                display_form_feedback(False, "Validation failed", validation_errors)
+            elif on_submit:
                 on_submit(team_info)

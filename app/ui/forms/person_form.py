@@ -9,6 +9,13 @@ from typing import Dict, Any, Optional, List
 from app.services.validation_service import validate_person
 from app.utils.formatting import format_currency
 from app.services.config_service import load_work_schedule_settings
+from app.utils.form_utils import (
+    display_form_header,
+    display_form_feedback,
+    display_confirm_checkbox,
+    display_form_actions,
+    display_form_section,
+)
 
 # Add day code mapping
 DAY_CODE_MAP = {
@@ -57,15 +64,15 @@ def display_person_form(
     # Generate a unique form key to avoid duplicate element IDs
     form_key = f"person_form_{id(person_data)}_{form_type}"
 
+    # Display appropriate form header
+    display_form_header("Person", form_type)
+
     # Get default work schedule from settings
     work_schedule = load_work_schedule_settings()
     default_work_days = work_schedule.get(
         "work_days", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
     )
     default_work_hours = work_schedule.get("work_hours", 8.0)
-
-    # No header needed since we're using expanders in the parent component
-    # Form does not need to be in an expander since the parent handles that
 
     # Pre-fill form fields if editing or deleting
     name = st.text_input(
@@ -236,20 +243,29 @@ def display_person_form(
         capacity_week = len(work_days) * daily_work_hours
         capacity_month = capacity_week * 4.33  # Average weeks in a month
 
-        st.metric("Capacity (Hours/Week)", f"{capacity_week:.1f}")
-        st.metric("Capacity (Hours/Month)", f"{capacity_month:.1f}")
+        display_form_section("Capacity")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Hours/Week", f"{capacity_week:.1f}")
+        with col2:
+            st.metric("Hours/Month", f"{capacity_month:.1f}")
 
-    # Submit button
+    # Submit button logic
     if form_type == "delete":
-        button_label = "Delete Person"
-        confirm = st.checkbox(
+        confirm = display_confirm_checkbox(
             "I confirm I want to delete this person", key=f"{form_key}_confirm"
         )
+        button_label = "Delete Person"
     else:
-        button_label = "Submit"
         confirm = True
+        button_label = "Save" if form_type == "edit" else "Add Person"
 
-    if st.button(button_label, key=f"{form_key}_submit", use_container_width=True):
+    if display_form_actions(
+        primary_label=button_label,
+        primary_key=f"{form_key}_submit",
+        is_delete=form_type == "delete",
+        is_disabled=form_type == "delete" and not confirm,
+    ):
         if confirm:
             # Validate form data for add/edit
             if form_type != "delete":
@@ -273,11 +289,13 @@ def display_person_form(
 
                 validation_result, validation_errors = validate_person(person)
                 if not validation_result:
-                    st.error("Validation Errors: " + ", ".join(validation_errors))
+                    display_form_feedback(False, "Validation failed", validation_errors)
                 elif on_submit:
                     on_submit(person)
             # For delete, just pass the name
             elif on_submit:
                 on_submit({"name": name})
         else:
-            st.error("Please confirm the deletion by checking the box.")
+            display_form_feedback(
+                False, "Please confirm the deletion by checking the box."
+            )
