@@ -16,6 +16,7 @@ from app.services.config_service import (
     load_utilization_thresholds,
     load_department_colors,
 )
+from app.services.data_service import paginate_dataframe
 from data_handlers import (
     create_gantt_data,
     calculate_resource_utilization,

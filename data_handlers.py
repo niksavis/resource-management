@@ -13,7 +13,7 @@ import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional, Any, Union
-from utils import paginate_dataframe
+from app.services.data_service import paginate_dataframe
 from configuration import load_currency_settings
 
 
