@@ -113,8 +113,17 @@ def validate_project(project_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors.append("End date is required.")
     elif project_data.get("start_date") and project_data.get("end_date"):
         try:
-            start_date = pd.to_datetime(project_data["start_date"])
-            end_date = pd.to_datetime(project_data["end_date"])
+            # Handle both string dates and datetime objects
+            if isinstance(project_data["start_date"], str):
+                start_date = pd.to_datetime(project_data["start_date"])
+            else:
+                start_date = pd.to_datetime(project_data["start_date"])
+
+            if isinstance(project_data["end_date"], str):
+                end_date = pd.to_datetime(project_data["end_date"])
+            else:
+                end_date = pd.to_datetime(project_data["end_date"])
+
             if start_date > end_date:
                 errors.append("Start date must be before end date.")
         except ValueError:
@@ -124,10 +133,24 @@ def validate_project(project_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     if "priority" in project_data:
         try:
             priority = int(project_data["priority"])
-            if priority < 1 or priority > 10:
-                errors.append("Priority must be between 1 and 10.")
+            if priority < 1:
+                errors.append(
+                    "Priority must be a positive integer (1 is highest priority)."
+                )
+
+            # Uniqueness of priority is validated at form submission time,
+            # as we need to know if we're creating a new project or editing an existing one
         except ValueError:
             errors.append("Priority must be a valid integer.")
+
+    # Validate assigned resources
+    if not project_data.get("assigned_resources"):
+        errors.append("At least one resource must be assigned to the project.")
+
+    # Validate budget
+    if "allocated_budget" in project_data:
+        if project_data["allocated_budget"] < 0:
+            errors.append("Allocated budget cannot be negative.")
 
     return (len(errors) == 0, errors)
 

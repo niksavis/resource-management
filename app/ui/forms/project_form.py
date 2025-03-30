@@ -47,7 +47,7 @@ def display_project_form(
     # Display appropriate form header
     display_form_header("Project", form_type)
 
-    # Use a form container
+    # Use a container instead of an expander to avoid nesting issues
     with st.form(key=form_key):
         name = st.text_input(
             "Project Name",
@@ -78,10 +78,24 @@ def display_project_form(
             disabled=is_deleting,
         )
 
-        priority = st.selectbox(
-            "Priority",
-            options=[1, 2, 3, 4, 5],
-            index=(project_data.get("priority", 3) - 1) if project_data else 2,
+        # Calculate the default priority - for new projects, it's max priority + 1
+        existing_priorities = [
+            p.get("priority", 1) for p in st.session_state.data["projects"]
+        ]
+        if project_data and "priority" in project_data:
+            # For editing, use current priority
+            default_priority = project_data.get("priority", 1)
+        else:
+            # For new projects, set default as one less priority than current min
+            default_priority = max(existing_priorities, default=[0]) + 1
+
+        # Replace dropdown with number input for priority
+        priority = st.number_input(
+            "Priority (1 = highest)",
+            value=default_priority,
+            min_value=1,
+            step=1,
+            help="Each project must have a unique priority. Lower numbers = higher priority.",
             disabled=is_deleting,
         )
 
@@ -244,7 +258,7 @@ def display_project_form(
                 # Add a divider between resources
                 st.divider()
 
-        # Form submission
+        # Form submission section
         if is_deleting:
             confirm = display_confirm_checkbox(
                 "I confirm I want to delete this project", key=f"{form_key}_confirm"
@@ -254,14 +268,14 @@ def display_project_form(
             confirm = True
             submit_label = "Save" if form_type == "edit" else "Add Project"
 
-        submit_button = st.form_submit_button(
+        submitted = st.form_submit_button(
             label=f"{display_resource_icon('project')} {submit_label}",
             type="primary" if not is_deleting else "danger",
             disabled=is_deleting and not confirm,
             use_container_width=True,
         )
 
-        if submit_button:
+        if submitted:
             if not confirm and is_deleting:
                 display_form_feedback(
                     False, "Please confirm the deletion by checking the box."
@@ -269,48 +283,104 @@ def display_project_form(
                 return
 
             if not is_deleting:
-                # Validate project data
-                validation_result, validation_errors = validate_project(
-                    name=name,
-                    description=description,
-                    start_date=start_date,
-                    end_date=end_date,
-                    priority=priority,
-                    allocated_budget=allocated_budget,
-                    assigned_resources=assigned_resources,
-                )
-
-                if not validation_result:
-                    display_form_feedback(False, "Validation failed", validation_errors)
+                # Basic validation - just check required fields
+                if not name:
+                    display_form_feedback(
+                        False,
+                        "Project name is required",
+                        ["Please enter a project name"],
+                    )
                     return
 
-                # Prepare project data
+                if not assigned_resources:
+                    display_form_feedback(
+                        False,
+                        "No resources assigned",
+                        ["Please assign at least one resource to the project"],
+                    )
+                    return
+
+                if start_date > end_date:
+                    display_form_feedback(
+                        False,
+                        "Invalid date range",
+                        ["Start date must be before end date"],
+                    )
+                    return
+
+                # Check if priority is already taken by another project
+                priority_conflict = False
+                if form_type == "add":
+                    priority_conflict = any(
+                        p.get("priority") == priority
+                        for p in st.session_state.data["projects"]
+                    )
+                elif form_type == "edit":
+                    # For edit, check all projects except the one being edited
+                    priority_conflict = any(
+                        p.get("priority") == priority
+                        and p.get("name") != project_data.get("name")
+                        for p in st.session_state.data["projects"]
+                    )
+
+                if priority_conflict:
+                    display_form_feedback(
+                        False,
+                        f"Priority {priority} is already taken by another project",
+                        [
+                            "Each project must have a unique priority. Please select a different value."
+                        ],
+                    )
+                    return
+
+                # Create project data dictionary
                 new_project_data = {
                     "name": name,
                     "description": description,
                     "start_date": start_date.strftime("%Y-%m-%d"),
                     "end_date": end_date.strftime("%Y-%m-%d"),
                     "priority": priority,
-                    "allocated_budget": allocated_budget,
+                    "allocated_budget": float(allocated_budget),  # Ensure it's float
                     "assigned_resources": assigned_resources,
                 }
 
-                # Add resource allocations if any
+                # Add resource allocations if any resources are assigned
                 if assigned_resources:
                     new_project_data["resource_allocations"] = resource_allocations
 
                 # Execute callback if provided
                 if on_submit:
-                    on_submit(new_project_data)
-                    display_form_feedback(
-                        True,
-                        f"Project {name} successfully {'updated' if is_editing else 'created'}!",
-                    )
+                    try:
+                        on_submit(new_project_data)
+                        st.success(
+                            f"Project {name} successfully {'updated' if is_editing else 'added'}!"
+                        )
+
+                        # Reset form visibility
+                        if form_type == "add":
+                            st.session_state.show_add_project_form = False
+                        elif form_type == "edit":
+                            st.session_state.show_edit_project_form = False
+
+                        # Schedule a rerun after the form is processed
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
+                        return
 
             # For delete, just pass the name
-            elif on_submit:
-                on_submit({"name": project_data.get("name", "")})
-                display_form_feedback(
-                    True,
-                    f"Project {project_data.get('name', '')} successfully deleted!",
-                )
+            elif on_submit and project_data:
+                try:
+                    on_submit({"name": project_data.get("name", "")})
+                    st.success(
+                        f"Project {project_data.get('name', '')} successfully deleted!"
+                    )
+
+                    # Reset form visibility
+                    st.session_state.show_delete_project_form = False
+
+                    # Schedule a rerun after the form is processed
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error deleting project: {str(e)}")
+                    return
