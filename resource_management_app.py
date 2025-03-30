@@ -319,15 +319,15 @@ def display_consolidated_resources():
 
     st.write("### Resources Overview")
 
-    with st.expander("Search and Filter Resources", expanded=False):
+    with st.expander("Search, Sort, and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
-        col1, col2 = st.columns([1, 1])
+        col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
             type_filter = st.multiselect(
                 "Filter by Type",
                 options=["Person", "Team", "Department"],
-                default=["Person", "Team", "Department"],
+                default=[],  # Empty by default
                 key="filter_type_all",
             )
         with col2:
@@ -337,6 +337,13 @@ def display_consolidated_resources():
                 default=[],
                 key="filter_dept_all",
             )
+        with col3:
+            sort_option = st.selectbox(
+                "Sort by",
+                options=["Name", "Role", "Department", "Daily Cost"],
+                key="sort_option_all",
+            )
+            ascending = st.checkbox("Ascending", value=True, key="sort_ascending_all")
 
     if search_term:
         people = [p for p in people if search_term.lower() in str(p).lower()]
@@ -348,12 +355,53 @@ def display_consolidated_resources():
         teams = [t for t in teams if t["department"] in dept_filter]
         departments = [d for d in departments if d["name"] in dept_filter]
 
+    # Apply type filter only if it has values, otherwise keep all types
+    filtered_people = people if not type_filter or "Person" in type_filter else []
+    filtered_teams = teams if not type_filter or "Team" in type_filter else []
+    filtered_departments = (
+        departments if not type_filter or "Department" in type_filter else []
+    )
+
+    # Apply sorting
+    if sort_option == "Name":
+        filtered_people.sort(key=lambda x: x["name"], reverse=not ascending)
+        filtered_teams.sort(key=lambda x: x["name"], reverse=not ascending)
+        filtered_departments.sort(key=lambda x: x["name"], reverse=not ascending)
+    elif sort_option == "Role":
+        filtered_people.sort(key=lambda x: x.get("role", ""), reverse=not ascending)
+    elif sort_option == "Department":
+        filtered_people.sort(key=lambda x: x["department"], reverse=not ascending)
+        filtered_teams.sort(key=lambda x: x["department"], reverse=not ascending)
+        filtered_departments.sort(key=lambda x: x["name"], reverse=not ascending)
+    elif sort_option == "Daily Cost":
+        filtered_people.sort(
+            key=lambda x: x.get("daily_cost", 0), reverse=not ascending
+        )
+        filtered_teams.sort(
+            key=lambda x: sum(
+                p["daily_cost"]
+                for p in st.session_state.data["people"]
+                if p["name"] in x.get("members", [])
+            ),
+            reverse=not ascending,
+        )
+
     view_option = st.radio("View As:", ["Cards", "Visual Map"], horizontal=True)
 
     if view_option == "Cards":
-        _display_resource_cards(people, teams, departments, type_filter)
+        _display_resource_cards(
+            filtered_people,
+            filtered_teams,
+            filtered_departments,
+            ["Person", "Team", "Department"],
+        )
     else:
-        _display_resource_visual_map(people, teams, departments, type_filter)
+        _display_resource_visual_map(
+            filtered_people,
+            filtered_teams,
+            filtered_departments,
+            ["Person", "Team", "Department"],
+        )
 
 
 def _display_resource_cards(people, teams, departments, type_filter):
