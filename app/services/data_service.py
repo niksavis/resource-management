@@ -3,7 +3,7 @@ Data service for handling data loading, saving, and processing.
 """
 
 import json
-import base64  # Add missing import for base64 module
+import base64
 import streamlit as st
 import pandas as pd
 import numpy as np
