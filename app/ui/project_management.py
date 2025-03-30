@@ -78,8 +78,9 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Filtered DataFrame
     """
-    with st.expander("Search and Filter Projects", expanded=False):
-        col1, col2 = st.columns([1, 1])
+    with st.expander("🔍 Search, Sort, and Filter Projects", expanded=False):
+        # First row: Search, Date Range, and Sort options
+        col1, col2, col3, col4 = st.columns([1, 1, 0.7, 0.3])
 
         with col1:
             search_term = st.text_input("Search Projects", key="search_projects")
@@ -95,36 +96,7 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
                 max_value=pd.to_datetime(projects_df["End Date"]).max().date(),
             )
 
-        # Resource filters
-        col3, col4, col5 = st.columns(3)
-
         with col3:
-            people_filter = st.multiselect(
-                "Filter by Assigned People",
-                options=[p["name"] for p in st.session_state.data["people"]],
-                default=[],
-                key="filter_people_projects",
-            )
-
-        with col4:
-            teams_filter = st.multiselect(
-                "Filter by Assigned Team",
-                options=[t["name"] for t in st.session_state.data["teams"]],
-                default=[],
-                key="filter_teams_projects",
-            )
-
-        with col5:
-            departments_filter = st.multiselect(
-                "Filter by Assigned Department",
-                options=[d["name"] for d in st.session_state.data["departments"]],
-                default=[],
-                key="filter_departments_projects",
-            )
-
-        # Sort options
-        sort_col, sort_dir = st.columns(2)
-        with sort_col:
             sort_by = st.selectbox(
                 "Sort by",
                 options=[
@@ -139,9 +111,36 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
                 key="sort_by_projects",
             )
 
-        with sort_dir:
+        with col4:
             sort_ascending = st.checkbox(
                 "Ascending", value=True, key="sort_ascending_projects"
+            )
+
+        # Second row: Resource filters
+        col5, col6, col7 = st.columns(3)
+
+        with col5:
+            people_filter = st.multiselect(
+                "Filter by Assigned People",
+                options=[p["name"] for p in st.session_state.data["people"]],
+                default=[],
+                key="filter_people_projects",
+            )
+
+        with col6:
+            teams_filter = st.multiselect(
+                "Filter by Assigned Team",
+                options=[t["name"] for t in st.session_state.data["teams"]],
+                default=[],
+                key="filter_teams_projects",
+            )
+
+        with col7:
+            departments_filter = st.multiselect(
+                "Filter by Assigned Department",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                default=[],
+                key="filter_departments_projects",
             )
 
         # Apply search filter
@@ -193,12 +192,10 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
         # Apply sorting
         projects_df = projects_df.sort_values(by=sort_by, ascending=sort_ascending)
 
-        # Apply pagination with configured page size
-        display_prefs = load_display_preferences()
-        page_size = display_prefs.get("page_size", 10)
-        projects_df = paginate_dataframe(
-            projects_df, "projects", items_per_page=page_size
-        )
+    # Apply pagination with configured page size
+    display_prefs = load_display_preferences()
+    page_size = display_prefs.get("page_size", 10)
+    projects_df = paginate_dataframe(projects_df, "projects", items_per_page=page_size)
 
     return projects_df
 
@@ -383,7 +380,11 @@ def add_project_form():
 
             # Add to session state
             st.session_state.data["projects"].append(new_project)
-            st.success(f"Project '{project_name}' added successfully!")
+
+            # Display a more prominent success message
+            st.success(f"✅ Project '{project_name}' added successfully!")
+
+            # Refresh UI immediately - no balloons
             st.rerun()
 
 
@@ -649,7 +650,11 @@ def edit_project_form():
 
                     # Update in session state
                     st.session_state.data["projects"][project_index] = updated_project
-                    st.success(f"Project '{project_name}' updated successfully!")
+
+                    # Display a more prominent success message
+                    st.success(f"✅ Project '{project_name}' updated successfully!")
+
+                    # Refresh UI immediately
                     st.rerun()
 
 
@@ -697,5 +702,9 @@ def delete_project_form():
 
             if project_index is not None:
                 del st.session_state.data["projects"][project_index]
-                st.success(f"Project '{selected_project}' deleted successfully!")
+
+                # Display a more prominent success message
+                st.success(f"✅ Project '{selected_project}' deleted successfully!")
+
+                # Refresh UI immediately
                 st.rerun()
