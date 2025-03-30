@@ -5,6 +5,89 @@ from configuration import load_currency_settings
 from utils import confirm_action
 
 
+def search_filter_projects():
+    with st.expander("Search, Sort and Filter Projects", expanded=False):
+        # First row: Search, Sort, and Date Range
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.session_state.project_search = st.text_input(
+                "Search Projects",
+                value=st.session_state.get("project_search", ""),
+                key="project_search",
+            )
+
+        with col2:
+            sort_options = ["Name", "Start Date", "End Date", "Priority", "Budget"]
+            st.session_state.project_sort_by = st.selectbox(
+                "Sort by", sort_options, key="project_sort_by"
+            )
+            st.session_state.project_sort_ascending = st.checkbox(
+                "Ascending",
+                value=st.session_state.get("project_sort_ascending", True),
+                key="project_sort_ascending",
+            )
+
+        with col3:
+            st.write("Filter by Date Range")
+            date_col1, date_col2 = st.columns(2)
+            with date_col1:
+                st.session_state.project_date_filter_start = st.date_input(
+                    "From",
+                    value=st.session_state.get(
+                        "project_date_filter_start", pd.to_datetime("today")
+                    ),
+                    key="project_date_filter_start",
+                )
+            with date_col2:
+                st.session_state.project_date_filter_end = st.date_input(
+                    "To",
+                    value=st.session_state.get(
+                        "project_date_filter_end",
+                        pd.to_datetime("today") + pd.Timedelta(days=90),
+                    ),
+                    key="project_date_filter_end",
+                )
+
+        # Second row: Resource filters
+        col4, col5, col6 = st.columns(3)
+
+        with col4:
+            people_options = [p["name"] for p in st.session_state.data["people"]]
+            st.session_state.project_people_filter = st.multiselect(
+                "Filter by Assigned People",
+                people_options,
+                default=st.session_state.get("project_people_filter", []),
+                key="project_people_filter",
+            )
+
+        with col5:
+            team_options = [t["name"] for t in st.session_state.data["teams"]]
+            st.session_state.project_team_filter = st.multiselect(
+                "Filter by Assigned Team",
+                team_options,
+                default=st.session_state.get("project_team_filter", []),
+                key="project_team_filter",
+            )
+
+        with col6:
+            # Get unique departments from people data
+            department_options = [
+                d["name"] for d in st.session_state.data["departments"]
+            ]
+            st.session_state.project_department_filter = st.multiselect(
+                "Filter by Assigned Department",
+                department_options,
+                default=st.session_state.get("project_department_filter", []),
+                key="project_department_filter",
+            )
+
+        # Apply button for filters that will trigger a rerun to apply the filters
+        if st.button("Apply Filters", key="apply_project_filters"):
+            st.session_state.project_filters_applied = True
+            st.rerun()
+
+
 def add_project_form():
     with st.expander("Add Project", expanded=False):  # Set expanded=False
         # Initialize session state for resources and allocations

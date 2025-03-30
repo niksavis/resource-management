@@ -28,7 +28,6 @@ from department_crud_form import department_crud_form
 from project_crud_form import add_project_form, edit_project_form, delete_project_form
 from utils import (
     delete_resource,
-    _apply_sorting,
     check_circular_dependencies,
     display_filtered_resource,
     paginate_dataframe,
@@ -540,7 +539,6 @@ def display_manage_projects_tab():
 
     projects_df = _create_projects_dataframe()
 
-    # Remove Priority Count and Priority Label logic
     projects_df = _filter_projects_dataframe(projects_df)
 
     st.dataframe(projects_df, use_container_width=True)
@@ -575,119 +573,112 @@ def _create_projects_dataframe():
 
 
 def _filter_projects_dataframe(projects_df):
-    with st.expander("Search, Sort, and Filter Projects", expanded=False):
-        search_term = _handle_search_input()
-        date_filter = _handle_date_filter(projects_df)
-        resource_filters = _handle_resource_filters()
+    with st.expander("Search, Sort and Filter Projects", expanded=False):
+        # First row: Search, Sort, and Date Filter
+        col1, col2, col3 = st.columns(3)
 
-        projects_df = _apply_search_filter(projects_df, search_term)
-        projects_df = _apply_date_filter(projects_df, date_filter)
-        projects_df = _apply_resource_filters(projects_df, resource_filters)
+        with col1:
+            search_term = st.text_input("Search Projects", key="search_projects")
 
-        projects_df = _apply_sorting(projects_df, "projects")
-        projects_df = paginate_dataframe(projects_df, "projects")
+        with col2:
+            sort_col = st.selectbox(
+                "Sort by",
+                options=["None"] + list(projects_df.columns),
+                key="sort_projects",
+            )
+            sort_ascending = st.checkbox(
+                "Ascending", True, key="sort_ascending_projects"
+            )
 
-    return projects_df
+        with col3:
+            date_range = st.date_input(
+                "Filter by Date Range",
+                value=(
+                    pd.to_datetime(projects_df["Start Date"]).min().date(),
+                    pd.to_datetime(projects_df["End Date"]).max().date(),
+                ),
+                min_value=pd.to_datetime(projects_df["Start Date"]).min().date(),
+                max_value=pd.to_datetime(projects_df["End Date"]).max().date(),
+            )
 
+        # Second row: Resource filters
+        col4, col5, col6 = st.columns(3)
 
-def _handle_search_input():
-    """Handle search input for project filtering."""
-    return st.text_input("Search Projects", key="search_projects")
+        with col4:
+            people_filter = st.multiselect(
+                "Filter by Assigned People",
+                options=[p["name"] for p in st.session_state.data["people"]],
+                default=[],
+                key="filter_people_projects",
+            )
 
+        with col5:
+            teams_filter = st.multiselect(
+                "Filter by Assigned Team",
+                options=[t["name"] for t in st.session_state.data["teams"]],
+                default=[],
+                key="filter_teams_projects",
+            )
 
-def _handle_date_filter(projects_df):
-    """Handle date range filter for project filtering."""
-    col1, col2 = st.columns(2)
-    with col1:
-        date_range = st.date_input(
-            "Filter by Date Range",
-            value=(
-                pd.to_datetime(projects_df["Start Date"]).min().date(),
-                pd.to_datetime(projects_df["End Date"]).max().date(),
-            ),
-            min_value=pd.to_datetime(projects_df["Start Date"]).min().date(),
-            max_value=pd.to_datetime(projects_df["End Date"]).max().date(),
-        )
-    return date_range
+        with col6:
+            departments_filter = st.multiselect(
+                "Filter by Assigned Department",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                default=[],
+                key="filter_departments_projects",
+            )
 
+        # Apply search filter
+        if search_term:
+            mask = np.column_stack(
+                [
+                    projects_df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in projects_df.columns
+                ]
+            )
+            projects_df = projects_df[mask.any(axis=1)]
 
-def _handle_resource_filters():
-    """Handle resource filters for project filtering."""
-    col3, col4 = st.columns(2)
-    with col3:
-        people_filter = st.multiselect(
-            "Filter by Assigned People",
-            options=[p["name"] for p in st.session_state.data["people"]],
-            default=[],
-        )
-    with col4:
-        teams_filter = st.multiselect(
-            "Filter by Assigned Teams",
-            options=[t["name"] for t in st.session_state.data["teams"]],
-            default=[],
-        )
-    departments_filter = st.multiselect(
-        "Filter by Assigned Departments",
-        options=[d["name"] for d in st.session_state.data["departments"]],
-        default=[],
-    )
-    return people_filter, teams_filter, departments_filter
-
-
-def _apply_search_filter(projects_df, search_term):
-    """Apply search filter to the projects dataframe."""
-    if search_term:
-        mask = np.column_stack(
-            [
-                projects_df[col]
-                .fillna("")
-                .astype(str)
-                .str.contains(search_term, case=False, na=False)
-                for col in projects_df.columns
+        # Apply date filter
+        if len(date_range) == 2:
+            start_date, end_date = (
+                pd.to_datetime(date_range[0]),
+                pd.to_datetime(date_range[1]),
+            )
+            projects_df = projects_df[
+                (pd.to_datetime(projects_df["Start Date"]) >= start_date)
+                & (pd.to_datetime(projects_df["End Date"]) <= end_date)
             ]
-        )
-        projects_df = projects_df[mask.any(axis=1)]
-    return projects_df
 
+        # Apply resource filters
+        if people_filter:
+            projects_df = projects_df[
+                projects_df["Assigned People"].apply(
+                    lambda x: any(person in x for person in people_filter)
+                )
+            ]
 
-def _apply_date_filter(projects_df, date_range):
-    """Apply date range filter to the projects dataframe."""
-    if len(date_range) == 2:
-        start_date, end_date = (
-            pd.to_datetime(date_range[0]),
-            pd.to_datetime(date_range[1]),
-        )  # Ensure consistent types
-        projects_df = projects_df[
-            (pd.to_datetime(projects_df["Start Date"]) >= start_date)
-            & (pd.to_datetime(projects_df["End Date"]) <= end_date)
-        ]
-    return projects_df
+        if teams_filter:
+            projects_df = projects_df[
+                projects_df["Assigned Teams"].apply(
+                    lambda x: any(team in x for team in teams_filter)
+                )
+            ]
 
+        if departments_filter:
+            projects_df = projects_df[
+                projects_df["Assigned Departments"].apply(
+                    lambda x: any(dept in x for dept in departments_filter)
+                )
+            ]
 
-def _apply_resource_filters(projects_df, resource_filters):
-    """Apply resource filters to the projects dataframe."""
-    people_filter, teams_filter, departments_filter = resource_filters
+        # Apply sorting
+        if sort_col != "None":
+            projects_df = projects_df.sort_values(by=sort_col, ascending=sort_ascending)
 
-    if people_filter:
-        projects_df = projects_df[
-            projects_df["Assigned People"].apply(
-                lambda x: any(person in x for person in people_filter)
-            )
-        ]
-
-    if teams_filter:
-        projects_df = projects_df[
-            projects_df["Assigned Teams"].apply(
-                lambda x: any(team in x for team in teams_filter)
-            )
-        ]
-
-    if departments_filter:
-        projects_df = projects_df[
-            projects_df["Assigned Departments"].apply(
-                lambda x: any(dept in x for dept in departments_filter)
-            )
-        ]
+        projects_df = paginate_dataframe(projects_df, "projects")
 
     return projects_df
 
