@@ -1,63 +1,93 @@
 """
-Data handlers for resource management application.
-
-This module contains functions for data loading, saving, and processing.
+Data service for handling data loading, saving, and processing.
 """
 
-import base64
-import io
 import json
-import uuid
-import numpy as np
-import pandas as pd
+import base64  # Add missing import for base64 module
 import streamlit as st
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional, Any, Union
-from utils import paginate_dataframe
-from configuration import load_currency_settings
 
 
-def load_json(file: Union[io.TextIOWrapper, io.BytesIO]) -> Dict[str, Any]:
-    """
-    Load data from a JSON file.
-
-    Args:
-        file: File object to load data from
-
-    Returns:
-        Loaded JSON data as a dictionary
-    """
+def load_demo_data() -> Dict[str, List[Dict[str, Any]]]:
+    """Load the demo data from the JSON file."""
     try:
-        if isinstance(file, io.BytesIO):
-            return json.loads(file.getvalue().decode("utf-8"))
-        else:
+        with open("resource_data.json", "r") as file:
             return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        st.error(f"Error loading demo data: {str(e)}")
+        # Return minimal empty data structure
+        return {
+            "people": [],
+            "teams": [],
+            "departments": [],
+            "projects": [],
+        }
+
+
+def save_data(
+    data: Dict[str, List[Dict[str, Any]]], filename: str = "resource_data.json"
+) -> bool:
+    """Save data to a JSON file."""
+    try:
+        with open(filename, "w") as file:
+            json.dump(data, file, indent=4)
+        return True
     except Exception as e:
-        st.error(f"Error loading JSON file: {str(e)}")
+        st.error(f"Error saving data: {str(e)}")
+        return False
+
+
+def load_json(file) -> Dict[str, Any]:
+    """Load data from a JSON file upload."""
+    try:
+        return json.loads(file.getvalue().decode("utf-8"))
+    except json.JSONDecodeError:
+        st.error("The uploaded file is not a valid JSON file.")
         return {}
 
 
 def save_json(data: Dict[str, Any], filename: str) -> str:
-    """
-    Save data to a JSON file and return a download link.
-
-    Args:
-        data: Dictionary data to save
-        filename: Name for the saved file
-
-    Returns:
-        HTML string containing a download link
-    """
+    """Save data as a downloadable JSON file."""
     try:
         json_str = json.dumps(data, indent=4)
         b64 = base64.b64encode(json_str.encode()).decode()
-        return f'<a href="data:application/json;base64,{b64}" download="{filename}">Download JSON file</a>'
-    except (TypeError, ValueError) as e:
-        st.error(f"Error serializing JSON data: {e}")
-        return ""
+        return f'<a href="data:application/json;base64,{b64}" download="{filename}">Download {filename}</a>'
     except Exception as e:
-        st.error(f"Unexpected error while saving JSON: {e}")
+        st.error(f"Error creating download link: {str(e)}")
         return ""
+
+
+def check_data_integrity():
+    """Check and fix data integrity issues."""
+    from app.utils.resource_utils import delete_resource
+
+    # Check for teams with insufficient members
+    invalid_teams = [
+        t["name"]
+        for t in st.session_state.data["teams"]
+        if len(t.get("members", [])) < 2
+    ]
+
+    if invalid_teams:
+        st.warning(
+            f"Found {len(invalid_teams)} teams with fewer than 2 members. These teams will be automatically removed."
+        )
+        for team_name in invalid_teams:
+            delete_resource(st.session_state.data["teams"], team_name, "team")
+
+    # Check for resources assigned to non-existent departments
+    valid_departments = {d["name"] for d in st.session_state.data["departments"]}
+
+    for person in st.session_state.data["people"]:
+        if person.get("department") not in valid_departments:
+            person["department"] = "Unassigned"
+
+    for team in st.session_state.data["teams"]:
+        if team.get("department") not in valid_departments:
+            team["department"] = "Unassigned"
 
 
 def create_gantt_data(
@@ -162,12 +192,12 @@ def _determine_resource_type(
     # Check if the resource is a person
     for person in data["people"]:
         if person["name"] == resource:
-            return "Person", person["department"]
+            return "Person", person.get("department", "Unknown")
 
     # Check if the resource is a team
     for team in data["teams"]:
         if team["name"] == resource:
-            return "Team", team["department"]
+            return "Team", team.get("department", "Unknown")
 
     # Check if the resource is a department
     for department in data["departments"]:
@@ -263,31 +293,33 @@ def calculate_project_cost(
     Returns:
         Total cost of the project
     """
+    # Get project dates
+    start_date = pd.to_datetime(project["start_date"])
+    end_date = pd.to_datetime(project["end_date"])
+    duration_days = (end_date - start_date).days + 1
+
     # Get resource allocations
     resource_allocations = project.get("resource_allocations", [])
 
     # If no specific allocations, use default 100% allocation for all resources
     if not resource_allocations:
         assigned_resources = project.get("assigned_resources", [])
-        start_date = pd.to_datetime(project["start_date"])
-        end_date = pd.to_datetime(project["end_date"])
-        duration_days = (end_date - start_date).days + 1
 
         total_cost = 0
         for resource_name in assigned_resources:
             # Calculate cost for a person
             person = next((p for p in people if p["name"] == resource_name), None)
             if person:
-                total_cost += person["daily_cost"] * duration_days
+                total_cost += person.get("daily_cost", 0) * duration_days
                 continue
 
             # Calculate cost for a team
             team = next((t for t in teams if t["name"] == resource_name), None)
             if team:
                 team_cost = sum(
-                    person["daily_cost"]
+                    person.get("daily_cost", 0)
                     for person in people
-                    if person["name"] in team["members"]
+                    if person["name"] in team.get("members", [])
                 )
                 total_cost += team_cost * duration_days
                 # Note: We don't handle departments directly in cost calculations
@@ -299,14 +331,18 @@ def calculate_project_cost(
     for allocation in resource_allocations:
         resource_name = allocation["resource"]
         allocation_percentage = allocation["allocation_percentage"] / 100
-        start_date = pd.to_datetime(allocation["start_date"])
-        end_date = pd.to_datetime(allocation["end_date"])
-        duration_days = (end_date - start_date).days + 1
+        alloc_start = pd.to_datetime(allocation["start_date"])
+        alloc_end = pd.to_datetime(allocation["end_date"])
+        alloc_duration_days = (alloc_end - alloc_start).days + 1
 
         # Calculate cost for a person
         person = next((p for p in people if p["name"] == resource_name), None)
         if person:
-            resource_cost = person["daily_cost"] * duration_days * allocation_percentage
+            resource_cost = (
+                person.get("daily_cost", 0)
+                * alloc_duration_days
+                * allocation_percentage
+            )
             total_cost += resource_cost
             continue
 
@@ -314,31 +350,109 @@ def calculate_project_cost(
         team = next((t for t in teams if t["name"] == resource_name), None)
         if team:
             team_daily_cost = sum(
-                person["daily_cost"]
+                person.get("daily_cost", 0)
                 for person in people
-                if person["name"] in team["members"]
+                if person["name"] in team.get("members", [])
             )
-            resource_cost = team_daily_cost * duration_days * allocation_percentage
+            resource_cost = (
+                team_daily_cost * alloc_duration_days * allocation_percentage
+            )
             total_cost += resource_cost
 
     return total_cost
 
 
-def sort_projects_by_priority_and_date(
-    projects: List[Dict[str, Any]],
-) -> List[Dict[str, Any]]:
+def parse_resources(resources: List[str]) -> Tuple[List[str], List[str], List[str]]:
     """
-    Sort projects by priority (ascending) and end date (ascending).
+    Parse a list of resources into people, teams, and departments.
 
     Args:
-        projects: List of project dictionaries
+        resources: List of resource names
 
     Returns:
-        Sorted list of projects
+        Tuple containing (people_list, teams_list, departments_list)
     """
-    return sorted(
-        projects, key=lambda p: (p["priority"], pd.to_datetime(p["end_date"]))
-    )
+    # Get the actual resource lists
+    all_people = {p["name"] for p in st.session_state.data.get("people", [])}
+    all_teams = {t["name"] for t in st.session_state.data.get("teams", [])}
+    all_departments = {d["name"] for d in st.session_state.data.get("departments", [])}
+
+    # Categorize the resources
+    people = [r for r in resources if r in all_people]
+    teams = [r for r in resources if r in all_teams]
+    departments = [r for r in resources if r in all_departments]
+
+    return people, teams, departments
+
+
+def calculate_capacity_data(
+    gantt_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> pd.DataFrame:
+    """
+    Calculate capacity data for resources in the given date range.
+
+    Args:
+        gantt_data: DataFrame containing Gantt chart data
+        start_date: Start date for capacity calculation
+        end_date: End date for capacity calculation
+
+    Returns:
+        DataFrame with capacity data
+    """
+    if gantt_data.empty:
+        return pd.DataFrame(
+            columns=[
+                "Resource",
+                "Type",
+                "Department",
+                "Date",
+                "Allocation",
+                "Available",
+                "Overallocated",
+            ]
+        )
+
+    # Create a date range
+    all_dates = pd.date_range(start=start_date, end=end_date)
+
+    # Get all resources from Gantt data
+    resources = gantt_data["Resource"].unique()
+
+    # For each resource and date, calculate allocation
+    capacity_data = []
+
+    for resource in resources:
+        resource_rows = gantt_data[gantt_data["Resource"] == resource]
+        resource_type = resource_rows["Type"].iloc[0]
+        department = resource_rows["Department"].iloc[0]
+
+        # For each date in range, calculate total allocation
+        for date in all_dates:
+            # Get allocations for this resource on this date
+            allocations = resource_rows[
+                (resource_rows["Start"] <= date) & (resource_rows["End"] >= date)
+            ]
+
+            # Calculate total allocation percentage
+            total_allocation = allocations["Allocation %"].sum() / 100
+
+            # Calculate availability and over-allocation
+            available = max(0, 1 - total_allocation)  # Can't be less than 0
+            overallocated = max(0, total_allocation - 1)  # Can't be less than 0
+
+            capacity_data.append(
+                {
+                    "Resource": resource,
+                    "Type": resource_type,
+                    "Department": department,
+                    "Date": date,
+                    "Allocation": total_allocation,
+                    "Available": available,
+                    "Overallocated": overallocated,
+                }
+            )
+
+    return pd.DataFrame(capacity_data)
 
 
 def apply_filters(df: pd.DataFrame, filters: Dict[str, Any]) -> pd.DataFrame:
@@ -367,6 +481,7 @@ def apply_filters(df: pd.DataFrame, filters: Dict[str, Any]) -> pd.DataFrame:
                 .str.lower()
                 .str.contains(search_term, na=False)
                 for col in ["Resource", "Project", "Type", "Department"]
+                if col in filtered_df.columns
             ]
         )
         filtered_df = filtered_df[mask.any(axis=1)]
@@ -404,142 +519,24 @@ def apply_filters(df: pd.DataFrame, filters: Dict[str, Any]) -> pd.DataFrame:
     return filtered_df
 
 
-def parse_resources(resources: List[str]) -> Tuple[List[str], List[str], List[str]]:
+def sort_projects_by_priority_and_date(
+    projects: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     """
-    Parse a list of resources into people, teams, and departments.
+    Sort projects by priority (ascending) and end date (ascending).
 
     Args:
-        resources: List of resource names
+        projects: List of project dictionaries
 
     Returns:
-        Tuple containing (people_list, teams_list, departments_list)
+        Sorted list of projects
     """
-    # This is a simplified implementation and would need to be adjusted
-    # to your specific data structure
-
-    # In an actual implementation, you would check against your data to determine types
-    # Here we're just using a placeholder implementation
-    people = []
-    teams = []
-    departments = []
-
-    # For the purpose of this example, we'll parse based on naming conventions
-    for resource in resources:
-        # Example: Teams often have "Team" in their name
-        if "Team" in resource:
-            teams.append(resource)
-        # Example: Departments might end with "Department"
-        elif "Department" in resource:
-            departments.append(resource)
-        # Default to assuming it's a person
-        else:
-            people.append(resource)
-
-    return people, teams, departments
-
-
-def calculate_capacity_data(
-    gantt_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
-) -> pd.DataFrame:
-    """
-    Calculate capacity data for resources in the given date range.
-
-    Args:
-        gantt_data: DataFrame containing Gantt chart data
-        start_date: Start date for capacity calculation
-        end_date: End date for capacity calculation
-
-    Returns:
-        DataFrame with capacity data
-    """
-    # Create a date range
-    all_dates = pd.date_range(start=start_date, end=end_date)
-    date_range = pd.DataFrame({"Date": all_dates})
-
-    # Create a result dataframe with resources and dates
-    resources = gantt_data["Resource"].unique()
-    capacity_data = []
-
-    for resource in resources:
-        resource_rows = gantt_data[gantt_data["Resource"] == resource]
-        resource_type = resource_rows["Type"].iloc[0]
-        department = resource_rows["Department"].iloc[0]
-
-        # Calculate daily allocation for this resource
-        for date in all_dates:
-            allocation = 0
-            for _, row in resource_rows.iterrows():
-                if row["Start"] <= date <= row["End"]:
-                    allocation += row["Allocation %"] / 100
-
-            capacity_data.append(
-                {
-                    "Resource": resource,
-                    "Type": resource_type,
-                    "Department": department,
-                    "Date": date,
-                    "Allocation": allocation,
-                    "Available": max(0, 1 - allocation),
-                    "Overallocated": max(0, allocation - 1),
-                }
-            )
-
-    return pd.DataFrame(capacity_data)
-
-
-def find_resource_conflicts(
-    gantt_data: pd.DataFrame, threshold: float = 1.0
-) -> pd.DataFrame:
-    """
-    Find resource allocation conflicts (overallocations).
-
-    Args:
-        gantt_data: DataFrame containing Gantt chart data
-        threshold: Allocation threshold above which a conflict is detected (default: 1.0)
-
-    Returns:
-        DataFrame with resource conflicts
-    """
-    if gantt_data.empty:
-        return pd.DataFrame(
-            columns=["Resource", "Type", "Department", "Date", "Allocation", "Projects"]
-        )
-
-    # Get the min and max dates
-    min_date = gantt_data["Start"].min()
-    max_date = gantt_data["End"].max()
-
-    # Create a date range for all dates
-    dates = pd.date_range(start=min_date, end=max_date)
-
-    conflicts = []
-
-    # For each resource, check daily allocations
-    for resource in gantt_data["Resource"].unique():
-        resource_data = gantt_data[gantt_data["Resource"] == resource]
-        resource_type = resource_data["Type"].iloc[0]
-        department = resource_data["Department"].iloc[0]
-
-        # For each day, calculate total allocation and collect projects
-        for date in dates:
-            # Find allocations that include this date
-            allocations = resource_data[
-                (resource_data["Start"] <= date) & (resource_data["End"] >= date)
-            ]
-
-            total_allocation = allocations["Allocation %"].sum() / 100
-
-            # If allocation exceeds threshold, report as conflict
-            if total_allocation > threshold:
-                conflicts.append(
-                    {
-                        "Resource": resource,
-                        "Type": resource_type,
-                        "Department": department,
-                        "Date": date,
-                        "Allocation": total_allocation * 100,  # As percentage
-                        "Projects": ", ".join(allocations["Project"].tolist()),
-                    }
-                )
-
-    return pd.DataFrame(conflicts)
+    return sorted(
+        projects,
+        key=lambda p: (
+            p.get("priority", 999),  # Default high priority if missing
+            pd.to_datetime(
+                p.get("end_date", "2099-12-31")
+            ),  # Default far future date if missing
+        ),
+    )

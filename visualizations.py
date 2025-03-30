@@ -1,844 +1,870 @@
-import numpy as np
+"""
+Visualization functions for resource management application.
+
+This module provides functions for creating visual representations of resource data.
+"""
+
+import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import streamlit as st
-from typing import List, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Union
+from datetime import datetime, timedelta
+
 from data_handlers import (
     calculate_resource_utilization,
     calculate_capacity_data,
     find_resource_conflicts,
-    _determine_resource_type,
 )
 from configuration import (
     load_utilization_thresholds,
     load_display_preferences,
     load_heatmap_colorscale,
+    load_department_colors,
+    load_currency_settings,
 )
 
 
 def _prepare_gantt_data(df: pd.DataFrame, projects_to_include=None) -> pd.DataFrame:
-    """Prepare data for Gantt chart visualization with filtering support."""
-    gantt_data = []
+    """
+    Prepare data for Gantt chart visualization from a DataFrame.
 
-    for project in st.session_state.data["projects"]:
-        # Skip projects not in the filter list if provided AND non-empty
-        if (
-            projects_to_include is not None
-            and len(projects_to_include) > 0  # Only apply filter if list has items
-            and project["name"] not in projects_to_include
-        ):
-            continue
+    Args:
+        df: DataFrame containing resource allocation data
+        projects_to_include: List of project names to include (if None, include all)
 
-        project_name = project["name"]
-        project_priority = project["priority"]
+    Returns:
+        DataFrame formatted for Gantt chart visualization
+    """
+    if df.empty:
+        return pd.DataFrame()
 
-        # Get resource allocations
-        resource_allocations = project.get("resource_allocations", [])
+    # Filter by projects if specified
+    if projects_to_include is not None:
+        df = df[df["Project"].isin(projects_to_include)]
 
-        # If no specific allocations, create default ones for all assigned resources
-        if not resource_allocations:
-            if "assigned_resources" not in project or not project["assigned_resources"]:
-                st.warning(f"Project '{project_name}' has no assigned resources.")
-                continue  # Skip projects with no assigned resources
+    # Create a copy to avoid modifying the original
+    gantt_df = df.copy()
 
-            resource_allocations = [
-                {
-                    "resource": r,
-                    "allocation_percentage": 100,
-                    "start_date": project["start_date"],
-                    "end_date": project["end_date"],
-                }
-                for r in project["assigned_resources"]
-            ]
+    # Format for Gantt chart:
+    # - Task: Resource name
+    # - Start: Start date
+    # - Finish: End date
+    # - Resource: Resource name
+    # - Project: Project name
+    # - Allocation: Allocation percentage
 
-        # Add each resource allocation as a separate Gantt bar
-        for allocation in resource_allocations:
-            resource = allocation["resource"]
-            r_type, department = _determine_resource_type(
-                resource, st.session_state.data
-            )
+    # Rename columns to match Plotly Gantt chart expectations
+    gantt_df = gantt_df.rename(
+        columns={
+            "Resource": "Task",
+            "Start": "Start",
+            "End": "Finish",
+            "Allocation %": "Allocation",
+        }
+    )
 
-            start_date = pd.to_datetime(allocation["start_date"])
-            end_date = pd.to_datetime(allocation["end_date"])
-            duration_days = (end_date - start_date).days + 1
+    # Add color column based on resource type
+    gantt_df["Color"] = gantt_df["Type"].map(
+        {
+            "Person": "#1f77b4",  # Blue
+            "Team": "#ff7f0e",  # Orange
+            "Department": "#2ca02c",  # Green
+        }
+    )
 
-            # Calculate cost
-            cost = 0.0
-            if r_type == "Person":
-                person = next(
-                    (
-                        p
-                        for p in st.session_state.data["people"]
-                        if p["name"] == resource
-                    ),
-                    None,
-                )
-                if person:
-                    cost = person.get("daily_cost", 0) * duration_days
-            elif r_type == "Team":
-                team = next(
-                    (
-                        t
-                        for t in st.session_state.data["teams"]
-                        if t["name"] == resource
-                    ),
-                    None,
-                )
-                if team:
-                    team_cost = sum(
-                        p.get("daily_cost", 0)
-                        for p in st.session_state.data["people"]
-                        if p["name"] in team.get("members", [])
-                    )
-                    cost = team_cost * duration_days
+    # Sort by resource type, department, then resource name
+    gantt_df = gantt_df.sort_values(
+        by=["Type", "Department", "Task"], ascending=[True, True, True]
+    )
 
-            gantt_data.append(
-                {
-                    "Resource": resource,
-                    "Type": r_type,
-                    "Department": department,
-                    "Project": project_name,
-                    "Start": start_date,
-                    "Finish": end_date,
-                    "Priority": project_priority,
-                    "Duration (Days)": duration_days,
-                    "Allocation %": allocation["allocation_percentage"],
-                    "Cost": cost,
-                    "Utilization %": 0.0,
-                    "Overallocation %": 0.0,
-                }
-            )
+    # Format tooltip content
+    gantt_df["Tooltip"] = gantt_df.apply(
+        lambda row: (
+            f"<b>{row['Task']}</b> ({row['Type']})<br>"
+            f"Project: {row['Project']}<br>"
+            f"Allocation: {row['Allocation']}%<br>"
+            f"Period: {row['Start'].strftime('%Y-%m-%d')} to {row['Finish'].strftime('%Y-%m-%d')}"
+        ),
+        axis=1,
+    )
 
-    # Return an empty DataFrame with the expected columns if no data
-    if not gantt_data:
-        st.warning("No valid data available for Gantt chart.")
-        return pd.DataFrame(
-            columns=[
-                "Resource",
-                "Type",
-                "Department",
-                "Project",
-                "Start",
-                "Finish",
-                "Priority",
-                "Duration (Days)",
-                "Allocation %",
-                "Cost",
-                "Utilization %",
-                "Overallocation %",
-            ]
-        )
-
-    df = pd.DataFrame(gantt_data)
-
-    # Calculate utilization and overallocation for each resource
-    for resource in df["Resource"].unique():
-        resource_df = df[df["Resource"] == resource]
-
-        # Calculate total days in the period
-        min_date = resource_df["Start"].min()
-        max_date = resource_df["Finish"].max()
-        total_days = (max_date - min_date).days + 1
-
-        # Calculate utilization percentage
-        utilization_percentage = (
-            resource_df["Duration (Days)"].sum() / total_days
-        ) * 100
-        df.loc[df["Resource"] == resource, "Utilization %"] = min(
-            utilization_percentage, 100
-        )
-
-        # Calculate overallocation percentage
-        df.loc[df["Resource"] == resource, "Overallocation %"] = max(
-            0, utilization_percentage - 100
-        )
-
-    return df
+    return gantt_df
 
 
 def _add_today_marker(fig: go.Figure) -> go.Figure:
-    """Add a vertical line for today's date to the Gantt chart."""
-    today = pd.Timestamp.now()
-    fig.add_vline(x=today, line_width=2, line_dash="dash", line_color="gray")
+    """
+    Add a vertical line marker for today's date on a Gantt chart.
+
+    Args:
+        fig: Plotly figure object (Gantt chart)
+
+    Returns:
+        Updated figure with today's marker
+    """
+    # Get today's date as a string to avoid timestamp arithmetic issues
+    today = pd.Timestamp.now().strftime("%Y-%m-%d")
+
+    # Add a shape (vertical line) for today's date
+    fig.add_shape(
+        type="line",
+        x0=today,
+        x1=today,
+        y0=0,
+        y1=1,
+        yref="paper",
+        line=dict(color="red", width=2, dash="dash"),
+    )
+
+    # Add text annotation for "Today"
+    fig.add_annotation(
+        x=today,
+        y=1.0,
+        yref="paper",
+        text="Today",
+        showarrow=False,
+        font=dict(color="red"),
+        bgcolor="white",
+        bordercolor="red",
+        borderwidth=1,
+    )
+
     return fig
 
 
 def _highlight_overallocated_resources(fig: go.Figure, df: pd.DataFrame) -> go.Figure:
-    """Highlight overallocated resources in the Gantt chart."""
-    overallocation_map = df.set_index("Resource")["Overallocation %"].to_dict()
+    """
+    Highlight resources that are overallocated on a Gantt chart.
 
-    for i, resource in enumerate(df["Resource"].unique()):
-        overallocation = overallocation_map.get(resource, 0)
-        if overallocation > 0:  # Highlight only if Overallocation % > 0
-            fig.add_shape(
-                type="rect",
-                x0=df[df["Resource"] == resource]["Start"].min(),
-                x1=df[df["Resource"] == resource]["Finish"].max(),
-                y0=i - 0.4,
-                y1=i + 0.4,
-                line=dict(color="rgba(255,0,0,0.1)", width=0),
-                fillcolor="rgba(255,0,0,0.1)",
-                layer="below",
-            )
+    Args:
+        fig: Plotly figure object (Gantt chart)
+        df: DataFrame containing resource allocation data
+
+    Returns:
+        Updated figure with overallocated resources highlighted
+    """
+    if df.empty:
+        return fig
+
+    # Calculate daily allocation per resource
+    resource_conflicts = find_resource_conflicts(df)
+
+    if resource_conflicts.empty:
+        return fig
+
+    # Get utilization thresholds
+    thresholds = load_utilization_thresholds()
+    over_threshold = thresholds.get("over", 100)
+
+    # Filter for overallocated resources (over the threshold)
+    overallocated = resource_conflicts[
+        resource_conflicts["Allocation"] > over_threshold
+    ]
+
+    if overallocated.empty:
+        return fig
+
+    # For each overallocated resource, add a highlight
+    for _, row in overallocated.iterrows():
+        # Convert date to string to avoid timestamp arithmetic issues
+        date_str = row["Date"]
+        if isinstance(date_str, pd.Timestamp):
+            date_str = date_str.strftime("%Y-%m-%d")
+
+        # Add a shape instead of using add_vline
+        fig.add_shape(
+            type="line",
+            x0=date_str,
+            x1=date_str,
+            y0=0,
+            y1=1,
+            yref="paper",
+            line=dict(color="rgba(255, 0, 0, 0.3)", width=10),
+            layer="below",
+        )
+
+        # Add annotation for the overallocation
+        fig.add_annotation(
+            x=date_str,
+            y=1.0,
+            yref="paper",
+            text=f"Overallocated: {row['Resource']}",
+            showarrow=False,
+            font=dict(color="red", size=10),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            bordercolor="red",
+            borderwidth=1,
+        )
+
     return fig
 
 
-def _display_chart_legend() -> None:
-    """Display the legend for the Gantt chart."""
-    with st.expander("Chart Legend"):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Visual Indicators:**")
-            st.markdown(
-                "- Red background: Resources with overlapping project assignments"
-            )
-            st.markdown("- Dashed vertical line: Today's date")
-        with col2:
-            st.markdown("**Interactive Features:**")
-            st.markdown("- Zoom: Use the range selector or slider at the bottom")
-            st.markdown(
-                "- Details: Hover over bars to see project and resource details"
-            )
-            st.markdown("- Pan: Click and drag on the timeline")
-
-
-def display_utilization_dashboard(data, start_date=None, end_date=None):
+def display_resource_matrix_view(
+    df: pd.DataFrame,
+    start_date: Optional[pd.Timestamp] = None,
+    end_date: Optional[pd.Timestamp] = None,
+) -> None:
     """
-    Display utilization metrics dashboard
-    """
+    Display a matrix view of resource allocations across projects and time.
 
-    # Get chart height from display preferences
+    Args:
+        df: DataFrame containing resource allocation data
+        start_date: Start date for the analysis period (optional)
+        end_date: End date for the analysis period (optional)
+    """
+    if df.empty:
+        st.warning("No data available for the selected filters.")
+        return
+
+    # Get display preferences
     display_prefs = load_display_preferences()
     chart_height = display_prefs.get("chart_height", 600)
 
-    # Load utilization thresholds
+    # Prepare data for Gantt chart
+    gantt_data = _prepare_gantt_data(df)
+
+    if gantt_data.empty:
+        st.warning("No resource allocation data available for the selected period.")
+        return
+
+    # Create Gantt chart
+    fig = px.timeline(
+        gantt_data,
+        x_start="Start",
+        x_end="Finish",
+        y="Task",
+        color="Project",
+        hover_name="Task",
+        hover_data={"Task": False, "Start": False, "Finish": False, "Tooltip": True},
+        labels={"Task": "Resource", "Start": "Start Date", "Finish": "End Date"},
+        title="Resource Allocation Matrix",
+        height=max(500, min(len(gantt_data["Task"].unique()) * 30, chart_height * 1.5)),
+    )
+
+    # Update layout
+    fig.update_layout(
+        xaxis_title="Timeline",
+        yaxis_title="Resource",
+        xaxis=dict(
+            type="date",
+            tickformat="%b %d\n%Y",
+            tickmode="auto",
+            nticks=20,
+        ),
+        yaxis=dict(
+            autorange="reversed",  # Reverse y-axis to match project plan view
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+        margin=dict(
+            l=200, r=50, t=50, b=50
+        ),  # Increase left margin for long resource names
+    )
+
+    # Add today marker
+    fig = _add_today_marker(fig)
+
+    # Highlight overallocated resources
+    fig = _highlight_overallocated_resources(fig, df)
+
+    # Show the chart
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def display_utilization_dashboard(
+    df: pd.DataFrame,
+    start_date: Optional[pd.Timestamp] = None,
+    end_date: Optional[pd.Timestamp] = None,
+) -> None:
+    """
+    Display a dashboard for resource utilization metrics.
+
+    Args:
+        df: DataFrame containing resource allocation data
+        start_date: Start date for the analysis period (optional)
+        end_date: End date for the analysis period (optional)
+    """
+    # Calculate utilization
+    utilization_df = calculate_resource_utilization(df)
+
+    if utilization_df.empty:
+        st.warning("No utilization data available for the selected period.")
+        return
+
+    # Get preferences and thresholds
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
     thresholds = load_utilization_thresholds()
     under_threshold = thresholds.get("under", 50)
     over_threshold = thresholds.get("over", 100)
 
-    # Create utilization dataframe
-    util_df = calculate_resource_utilization(data)
-
-    if util_df.empty:
-        st.warning("No utilization data available for the selected filters.")
-        return
-
-    # Add category based on configurable thresholds
-    util_df["Utilization Category"] = pd.cut(
-        util_df["Utilization %"],
-        bins=[-float("inf"), under_threshold, over_threshold, float("inf")],
+    # Add utilization category based on thresholds
+    utilization_df["Category"] = pd.cut(
+        utilization_df["Utilization %"],
+        bins=[0, under_threshold, over_threshold, float("inf")],
         labels=["Underutilized", "Optimal", "Overutilized"],
     )
 
-    # Display core metrics
-    st.subheader("Performance Metrics")
+    # Dashboard layout with metrics and charts
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Resources", len(util_df))
-    col2.metric("Avg Utilization", f"{util_df['Utilization %'].mean():.1f}%")
-    col3.metric("Avg Overallocation", f"{util_df['Overallocation %'].mean():.1f}%")
 
-    # Single visualization section
-    st.subheader("Resource Utilization Analysis")
-    fig = px.bar(
-        util_df,
-        x="Resource",
-        y=["Utilization %", "Overallocation %"],
-        barmode="group",
-        color="Type",
-        labels={"value": "Percentage"},
-        height=chart_height,
+    with col1:
+        avg_utilization = utilization_df["Utilization %"].mean()
+        st.metric(
+            "Average Utilization",
+            f"{avg_utilization:.1f}%",
+            delta=f"{avg_utilization - 75:.1f}%" if 75 != avg_utilization else None,
+            delta_color="normal",
+        )
+
+    with col2:
+        over_utilized = len(
+            utilization_df[utilization_df["Category"] == "Overutilized"]
+        )
+        st.metric(
+            "Overutilized Resources",
+            f"{over_utilized}",
+            delta=None,
+            delta_color="inverse",
+        )
+
+    with col3:
+        under_utilized = len(
+            utilization_df[utilization_df["Category"] == "Underutilized"]
+        )
+        st.metric(
+            "Underutilized Resources",
+            f"{under_utilized}",
+            delta=None,
+            delta_color="inverse",
+        )
+
+    # Create utilization distribution chart
+    st.subheader("Utilization Distribution")
+
+    # Histogram of utilization percentages
+    fig = px.histogram(
+        utilization_df,
+        x="Utilization %",
+        color="Category",
+        barmode="overlay",
+        nbins=20,
+        title="Resource Utilization Distribution",
+        color_discrete_map={
+            "Underutilized": "teal",
+            "Optimal": "green",
+            "Overutilized": "crimson",
+        },
+        height=chart_height // 2,
     )
+
+    # Add threshold lines
+    fig.add_vline(
+        x=under_threshold,
+        line_dash="dash",
+        line_color="blue",
+        annotation_text=f"{under_threshold}%",
+    )
+    fig.add_vline(
+        x=over_threshold,
+        line_dash="dash",
+        line_color="red",
+        annotation_text=f"{over_threshold}%",
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
-    # Detailed table
-    st.subheader("Detailed Metrics")
-    st.dataframe(
-        util_df,
-        column_config={
-            "Utilization %": st.column_config.ProgressColumn(
-                "Utilization %", format="%.1f%%", min_value=0, max_value=100
-            ),
-            "Overallocation %": st.column_config.NumberColumn(
-                "Overallocation %", format="%.1f%%"
-            ),
+    # Resource utilization by type
+    st.subheader("Resource Utilization by Type")
+
+    # Horizontal bar chart of resources sorted by utilization
+    fig = px.bar(
+        utilization_df.sort_values("Utilization %", ascending=False),
+        y="Resource",
+        x="Utilization %",
+        color="Category",
+        orientation="h",
+        title="Resource Utilization (Sorted)",
+        color_discrete_map={
+            "Underutilized": "teal",
+            "Optimal": "green",
+            "Overutilized": "crimson",
         },
-        use_container_width=True,
+        height=max(400, min(len(utilization_df) * 25, chart_height)),
     )
 
+    # Add threshold lines
+    fig.add_vline(x=under_threshold, line_dash="dash", line_color="blue")
+    fig.add_vline(x=over_threshold, line_dash="dash", line_color="red")
 
-def _display_resource_conflicts(gantt_data: pd.DataFrame) -> None:
-    """
-    Check and display resource conflicts using filtered Gantt data.
-    """
-    if gantt_data.empty:
-        st.warning("No data available to check for resource conflicts.")
-        return
+    st.plotly_chart(fig, use_container_width=True)
 
-    conflicts = find_resource_conflicts(gantt_data)
-    if conflicts:
-        st.subheader("Resource Conflicts")
+    # Display a table of utilization data
+    st.subheader("Utilization Details")
 
-        conflict_summary = {}
-        for conflict in conflicts:
-            resource = conflict["resource"]
-            if resource not in conflict_summary:
-                conflict_summary[resource] = 0
-            conflict_summary[resource] += 1
+    table_data = utilization_df[
+        ["Resource", "Type", "Department", "Utilization %", "Category"]
+    ].sort_values("Utilization %", ascending=False)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Total Conflicts", len(conflicts))
-        with col2:
-            st.metric("Affected Resources", len(conflict_summary))
+    # Format the table data
+    table_data["Utilization %"] = table_data["Utilization %"].map("{:.1f}%".format)
 
-        conflicts_df = pd.DataFrame(conflicts)
-        conflicts_df["overlap_start"] = pd.to_datetime(conflicts_df["overlap_start"])
-        conflicts_df["overlap_end"] = pd.to_datetime(conflicts_df["overlap_end"])
-
-        fig = px.timeline(
-            conflicts_df,
-            x_start="overlap_start",
-            x_end="overlap_end",
-            y="resource",
-            color="overlap_days",
-            hover_data=["project1", "project2", "overlap_days"],
-            color_continuous_scale="Reds",
-            title="Resource Conflict Timeline",
-            labels={"overlap_days": "Overlapping Days"},
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        _display_resource_conflicts_chart_legend()
-
-        st.subheader("Conflict Details")
-        st.dataframe(conflicts_df, use_container_width=True)
-    else:
-        st.success("No resource conflicts detected.")
-
-
-def _display_resource_conflicts_chart_legend():
-    with st.expander("Chart Legend", expanded=False):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Visual Indicators:**")
-            st.markdown("- **Red Bars**: Duration of overlapping assignments.")
-            st.markdown("- **Hover Details**: Shows overlapping projects and days.")
-        with col2:
-            st.markdown("**Interactive Features:**")
-            st.markdown("- **Zoom**: Use the range selector or slider at the bottom.")
-            st.markdown("- **Details**: Hover over bars to see conflict details.")
-            st.markdown("- **Pan**: Click and drag on the timeline.")
+    st.dataframe(
+        table_data,
+        use_container_width=True,
+        column_config={
+            "Resource": "Resource",
+            "Type": "Type",
+            "Department": "Department",
+            "Utilization %": "Utilization %",
+            "Category": st.column_config.SelectboxColumn(
+                "Status",
+                help="Utilization status",
+                width="medium",
+                options=["Underutilized", "Optimal", "Overutilized"],
+                required=True,
+            ),
+        },
+    )
 
 
 def display_capacity_planning_dashboard(
-    filtered_data: pd.DataFrame, start_date=None, end_date=None
-):
+    df: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
     """
-    Displays the capacity planning dashboard.
-    """
-    if filtered_data.empty:
-        st.warning("No data available for capacity planning.")
-        return
+    Display a dashboard for capacity planning and availability forecasting.
 
-    # Get filtered resources
-    filtered_resources = filtered_data["Resource"].unique()
+    Args:
+        df: DataFrame containing resource allocation data
+        start_date: Start date for the forecast period
+        end_date: End date for the forecast period
+    """
+    if df.empty or start_date is None or end_date is None:
+        st.warning("Please provide resource data and date range for capacity planning.")
+        return
 
     # Calculate capacity data
-    capacity_data = calculate_capacity_data(start_date, end_date)
-
-    # Filter capacity data to only include resources from filtered_data
-    capacity_data = capacity_data[capacity_data["Resource"].isin(filtered_resources)]
+    capacity_data = calculate_capacity_data(df, start_date, end_date)
 
     if capacity_data.empty:
-        st.warning("No capacity data available for the selected period and filters.")
+        st.warning("No capacity data available for the selected period.")
         return
 
-    # Display capacity overview
-    st.subheader("Capacity Overview")
+    # Get display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
+    # Dashboard layout with metrics and charts
+    st.subheader("Resource Capacity Overview")
+
+    # Calculate summary metrics
+    total_resources = capacity_data["Resource"].nunique()
+    avg_allocation = capacity_data["Allocation"].mean() * 100
+    over_allocated_days = capacity_data[capacity_data["Overallocated"] > 0][
+        "Date"
+    ].nunique()
+    total_days = capacity_data["Date"].nunique()
+
     col1, col2, col3 = st.columns(3)
+
     with col1:
-        total_capacity = capacity_data["Capacity (hours)"].sum()
-        st.metric("Total Capacity (hours)", f"{total_capacity:,.1f}")
+        st.metric("Total Resources", f"{total_resources}", delta=None)
+
     with col2:
-        total_allocated = capacity_data["Allocated (hours)"].sum()
-        st.metric("Total Allocated (hours)", f"{total_allocated:,.1f}")
+        st.metric("Avg. Allocation", f"{avg_allocation:.1f}%", delta=None)
+
     with col3:
-        overall_utilization = (
-            (total_allocated / total_capacity * 100) if total_capacity > 0 else 0
+        st.metric(
+            "Overallocated Days",
+            f"{over_allocated_days}/{total_days}",
+            delta=None,
+            delta_color="inverse",
         )
-        st.metric("Overall Utilization", f"{overall_utilization:.1f}%")
 
-    # Capacity vs Allocation chart
-    st.subheader("Capacity vs Allocation by Resource")
+    # Capacity heatmap by resource and date
+    st.subheader("Resource Allocation Heatmap")
 
-    # Sort by utilization for better visualization
-    capacity_data = capacity_data.sort_values(by="Utilization %", ascending=False)
-
-    fig = px.bar(
-        capacity_data,
-        x="Resource",
-        y=["Capacity (hours)", "Allocated (hours)"],
-        barmode="overlay",
-        title="Resource Capacity vs Allocation",
-        color_discrete_map={
-            "Capacity (hours)": "cyan",
-            "Allocated (hours)": "orange",
-        },
-        labels={"value": "Hours", "variable": "Metric"},
+    # Pivot capacity data for heatmap
+    pivot_data = capacity_data.pivot_table(
+        index="Resource", columns="Date", values="Allocation", aggfunc="sum"
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    # Get color scale for heatmap
+    colorscale = load_heatmap_colorscale()
 
-    # Display detailed capacity table
-    st.subheader("Detailed Capacity Data")
-    st.dataframe(
-        capacity_data,
-        column_config={
-            "Resource": st.column_config.TextColumn("Resource"),
-            "Type": st.column_config.TextColumn("Type"),
-            "Department": st.column_config.TextColumn("Department"),
-            "Capacity (hours)": st.column_config.NumberColumn(
-                "Capacity (Hours)", format="%.1f"
-            ),
-            "Allocated (hours)": st.column_config.NumberColumn(
-                "Allocated (Hours)", format="%.1f"
-            ),
-            "Utilization %": st.column_config.ProgressColumn(
-                "Utilization (%)", format="%.1f%%", min_value=0, max_value=100
-            ),
-            "Available (hours)": st.column_config.NumberColumn(
-                "Available (Hours)", format="%.1f"
-            ),
-        },
-        use_container_width=True,
-    )
-
-
-def identify_overallocated_resources(capacity_data, threshold=100):
-    """Identify resources that are overallocated based on a utilization threshold."""
-    overallocated = capacity_data[capacity_data["Utilization %"] > threshold]
-    return overallocated
-
-
-def display_overallocation_warnings(capacity_data):
-    """Display warnings for overallocated resources."""
-    overallocated = identify_overallocated_resources(capacity_data)
-
-    if not overallocated.empty:
-        st.warning(f"⚠️ {len(overallocated)} resources are overallocated:")
-
-        for _, row in overallocated.iterrows():
-            st.markdown(
-                f"**{row['Resource']}** ({row['Type']}) - "
-                f"Utilization: {row['Utilization %']:.1f}% - "
-                f"Allocated: {row['Allocated (hours)']:.1f} hours / "
-                f"Capacity: {row['Capacity (hours)']:.1f} hours"
-            )
-
-
-def display_resource_calendar(filtered_data: pd.DataFrame, start_date, end_date):
-    """Display a calendar view of resource allocations."""
-    if filtered_data.empty:
-        st.warning("No data available for resource calendar.")
-        return
-
-    # Generate date range
-    date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-
-    # Get resources from filtered data
-    resources = filtered_data["Resource"].unique()
-
-    # Create empty calendar DataFrame
-    calendar_data = pd.DataFrame(0, index=resources, columns=date_range)
-
-    # Process project data
-    for project in st.session_state.data["projects"]:
-        # Get resource allocations for this project
-        resource_allocations = project.get("resource_allocations", [])
-
-        # If no specific allocations, create default ones
-        if not resource_allocations:
-            resource_allocations = [
-                {
-                    "resource": r,
-                    "allocation_percentage": 100,
-                    "start_date": project["start_date"],
-                    "end_date": project["end_date"],
-                }
-                for r in project["assigned_resources"]
-                if r in resources
-            ]
-
-        # Process each allocation
-        for allocation in resource_allocations:
-            res = allocation["resource"]
-
-            # Skip if resource is not in filtered resources
-            if res not in resources:
-                continue
-
-            # Calculate overlap with the selected date range
-            alloc_start = pd.to_datetime(allocation["start_date"])
-            alloc_end = pd.to_datetime(allocation["end_date"])
-            overlap_start = max(alloc_start, pd.Timestamp(start_date))
-            overlap_end = min(alloc_end, pd.Timestamp(end_date))
-
-            # Update calendar data
-            if overlap_start <= overlap_end:
-                overlap_dates = pd.date_range(
-                    start=overlap_start, end=overlap_end, freq="D"
-                )
-                for date in overlap_dates:
-                    if date in calendar_data.columns:
-                        calendar_data.at[res, date] += allocation[
-                            "allocation_percentage"
-                        ]
-
-    # Create heatmap visualization
+    # Create heatmap
     fig = px.imshow(
-        calendar_data,
-        labels=dict(x="Date", y="Resource", color="Allocation %"),
-        x=calendar_data.columns,
-        y=calendar_data.index,
-        color_continuous_scale=[
-            (0.0, "#ADD8E6"),  # Light blue for low allocation
-            (0.5, "#32CD32"),  # Lime green for moderate allocation
-            (1.0, "#FF4500"),  # Orange red for high allocation
-        ],
-        aspect="auto",
-        height=800,
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def unified_filter_component() -> Tuple[pd.Timestamp, pd.Timestamp, List[str], float]:
-    """
-    Creates a unified filter component for use across multiple pages.
-
-    Returns:
-    - start_date: The start date for filtering
-    - end_date: The end date for filtering
-    - resource_types: List of selected resource types
-    - utilization_threshold: The minimum utilization percentage to filter by
-    """
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = pd.to_datetime(
-            st.date_input("Start Date", value=pd.to_datetime("today"))
-        )
-    with col2:
-        end_date = pd.to_datetime(
-            st.date_input(
-                "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
-            )
-        )
-
-    resource_types = st.multiselect(
-        "Resource Type",
-        options=["Person", "Team", "Department"],
-        default=["Person", "Team", "Department"],
-    )
-
-    utilization_threshold = st.slider(
-        "Minimum Utilization %", min_value=0, max_value=100, value=0, step=5
-    )
-
-    return start_date, end_date, resource_types, utilization_threshold
-
-
-def display_standard_filters(update_session_state=True):
-    """Display standard filters consistently across app."""
-    with st.expander("Filter Options", expanded=True):
-        col1, col2 = st.columns(2)
-
-        # Date range selection
-        with col1:
-            start_date = st.date_input(
-                "From",
-                value=st.session_state.filter_state["date_range"]["start"],
-            )
-        with col2:
-            end_date = st.date_input(
-                "To",
-                value=st.session_state.filter_state["date_range"]["end"],
-            )
-
-        # Resource type and department filters
-        resource_types = st.multiselect(
-            "Resource Types",
-            options=["Person", "Team", "Department"],
-            default=st.session_state.filter_state["resource_types"],
-            key="filter_resource_types",
-        )
-
-        departments = st.multiselect(
-            "Departments",
-            options=sorted([d["name"] for d in st.session_state.data["departments"]]),
-            default=st.session_state.filter_state["departments"],
-            key="filter_departments",
-        )
-
-        # Utilization threshold
-        utilization_threshold = st.slider(
-            "Minimum Utilization %",
-            min_value=0,
-            max_value=100,
-            value=st.session_state.filter_state["utilization_threshold"],
-            step=5,
-            key="filter_utilization",
-        )
-
-        # Update session state if requested
-        if update_session_state:
-            st.session_state.filter_state["date_range"]["start"] = start_date
-            st.session_state.filter_state["date_range"]["end"] = end_date
-            st.session_state.filter_state["resource_types"] = resource_types
-            st.session_state.filter_state["departments"] = departments
-            st.session_state.filter_state["utilization_threshold"] = (
-                utilization_threshold
-            )
-
-    return start_date, end_date, resource_types, departments, utilization_threshold
-
-
-def display_resource_matrix_view(df: pd.DataFrame, start_date=None, end_date=None):
-    """Display a resource matrix view showing project allocations over time."""
-    if df.empty:
-        st.warning("No data available to visualize.")
-        return
-
-    # If dates not provided, use min/max from data
-    if start_date is None:
-        start_date = df["Start"].min()
-    if end_date is None:
-        end_date = df["Finish"].max()
-
-    # Convert to pandas timestamps if needed
-    start_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
-
-    # Calculate appropriate time periods based on date range
-    range_days = (end_date - start_date).days
-    if range_days <= 14:
-        freq = "D"
-        period_name = "Day"
-    elif range_days <= 60:
-        freq = "W"
-        period_name = "Week"
-    else:
-        freq = "ME"
-        period_name = "Month"
-
-    # Generate time periods
-    date_range = pd.date_range(start=start_date, end=end_date, freq=freq)
-    if len(date_range) > 30:  # If too many periods, adjust frequency
-        freq = "W" if freq == "D" else "ME"
-        period_name = "Week" if freq == "W" else "Month"
-        date_range = pd.date_range(start=start_date, end=end_date, freq=freq)
-
-    # Get unique projects sorted by priority
-    projects = df.sort_values(by="Priority", ascending=False)["Project"].unique()
-
-    # Create empty matrix (projects × time periods)
-    matrix_data = pd.DataFrame(0, index=projects, columns=date_range)
-
-    # Ensure matrix_data is of type float64 to avoid dtype issues
-    matrix_data = matrix_data.astype(float)
-
-    # Add metadata for hover info
-    hover_data = {}
-    for project in projects:
-        hover_data[project] = {period: [] for period in date_range}
-
-    # Add weighted allocation to matrix
-    for _, row in df.iterrows():
-        project = row["Project"]
-        resource = row["Resource"]
-        resource_type = row["Type"]
-
-        # Check if 'Allocation %' column exists, if not use default 100
-        if "Allocation %" in row:
-            allocation = row["Allocation %"]
-        else:
-            allocation = 100  # Default allocation percentage if not provided
-
-        # Calculate period duration based on frequency
-        if freq == "D":
-            period_duration = pd.Timedelta(days=1)
-        elif freq == "W":
-            period_duration = pd.Timedelta(days=7)
-        else:
-            period_duration = pd.Timedelta(days=30)
-
-        # Calculate overlap with each time period
-        for period_start in date_range:
-            period_end = period_start + period_duration - pd.Timedelta(seconds=1)
-
-            # Check if allocation overlaps with period
-            if (row["Start"] <= period_end) and (row["Finish"] >= period_start):
-                # Calculate weighted allocation based on overlap
-                start_overlap = max(row["Start"], period_start)
-                end_overlap = min(row["Finish"], period_end)
-                overlap_days = (end_overlap - start_overlap).days + 1
-                period_days = (period_end - period_start).days + 1
-                overlap_factor = min(1.0, overlap_days / period_days)
-
-                # Add weighted allocation to matrix
-                matrix_data.at[project, period_start] += allocation * overlap_factor
-
-                # Store resource details for hover information
-                hover_data[project][period_start].append(
-                    {
-                        "resource": resource,
-                        "type": resource_type,
-                        "allocation": allocation,
-                        "dept": row["Department"],
-                    }
-                )
-
-    # Generate hover text
-    hover_text = []
-    for project in projects:
-        project_hover = []
-        for period in date_range:
-            period_text = (
-                f"Project: {project}<br>{period_name}: {period.strftime('%b %d')}<br>"
-            )
-            period_text += (
-                f"Total Allocation: {matrix_data.loc[project, period]:.1f}%<br>"
-            )
-
-            if hover_data[project][period]:
-                period_text += "<br><b>Resources:</b><br>"
-                for res in hover_data[project][period]:
-                    period_text += f"• {res['resource']} ({res['type']}, {res['dept']}): {res['allocation']}%<br>"
-            else:
-                period_text += "<br>No resources allocated"
-
-            project_hover.append(period_text)
-        hover_text.append(project_hover)
-
-    # Create color scale from configuration
-    try:
-        colorscale = load_heatmap_colorscale()
-    except (ImportError, AttributeError):
-        colorscale = [
-            (0.0, "#f0f2f6"),  # No allocation
-            (0.5, "#ffd700"),  # Moderate allocation
-            (1.0, "#4b0082"),  # Full/over allocation
-        ]
-
-    # Create heatmap visualization
-    fig = px.imshow(
-        matrix_data,
-        labels=dict(x=period_name, y="Project", color="Resource Allocation %"),
-        x=[period.strftime("%b %d") for period in date_range],
-        y=projects,
+        pivot_data.values,
+        x=pivot_data.columns,
+        y=pivot_data.index,
         color_continuous_scale=colorscale,
+        labels=dict(x="Date", y="Resource", color="Allocation"),
+        title="Resource Allocation Heatmap",
+        height=max(400, min(len(pivot_data) * 25, chart_height)),
         aspect="auto",
-        zmin=0,
-        zmax=150,  # Allow visualization of overallocation
-    )
-
-    # Add custom hover information
-    fig.update_traces(hovertemplate="%{hovertext}", hovertext=np.array(hover_text))
-
-    # Add today marker line
-    today = pd.Timestamp("today")
-    if start_date <= today <= end_date:
-        # Find the nearest date period
-        nearest_period = min(date_range, key=lambda x: abs(x - today))
-        period_idx = list(date_range).index(nearest_period)
-
-        fig.add_vline(
-            x=period_idx,
-            line_width=2,
-            line_color="red",
-            line_dash="dash",
-            annotation_text="Today",
-            annotation_position="top",
-        )
-
-    # Customize layout
-    fig.update_layout(
-        height=max(400, len(projects) * 30),  # Dynamic height based on projects
-        margin=dict(l=150, r=30, t=30, b=50),
-        coloraxis_colorbar=dict(
-            title="Allocation %",
-            tickvals=[0, 50, 100, 150],
-            ticktext=["0%", "50%", "100%", ">150%"],
-        ),
-        xaxis_title=f"{period_name}s",
-        yaxis_title="Projects",
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def display_sunburst_organization(data):
-    """Creates a sunburst chart showing organizational hierarchy with clear text labels."""
-
-    # Prepare data for sunburst chart
-    labels = []
-    parents = []
-    values = []
-
-    # Add root
-    labels.append("Organization")
-    parents.append("")  # Empty string is crucial for root node
-    values.append(1)
-
-    # Add departments
-    for dept in data["departments"]:
-        labels.append(dept["name"])
-        parents.append("Organization")  # Connect to root
-        values.append(
-            len([t for t in data["teams"] if t.get("department") == dept["name"]]) + 1
-        )
-
-    # Add teams
-    for team in data["teams"]:
-        labels.append(team["name"])
-        parents.append(
-            team.get("department", "Organization")
-        )  # Fallback to root if no department
-        values.append(
-            len([p for p in data["people"] if p.get("team") == team["name"]]) + 1
-        )
-
-    # Add people
-    for person in data["people"]:
-        if person.get("team"):
-            labels.append(person["name"])
-            parents.append(person["team"])
-            values.append(1)
-        elif person.get("department"):
-            # People directly in department (not in any team)
-            labels.append(person["name"])
-            parents.append(person["department"])
-            values.append(1)
-
-    # Try branchvalues='remainder' instead of 'total' if chart is empty
-    fig = px.sunburst(
-        names=labels,
-        parents=parents,
-        values=values,
-        branchvalues="remainder",
-        color_discrete_sequence=px.colors.qualitative.Bold,
-        height=1000,
-    )
-
-    # Customize text and hover information
-    fig.update_traces(
-        insidetextorientation="auto",
-        textinfo="label",
-        textfont=dict(size=16),
-        hovertemplate="<b>%{label}</b><br>Parent: %{parent}",
     )
 
     # Update layout for better readability
-    fig.update_layout(margin=dict(t=30, l=0, r=0, b=0))
+    fig.update_layout(
+        xaxis_nticks=20,
+        yaxis_nticks=min(40, len(pivot_data)),
+    )
 
-    # Display the chart with Streamlit theme
-    st.plotly_chart(fig, use_container_width=True, theme="streamlit")
+    # Add colorbar title
+    fig.update_coloraxes(colorbar_title="Allocation %", colorbar_tickformat=".0%")
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Resource availability forecast
+    st.subheader("Resource Availability Forecast")
+
+    # Calculate daily availability per resource type
+    resource_types = capacity_data["Type"].unique()
+    availability_by_type = {}
+
+    for resource_type in resource_types:
+        type_data = capacity_data[capacity_data["Type"] == resource_type]
+        daily_avail = type_data.groupby("Date")["Available"].mean()
+        availability_by_type[resource_type] = daily_avail
+
+    # Create availability chart
+    fig = go.Figure()
+
+    for resource_type, avail_data in availability_by_type.items():
+        fig.add_trace(
+            go.Scatter(
+                x=avail_data.index,
+                y=avail_data.values * 100,  # Convert to percentage
+                mode="lines",
+                name=resource_type,
+                line=dict(
+                    width=2,
+                    dash="solid" if resource_type == "Person" else "dash",
+                ),
+            )
+        )
+
+    # Update layout
+    fig.update_layout(
+        title="Average Resource Availability by Type",
+        xaxis_title="Date",
+        yaxis_title="Available Capacity (%)",
+        height=chart_height // 2,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+    )
+
+    # Add a reference line at 0%
+    fig.add_hline(y=0, line_dash="dot", line_color="red")
+
+    # Add today marker
+    fig = _add_today_marker(fig)
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def display_resource_calendar(
+    df: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display a calendar view of resource allocations.
+
+    Args:
+        df: DataFrame containing resource allocation data
+        start_date: Start date for the calendar
+        end_date: End date for the calendar
+    """
+    if df.empty or start_date is None or end_date is None:
+        st.warning("Please provide resource data and date range for the calendar view.")
+        return
+
+    # Calculate daily allocation per resource
+    capacity_data = calculate_capacity_data(df, start_date, end_date)
+
+    if capacity_data.empty:
+        st.warning("No capacity data available for the selected period.")
+        return
+
+    # Get display preferences and department colors
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+    dept_colors = load_department_colors()
+
+    # Filter for selected resources if any
+    if "selected_resources" in st.session_state and st.session_state.selected_resources:
+        selected_resources = st.session_state.selected_resources
+        capacity_data = capacity_data[
+            capacity_data["Resource"].isin(selected_resources)
+        ]
+
+    # Resource selection
+    st.subheader("Select Resources to View")
+    resources = sorted(capacity_data["Resource"].unique())
+
+    # Initialize selected resources if not already done
+    if "selected_resources" not in st.session_state:
+        # Default to showing first 5 resources
+        st.session_state.selected_resources = resources[: min(5, len(resources))]
+
+    # Allow multiple resource selection
+    selected_resources = st.multiselect(
+        "Select Resources",
+        options=resources,
+        default=st.session_state.selected_resources,
+        key="calendar_resource_select",
+    )
+
+    # Update session state
+    st.session_state.selected_resources = selected_resources
+
+    if not selected_resources:
+        st.warning("Please select at least one resource to view in the calendar.")
+        return
+
+    # Filter data for selected resources
+    filtered_data = capacity_data[capacity_data["Resource"].isin(selected_resources)]
+
+    # Create a calendar view for each selected resource
+    for resource in selected_resources:
+        resource_data = filtered_data[filtered_data["Resource"] == resource]
+
+        # Get resource type and department
+        resource_type = resource_data["Type"].iloc[0]
+        department = resource_data["Department"].iloc[0]
+
+        # Get department color
+        dept_color = dept_colors.get(department, "#1f77b4")
+
+        # Create a calendar heatmap
+        st.subheader(f"{resource} ({resource_type}, {department})")
+
+        # Pivot data for heatmap - group by week and day of week
+        resource_data["Week"] = resource_data["Date"].dt.isocalendar().week
+        resource_data["Day"] = resource_data["Date"].dt.day_name()
+
+        # Order days
+        day_order = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+
+        pivot_data = resource_data.pivot_table(
+            index="Week", columns="Day", values="Allocation", aggfunc="mean"
+        )
+
+        # Reorder columns by day of week
+        pivot_data = pivot_data.reindex(columns=day_order)
+
+        # Get color scale
+        colorscale = load_heatmap_colorscale()
+
+        # Create heatmap
+        fig = px.imshow(
+            pivot_data.values,
+            x=pivot_data.columns,
+            y=pivot_data.index,
+            color_continuous_scale=colorscale,
+            labels=dict(x="Day", y="Week", color="Allocation"),
+            title=f"Calendar View: {resource}",
+            height=chart_height // 2,
+        )
+
+        # Add text annotations with allocation percentages
+        for i in range(len(pivot_data.index)):
+            for j in range(len(pivot_data.columns)):
+                if not pd.isna(pivot_data.values[i, j]):
+                    fig.add_annotation(
+                        x=j,
+                        y=i,
+                        text=f"{pivot_data.values[i, j] * 100:.0f}%",
+                        showarrow=False,
+                        font=dict(
+                            color="black" if pivot_data.values[i, j] < 0.7 else "white",
+                            size=10,
+                        ),
+                    )
+
+        # Update layout
+        fig.update_layout(
+            xaxis_title="Day of Week",
+            yaxis_title="Week Number",
+        )
+
+        # Add colorbar title
+        fig.update_coloraxes(colorbar_title="Allocation %", colorbar_tickformat=".0%")
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None:
+    """
+    Display a sunburst chart showing the organizational structure.
+
+    Args:
+        data: Dictionary containing people, teams, and departments
+    """
+    # Prepare data for sunburst chart
+    sunburst_data = []
+
+    # Add departments
+    for dept in data["departments"]:
+        sunburst_data.append(
+            {"id": dept["name"], "parent": "", "value": 1, "type": "Department"}
+        )
+
+        # Add teams in departments
+        for team_name in dept.get("teams", []):
+            sunburst_data.append(
+                {"id": team_name, "parent": dept["name"], "value": 1, "type": "Team"}
+            )
+
+    # Add people to teams or departments
+    for person in data["people"]:
+        if person.get("team"):
+            parent = person["team"]
+        else:
+            parent = person.get("department", "")
+
+        sunburst_data.append(
+            {
+                "id": person["name"],
+                "parent": parent,
+                "value": person.get("daily_cost", 300),  # Size by cost
+                "type": "Person",
+            }
+        )
+
+    # Create DataFrame from sunburst data
+    sunburst_df = pd.DataFrame(sunburst_data)
+
+    # Department colors
+    dept_colors = load_department_colors()
+
+    # Create sunburst chart
+    fig = px.sunburst(
+        sunburst_df,
+        ids="id",
+        parents="parent",
+        values="value",
+        color="type",
+        color_discrete_map={
+            "Department": "#636EFA",
+            "Team": "#EF553B",
+            "Person": "#00CC96",
+        },
+        title="Organizational Structure",
+    )
+
+    # Update layout
+    fig.update_layout(
+        margin=dict(t=0, l=0, r=0, b=0),
+    )
+
+    # Show the chart
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _display_resource_conflicts(filtered_data: pd.DataFrame) -> None:
+    """
+    Display a section showing resource allocation conflicts.
+
+    Args:
+        filtered_data: DataFrame containing resource allocation data
+    """
+    # Find resource conflicts
+    conflicts = find_resource_conflicts(filtered_data)
+
+    if conflicts.empty:
+        st.success("No resource conflicts detected in the selected time period.")
+        return
+
+    # Display conflicts in an expander
+    with st.expander("Resource Conflicts Detected", expanded=True):
+        st.warning(
+            f"Found {len(conflicts)} potential resource conflicts. "
+            "These occur when a resource is allocated more than 100% on a given day."
+        )
+
+        # Group conflicts by resource
+        resource_conflicts = conflicts.groupby("Resource").size().reset_index()
+        resource_conflicts.columns = ["Resource", "Conflict Days"]
+        resource_conflicts = resource_conflicts.sort_values(
+            "Conflict Days", ascending=False
+        )
+
+        # Display conflict summary
+        col1, col2 = st.columns([2, 3])
+
+        with col1:
+            st.subheader("Resources with Conflicts")
+            st.dataframe(resource_conflicts, use_container_width=True)
+
+        with col2:
+            st.subheader("Conflict Calendar")
+
+            # Create a calendar view of conflicts
+            # Group by date and count conflicts
+            date_conflicts = conflicts.groupby("Date").size().reset_index()
+            date_conflicts.columns = ["Date", "Conflicts"]
+
+            # Create bar chart by date
+            fig = px.bar(
+                date_conflicts,
+                x="Date",
+                y="Conflicts",
+                title="Resource Conflicts by Date",
+                color="Conflicts",
+                color_continuous_scale="Reds",
+            )
+
+            # Update layout
+            fig.update_layout(
+                xaxis_title="Date",
+                yaxis_title="Number of Conflicts",
+            )
+
+            # Add today marker
+            fig = _add_today_marker(fig)
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Display conflict details
+        st.subheader("Conflict Details")
+
+        # Convert date to string for display
+        if "Date" in conflicts.columns:
+            if pd.api.types.is_datetime64_any_dtype(conflicts["Date"]):
+                conflicts["Date"] = conflicts["Date"].dt.strftime("%Y-%m-%d")
+
+        # Round allocation percentage for display
+        if "Allocation" in conflicts.columns:
+            conflicts["Allocation"] = conflicts["Allocation"].round(1)
+
+        # Sort by date and allocation
+        conflicts = conflicts.sort_values(
+            ["Date", "Allocation"], ascending=[True, False]
+        )
+
+        # Show the conflict details
+        st.dataframe(
+            conflicts[
+                ["Resource", "Type", "Department", "Date", "Allocation", "Projects"]
+            ],
+            use_container_width=True,
+        )

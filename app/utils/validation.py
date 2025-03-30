@@ -1,18 +1,18 @@
 """
-Validation module for resource management application.
+Validation utilities for resource management application.
 
-This module contains functions for validating input data across the application.
+This module provides validation functions used throughout the application.
 """
 
+import streamlit as st
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Union
 import pandas as pd
-import streamlit as st
 
 
 def validate_name_field(name: str, resource_type: str) -> bool:
     """
-    Validate the name field for a resource.
+    Validate a name field for a resource.
 
     Args:
         name: The name to validate
@@ -38,28 +38,28 @@ def validate_name_field(name: str, resource_type: str) -> bool:
         if any(
             p["name"] == name
             for p in st.session_state.data["people"]
-            if p["name"] != name
+            if p.get("name") != name
         ):
             return False
     elif resource_type == "team":
         if any(
             t["name"] == name
             for t in st.session_state.data["teams"]
-            if t["name"] != name
+            if t.get("name") != name
         ):
             return False
     elif resource_type == "department":
         if any(
             d["name"] == name
             for d in st.session_state.data["departments"]
-            if d["name"] != name
+            if d.get("name") != name
         ):
             return False
     elif resource_type == "project":
         if any(
             p["name"] == name
             for p in st.session_state.data["projects"]
-            if p["name"] != name
+            if p.get("name") != name
         ):
             return False
 
@@ -100,21 +100,20 @@ def validate_project_input(project_data: Dict[str, Any]) -> bool:
     Returns:
         True if the project data is valid, False otherwise
     """
-    # Validate required fields
-    required_fields = ["name", "start_date", "end_date"]
-    if not all(field in project_data for field in required_fields):
+    # Required fields
+    if not all(field in project_data for field in ["name", "start_date", "end_date"]):
         return False
 
-    # Validate name
+    # Name validation
     if not validate_name_field(project_data["name"], "project"):
         return False
 
-    # Validate date range
+    # Date range validation
     if not validate_date_range(project_data["start_date"], project_data["end_date"]):
         return False
 
-    # Validate budget if present
-    if "budget" in project_data and project_data["budget"] < 0:
+    # Budget validation if present
+    if "allocated_budget" in project_data and project_data["allocated_budget"] < 0:
         return False
 
     return True
@@ -199,45 +198,39 @@ def validate_resource_allocation(
     if not all(field in allocation for field in required_fields):
         return False
 
-    # Validate allocation percentage
-    percentage = allocation["allocation_percentage"]
-    if not 0 < percentage <= 100:
+    # Allocation percentage must be between 0 and 100
+    if not 0 < allocation["allocation_percentage"] <= 100:
         return False
 
-    # Validate date range
+    # Valid date range
     if not validate_date_range(allocation["start_date"], allocation["end_date"]):
         return False
 
-    # Convert project dates to pandas Timestamp
-    if isinstance(project_start, str):
-        project_start = pd.to_datetime(project_start)
-    if isinstance(project_end, str):
-        project_end = pd.to_datetime(project_end)
-
-    # Convert allocation dates to pandas Timestamp
+    # Allocation dates must be within project dates
     alloc_start = pd.to_datetime(allocation["start_date"])
     alloc_end = pd.to_datetime(allocation["end_date"])
+    proj_start = pd.to_datetime(project_start)
+    proj_end = pd.to_datetime(project_end)
 
-    # Allocation dates must be within project dates
-    return project_start <= alloc_start and alloc_end <= project_end
+    return proj_start <= alloc_start and alloc_end <= proj_end
 
 
-def validate_team_integrity(team_name: str, min_members: int = 2) -> bool:
+def validate_team_integrity(team_name: str) -> bool:
     """
     Validate that a team has the minimum required number of members.
 
     Args:
         team_name: Name of the team to validate
-        min_members: Minimum number of team members required (default 2)
 
     Returns:
-        True if the team has at least min_members, False otherwise
+        True if the team has at least 2 members, False otherwise
     """
+    min_members = 2
     team = next(
         (t for t in st.session_state.data["teams"] if t["name"] == team_name), None
     )
 
-    if team and len(team.get("members", [])) < min_members:
+    if not team or len(team.get("members", [])) < min_members:
         return False
 
     return True

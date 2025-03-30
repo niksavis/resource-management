@@ -956,6 +956,30 @@
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "John Doe",
+      "role": "Developer",
+      "department": "Engineering",
+      "team": "Web Team",
+      "daily_cost": 400,
+      "work_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2,
+      "skills": ["Programming", "Design"]
+    },
+    {
+      "name": "Jane Smith",
+      "role": "Project Manager",
+      "department": "Engineering",
+      "team": null,
+      "daily_cost": 600,
+      "work_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2,
+      "skills": ["Project Management"]
     }
   ],
   "teams": [
@@ -1118,6 +1142,18 @@
       "name": "Data Science Team",
       "department": "Research and Development",
       "members": ["Oliver Brown", "Lydia Simmons"]
+    },
+    {
+      "name": "Web Team",
+      "department": "Engineering",
+      "members": ["John Doe", "Sarah Williams"],
+      "description": "Focuses on web application development."
+    },
+    {
+      "name": "Design Team",
+      "department": "Design",
+      "members": ["Michael Brown", "Emily Wilson"],
+      "description": "Handles UI/UX design for products."
     }
   ],
   "departments": [
@@ -1267,6 +1303,21 @@
         "Ophelia Gray",
         "Oliver Brown"
       ]
+    },
+    {
+      "name": "Engineering",
+      "teams": ["Web Team"],
+      "members": ["John Doe", "Jane Smith", "Sarah Williams"]
+    },
+    {
+      "name": "Design",
+      "teams": ["Design Team"],
+      "members": ["Michael Brown", "Emily Wilson"]
+    },
+    {
+      "name": "Marketing",
+      "teams": [],
+      "members": []
     }
   ],
   "projects": [
@@ -1555,6 +1606,24 @@
           "end_date": "2025-11-15"
         }
       ]
+    },
+    {
+      "name": "Website Redesign",
+      "start_date": "2023-01-01",
+      "end_date": "2023-03-31",
+      "priority": 2,
+      "assigned_resources": ["John Doe", "Web Team", "Design Team"],
+      "description": "Redesign the company website with new branding.",
+      "allocated_budget": 50000
+    },
+    {
+      "name": "Mobile App Development",
+      "start_date": "2023-02-15",
+      "end_date": "2023-06-30",
+      "priority": 1,
+      "assigned_resources": ["Jane Smith", "Web Team"],
+      "description": "Develop a native mobile app for Android and iOS.",
+      "allocated_budget": 80000
     }
   ]
 }

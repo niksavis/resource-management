@@ -1,17 +1,27 @@
-import json
+"""
+Configuration module for resource management application.
+
+This module provides functions for loading, saving, and managing application settings.
+"""
+
 import os
-import random
+import json
 import streamlit as st
 import plotly.express as px
-from typing import Dict, List
+from typing import Dict, List, Tuple, Any, Optional
 
 SETTINGS_FILE = "settings.json"
 
 
-def create_default_settings() -> Dict:
-    """Creates a dictionary with default settings."""
+def create_default_settings() -> Dict[str, Any]:
+    """
+    Create default settings dictionary.
+
+    Returns:
+        Dictionary containing default application settings
+    """
     return {
-        "currency": "€",
+        "currency": "EUR",
         "currency_format": {"symbol_position": "prefix", "decimal_places": 2},
         "department_colors": {},
         "heatmap_colorscale": [
@@ -35,146 +45,190 @@ def create_default_settings() -> Dict:
 
 
 def ensure_settings_directory():
-    """Ensure the directory for settings.json exists."""
-    directory = os.path.dirname(SETTINGS_FILE)
-    if directory and not os.path.exists(directory):
-        os.makedirs(directory)
-
-
-def load_settings_safely() -> Dict:
     """
-    Loads the settings from the file, with error handling.
-    If loading fails, regenerates default settings.
+    Ensure the directory for settings file exists.
+    """
+    try:
+        # Get directory from settings file path
+        settings_dir = os.path.dirname(SETTINGS_FILE)
+
+        # If directory isn't empty string and doesn't exist, create it
+        if settings_dir and not os.path.exists(settings_dir):
+            os.makedirs(settings_dir)
+    except Exception as e:
+        st.error(f"Error ensuring settings directory: {str(e)}")
+
+
+def load_settings_safely() -> Dict[str, Any]:
+    """
+    Load settings from file with error handling.
+
+    Returns:
+        Settings dictionary from file or default settings if loading fails
     """
     try:
         if os.path.exists(SETTINGS_FILE):
             with open(SETTINGS_FILE, "r") as file:
-                settings = json.load(file)
-                return settings
+                return json.load(file)
         else:
-            # File doesn't exist, create default settings
+            # Create default settings if file doesn't exist
             settings = create_default_settings()
             save_settings(settings)
             return settings
-    except json.JSONDecodeError as e:
-        # Handle corrupted JSON
-        st.warning(
-            f"Settings file is corrupted: {str(e)}. Regenerating default settings."
-        )
-
-        # Create backup of corrupted file
-        try:
-            backup_file = f"{SETTINGS_FILE}.backup"
-            with open(SETTINGS_FILE, "r") as src, open(backup_file, "w") as dst:
-                dst.write(src.read())
-            st.info(f"Backup of corrupted settings saved to {backup_file}")
-        except Exception:
-            pass
-
-        # Generate and save default settings
-        settings = create_default_settings()
-        save_settings(settings)
-        return settings
-    except (FileNotFoundError, PermissionError) as e:
-        # Handle file access issues
-        st.warning(f"Cannot access settings file: {str(e)}. Using default settings.")
-        settings = create_default_settings()
-        try:
-            save_settings(settings)
-        except Exception:
-            pass
-        return settings
     except Exception as e:
-        # Catch any other unexpected errors
-        st.error(
-            f"Unexpected error loading settings: {str(e)}. Using default settings."
-        )
+        st.error(f"Error loading settings: {str(e)}")
         return create_default_settings()
 
 
-def load_settings() -> Dict:
+def load_settings() -> Dict[str, Any]:
     """
-    Loads the settings from file, with fallback to safe loading if it fails.
-    This maintains compatibility with existing code.
+    Load settings from file, falling back to defaults if needed.
+
+    Returns:
+        Settings dictionary
     """
     return load_settings_safely()
 
 
-def save_settings(settings: Dict) -> None:
-    """Saves the settings to the settings file with error handling."""
+def save_settings(settings: Dict[str, Any]) -> None:
+    """
+    Save settings to file.
+
+    Args:
+        settings: Settings dictionary to save
+    """
     try:
         ensure_settings_directory()
         with open(SETTINGS_FILE, "w") as file:
             json.dump(settings, file, indent=4)
     except Exception as e:
-        st.error(f"Failed to save settings: {str(e)}")
+        st.error(f"Error saving settings: {str(e)}")
 
 
 def regenerate_department_colors(departments: List[str]) -> None:
-    """Regenerates colors for all departments."""
+    """
+    Regenerate colors for departments.
+
+    Args:
+        departments: List of department names
+    """
     settings = load_settings()
+
+    # Get existing department colors
     department_colors = settings.get("department_colors", {})
 
-    # Generate new colors for missing departments
+    # Get color palette
     colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
-    for i, department in enumerate(departments):
-        if department not in department_colors:
-            department_colors[department] = colorscale[i % len(colorscale)].lower()
 
+    # Generate colors for missing departments
+    for i, dept in enumerate(departments):
+        if dept not in department_colors:
+            department_colors[dept] = colorscale[i % len(colorscale)].lower()
+
+    # Remove colors for departments that no longer exist
+    for dept in list(department_colors.keys()):
+        if dept not in departments:
+            del department_colors[dept]
+
+    # Save updated colors
     settings["department_colors"] = department_colors
     save_settings(settings)
 
 
 def add_department_color(department: str) -> None:
-    """Adds a color for a new department."""
+    """
+    Add a color for a single department.
+
+    Args:
+        department: Department name
+    """
     settings = load_settings()
     department_colors = settings.get("department_colors", {})
 
+    # Only add if it doesn't already exist
     if department not in department_colors:
+        # Get color palette
         colorscale = px.colors.qualitative.Plotly + px.colors.qualitative.D3
-        department_colors[department] = colorscale[
-            len(department_colors) % len(colorscale)
-        ].lower()
 
-    settings["department_colors"] = department_colors
-    save_settings(settings)
+        # Calculate index based on length of existing colors
+        idx = len(department_colors) % len(colorscale)
+        department_colors[department] = colorscale[idx].lower()
+
+        # Save updated colors
+        settings["department_colors"] = department_colors
+        save_settings(settings)
 
 
 def delete_department_color(department: str) -> None:
-    """Deletes the color associated with a department."""
+    """
+    Delete a department's color.
+
+    Args:
+        department: Department name to delete
+    """
     settings = load_settings()
     department_colors = settings.get("department_colors", {})
 
     if department in department_colors:
         del department_colors[department]
+        settings["department_colors"] = department_colors
+        save_settings(settings)
 
-    settings["department_colors"] = department_colors
-    save_settings(settings)
 
+def load_utilization_colorscale() -> List[List[Any]]:
+    """
+    Load utilization heatmap colorscale.
 
-def load_utilization_colorscale() -> List:
-    """Loads the utilization colorscale from the settings file."""
+    Returns:
+        List of [position, color] pairs for the colorscale
+    """
     settings = load_settings()
-    return settings.get("utilization_colorscale", [])
+    return settings.get(
+        "heatmap_colorscale",
+        [
+            [0.0, "#f0f2f6"],  # No allocation
+            [0.5, "#ffd700"],  # Moderate allocation
+            [1.0, "#4b0082"],  # Full/over allocation
+        ],
+    )
 
 
-def save_utilization_colorscale(colorscale: List) -> None:
-    """Save utilization colorscale to settings."""
+def save_utilization_colorscale(colorscale: List[List[Any]]) -> None:
+    """
+    Save utilization heatmap colorscale.
+
+    Args:
+        colorscale: List of [position, color] pairs
+    """
     settings = load_settings()
-    settings["utilization_colorscale"] = colorscale
+    settings["heatmap_colorscale"] = colorscale
     save_settings(settings)
 
 
 def manage_visualization_colors(departments: List[str]) -> Dict[str, str]:
     """
-    Ensures all departments have assigned colors and returns the updated color mapping.
+    Manage department colors and return the color mapping.
+
+    Args:
+        departments: List of department names
+
+    Returns:
+        Dictionary mapping department names to colors
     """
+    # Regenerate colors for all departments
     regenerate_department_colors(departments)
+
+    # Return the color mapping
     return load_department_colors()
 
 
-def load_currency_settings() -> tuple[str, Dict]:
-    """Loads the currency settings from the settings file."""
+def load_currency_settings() -> Tuple[str, Dict[str, Any]]:
+    """
+    Load currency settings from settings file.
+
+    Returns:
+        Tuple of (currency_symbol, currency_format)
+    """
     settings = load_settings()
     currency = settings.get("currency", "EUR")
     currency_format = settings.get(
@@ -183,8 +237,14 @@ def load_currency_settings() -> tuple[str, Dict]:
     return currency, currency_format
 
 
-def save_currency_settings(currency: str, currency_format: Dict) -> None:
-    """Saves the currency settings to the settings file."""
+def save_currency_settings(currency: str, currency_format: Dict[str, Any]) -> None:
+    """
+    Save currency settings to settings file.
+
+    Args:
+        currency: Currency symbol
+        currency_format: Currency format settings
+    """
     settings = load_settings()
     settings["currency"] = currency
     settings["currency_format"] = currency_format
@@ -192,151 +252,107 @@ def save_currency_settings(currency: str, currency_format: Dict) -> None:
 
 
 def load_daily_cost_settings() -> float:
-    """Loads the maximum daily cost setting from the settings file."""
+    """
+    Load maximum daily cost setting.
+
+    Returns:
+        Maximum daily cost value
+    """
     settings = load_settings()
     return settings.get("max_daily_cost", 2000.0)
 
 
 def save_daily_cost_settings(max_daily_cost: float) -> None:
-    """Saves the maximum daily cost setting to the settings file."""
+    """
+    Save maximum daily cost setting.
+
+    Args:
+        max_daily_cost: Maximum daily cost value
+    """
     settings = load_settings()
     settings["max_daily_cost"] = max_daily_cost
     save_settings(settings)
 
 
 def display_color_settings():
-    """Display and configure color settings for visualizations."""
-    st.subheader("Color Settings")
-
-    # Department Colors Section
-    with st.expander("Department Colors", expanded=False):
-        departments = [d["name"] for d in st.session_state.data["departments"]]
-        dept_colors = load_department_colors()
-
-        st.markdown("**Department Color Configuratrion**")
-        new_colors = {}
-        for dept in departments:
-            new_colors[dept] = st.color_picker(
-                f"{dept}",
-                value=dept_colors.get(dept, "#4B0082"),
-            )
-
-        if st.button("Save Department Colors"):
-            save_department_colors(new_colors)
-            st.success("Department colors updated")
-
-    # Gantt Chart Colors Section
-    with st.expander("Gantt Chart Colors", expanded=False):
-        colors = load_gantt_chart_colors()
-
-        st.markdown("**Project Colors by Priority**")
-        priority_colors = {}
-        for priority in range(1, 6):
-            priority_colors[priority] = st.color_picker(
-                f"Priority {priority}",
-                value=colors.get(
-                    f"priority_{priority}",
-                    "#" + "".join([f"{random.randint(0, 255):02x}" for _ in range(3)]),
-                ),
-            )
-
-        if st.button("Save Chart Colors"):
-            # Convert the priority colors to the expected format
-            colors_dict = {f"priority_{p}": c for p, c in priority_colors.items()}
-            save_gantt_chart_colors(colors_dict)
-            st.success("Chart colors updated")
-
-    # Matrix View Colors Section - FIXED FORM IMPLEMENTATION
-    with st.expander("Matrix View Colors", expanded=False):
-        heatmap_colorscale = load_heatmap_colorscale()
-
-        # Single form for matrix colors
-        with st.form(key="matrix_color_form"):
-            st.markdown("**Matrix View Color Configuration**")
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                low_color = st.color_picker(
-                    "No Allocation (0%)",
-                    value=heatmap_colorscale[0][1]
-                    if len(heatmap_colorscale) > 0
-                    else "#f0f2f6",
-                )
-
-            with col2:
-                medium_color = st.color_picker(
-                    "Medium Allocation (50%)",
-                    value=heatmap_colorscale[1][1]
-                    if len(heatmap_colorscale) > 1
-                    else "#ffd700",
-                )
-
-            with col3:
-                high_color = st.color_picker(
-                    "Full Allocation (100%+)",
-                    value=heatmap_colorscale[2][1]
-                    if len(heatmap_colorscale) > 2
-                    else "#4b0082",
-                )
-
-            # Submit button within the form
-            submit = st.form_submit_button("Save Matrix Colors")
-
-        # Process form submission outside the form
-        if submit:
-            new_colorscale = [[0.0, low_color], [0.5, medium_color], [1.0, high_color]]
-            save_heatmap_colorscale(new_colorscale)
-            st.success("Matrix view colors updated")
+    """Display color settings UI in Streamlit."""
+    # This function has been moved to app/ui/settings.py
+    st.warning("This function has been relocated to app/ui/settings.py")
 
 
-def save_gantt_chart_colors(colors_dict):
-    """Save Gantt chart colors to settings."""
+def save_gantt_chart_colors(colors_dict: Dict[str, str]):
+    """
+    Save Gantt chart colors.
+
+    Args:
+        colors_dict: Dictionary mapping chart elements to colors
+    """
     settings = load_settings()
     settings["gantt_chart_colors"] = colors_dict
     save_settings(settings)
 
 
-def save_department_colors(colors_dict):
-    """Save department colors to settings."""
+def save_department_colors(colors_dict: Dict[str, str]):
+    """
+    Save department colors.
+
+    Args:
+        colors_dict: Dictionary mapping departments to colors
+    """
     settings = load_settings()
     settings["department_colors"] = colors_dict
     save_settings(settings)
 
 
 def load_heatmap_colorscale():
-    """Load heatmap colorscale from settings"""
-    settings = load_settings()
-    return settings.get(
-        "heatmap_colorscale",
-        [
-            (0.0, "#f0f2f6"),  # No allocation
-            (0.5, "#ffd700"),  # Moderate allocation
-            (1.0, "#4b0082"),  # Full/over allocation
-        ],
-    )
+    """
+    Load heatmap colorscale.
+
+    Returns:
+        Colorscale for heatmap
+    """
+    return load_utilization_colorscale()
 
 
-def save_heatmap_colorscale(colorscale):
-    """Save heatmap colorscale to settings"""
-    settings = load_settings()
-    settings["heatmap_colorscale"] = colorscale
-    save_settings(settings)
+def save_heatmap_colorscale(colorscale: List[List[Any]]):
+    """
+    Save heatmap colorscale.
+
+    Args:
+        colorscale: Colorscale for heatmap
+    """
+    save_utilization_colorscale(colorscale)
 
 
 def load_gantt_chart_colors():
-    """Load Gantt chart colors from settings."""
+    """
+    Load Gantt chart colors.
+
+    Returns:
+        Dictionary mapping chart elements to colors
+    """
     settings = load_settings()
     return settings.get("gantt_chart_colors", {})
 
 
 def load_department_colors():
-    """Load department colors from settings."""
+    """
+    Load department colors.
+
+    Returns:
+        Dictionary mapping departments to colors
+    """
     settings = load_settings()
     return settings.get("department_colors", {})
 
 
 def load_work_schedule_settings():
-    """Load default work schedule settings from the settings file."""
+    """
+    Load default work schedule settings.
+
+    Returns:
+        Dictionary with work_days and work_hours
+    """
     settings = load_settings()
     return settings.get(
         "work_schedule",
@@ -347,28 +363,48 @@ def load_work_schedule_settings():
     )
 
 
-def save_work_schedule_settings(work_schedule):
-    """Save default work schedule settings to the settings file."""
+def save_work_schedule_settings(work_schedule: Dict[str, Any]):
+    """
+    Save default work schedule settings.
+
+    Args:
+        work_schedule: Dictionary with work_days and work_hours
+    """
     settings = load_settings()
     settings["work_schedule"] = work_schedule
     save_settings(settings)
 
 
 def load_utilization_thresholds():
-    """Load utilization threshold settings from the settings file."""
+    """
+    Load utilization threshold settings.
+
+    Returns:
+        Dictionary with under and over threshold values
+    """
     settings = load_settings()
     return settings.get("utilization_thresholds", {"under": 50, "over": 100})
 
 
-def save_utilization_thresholds(thresholds):
-    """Save utilization threshold settings to the settings file."""
+def save_utilization_thresholds(thresholds: Dict[str, int]):
+    """
+    Save utilization threshold settings.
+
+    Args:
+        thresholds: Dictionary with under and over threshold values
+    """
     settings = load_settings()
     settings["utilization_thresholds"] = thresholds
     save_settings(settings)
 
 
 def load_display_preferences():
-    """Load display preference settings from the settings file."""
+    """
+    Load display preferences settings.
+
+    Returns:
+        Dictionary with display preferences
+    """
     settings = load_settings()
     return settings.get(
         "display_preferences",
@@ -376,21 +412,13 @@ def load_display_preferences():
     )
 
 
-def save_display_preferences(preferences):
-    """Save display preference settings to the settings file."""
+def save_display_preferences(preferences: Dict[str, Any]):
+    """
+    Save display preferences settings.
+
+    Args:
+        preferences: Dictionary with display preferences
+    """
     settings = load_settings()
     settings["display_preferences"] = preferences
-    save_settings(settings)
-
-
-def load_date_range_settings():
-    """Load default date range settings from the settings file."""
-    settings = load_settings()
-    return settings.get("date_ranges", {"short": 30, "medium": 90, "long": 180})
-
-
-def save_date_range_settings(date_ranges):
-    """Save default date range settings to the settings file."""
-    settings = load_settings()
-    settings["date_ranges"] = date_ranges
     save_settings(settings)

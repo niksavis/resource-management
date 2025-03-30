@@ -1,476 +1,313 @@
+"""
+Project CRUD operations module.
+
+This module provides functions for creating, reading, updating, and deleting projects.
+"""
+
 import streamlit as st
 import pandas as pd
-from validation import validate_project_input
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional, Tuple
+from validation import validate_name_field, validate_date_range, validate_project_input
 from configuration import load_currency_settings
-from utils import confirm_action
-
-
-def search_filter_projects():
-    with st.expander("Search, Sort and Filter Projects", expanded=False):
-        # First row: Search, Sort, and Date Range
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.session_state.project_search = st.text_input(
-                "Search Projects",
-                value=st.session_state.get("project_search", ""),
-                key="project_search",
-            )
-
-        with col2:
-            sort_options = ["Name", "Start Date", "End Date", "Priority", "Budget"]
-            default_sort = "Name"
-            st.session_state.project_sort_by = st.selectbox(
-                "Sort by",
-                options=sort_options,
-                index=sort_options.index(default_sort),
-                key="project_sort_by",
-            )
-            st.session_state.project_sort_ascending = st.checkbox(
-                "Ascending",
-                value=st.session_state.get("project_sort_ascending", True),
-                key="project_sort_ascending",
-            )
-
-        with col3:
-            st.write("Filter by Date Range")
-            date_col1, date_col2 = st.columns(2)
-            with date_col1:
-                st.session_state.project_date_filter_start = st.date_input(
-                    "From",
-                    value=st.session_state.get(
-                        "project_date_filter_start", pd.to_datetime("today")
-                    ),
-                    key="project_date_filter_start",
-                )
-            with date_col2:
-                st.session_state.project_date_filter_end = st.date_input(
-                    "To",
-                    value=st.session_state.get(
-                        "project_date_filter_end",
-                        pd.to_datetime("today") + pd.Timedelta(days=90),
-                    ),
-                    key="project_date_filter_end",
-                )
-
-        # Second row: Resource filters
-        col4, col5, col6 = st.columns(3)
-
-        with col4:
-            people_options = [p["name"] for p in st.session_state.data["people"]]
-            st.session_state.project_people_filter = st.multiselect(
-                "Filter by Assigned People",
-                people_options,
-                default=st.session_state.get("project_people_filter", []),
-                key="project_people_filter",
-            )
-
-        with col5:
-            team_options = [t["name"] for t in st.session_state.data["teams"]]
-            st.session_state.project_team_filter = st.multiselect(
-                "Filter by Assigned Team",
-                team_options,
-                default=st.session_state.get("project_team_filter", []),
-                key="project_team_filter",
-            )
-
-        with col6:
-            # Get unique departments from people data
-            department_options = [
-                d["name"] for d in st.session_state.data["departments"]
-            ]
-            st.session_state.project_department_filter = st.multiselect(
-                "Filter by Assigned Department",
-                department_options,
-                default=st.session_state.get("project_department_filter", []),
-                key="project_department_filter",
-            )
-
-        # Apply button for filters that will trigger a rerun to apply the filters
-        if st.button("Apply Filters", key="apply_project_filters"):
-            st.session_state.project_filters_applied = True
-            st.rerun()
 
 
 def add_project_form():
-    with st.expander("Add Project", expanded=False):  # Set expanded=False
-        # Initialize session state for resources and allocations
-        if "new_project_resources" not in st.session_state:
-            st.session_state.new_project_resources = []
-        if "new_project_allocations" not in st.session_state:
-            st.session_state.new_project_allocations = {}
-
-        # Function to update resource allocations dynamically
-        def update_new_project_allocations():
-            for resource in st.session_state.new_project_resources:
-                if resource not in st.session_state.new_project_allocations:
-                    st.session_state.new_project_allocations[resource] = {
-                        "allocation_percentage": 100,
-                        "start_date": st.session_state.get("add_project_start_date"),
-                        "end_date": st.session_state.get("add_project_end_date"),
-                    }
-            # Remove allocations for unselected resources
-            for resource in list(st.session_state.new_project_allocations.keys()):
-                if resource not in st.session_state.new_project_resources:
-                    del st.session_state.new_project_allocations[resource]
-
-        # Group project details in a single row
-        st.markdown("### Project Details")
-        col1, col2 = st.columns(2)
-        with col1:
+    """Display form for adding a new project."""
+    with st.expander("Add New Project", expanded=False):
+        with st.form("add_project_form"):
+            # Basic project information
             name = st.text_input("Project Name")
-        with col2:
-            currency, _ = load_currency_settings()
-            budget = st.number_input(f"Budget ({currency})", min_value=0.0, step=1000.0)
 
-        # Group date inputs in another row
-        st.markdown("### Project Timeline")
-        col3, col4 = st.columns(2)
-        with col3:
-            start_date = st.date_input(
-                "Start Date",
-                key="add_project_start_date",
-            )
-        with col4:
-            end_date = st.date_input(
-                "End Date",
-                key="add_project_end_date",
-            )
-
-        # Assigned resources section
-        st.markdown("### Assigned Resources")
-        selected_resources = st.multiselect(
-            "Select Resources",
-            options=[
-                *[p["name"] for p in st.session_state.data["people"]],
-                *[t["name"] for t in st.session_state.data["teams"]],
-            ],
-            default=st.session_state.new_project_resources,
-            key="add_assigned_resources",
-        )
-
-        # Update session state for assigned resources and allocations
-        if selected_resources != st.session_state.new_project_resources:
-            st.session_state.new_project_resources = selected_resources
-            update_new_project_allocations()
-            st.rerun()  # Force rerun to immediately reflect changes
-
-        # Resource allocation section
-        st.markdown("### Resource Allocation")
-        resource_allocations = []
-        for resource in st.session_state.new_project_resources:
-            st.markdown(f"**{resource}**")
-            col1, col2, col3 = st.columns([2, 1, 1])
+            col1, col2 = st.columns(2)
             with col1:
-                allocation_percentage = st.slider(
-                    f"Allocation % for {resource}",
-                    min_value=10,
-                    max_value=100,
-                    value=st.session_state.new_project_allocations[resource][
-                        "allocation_percentage"
-                    ],
-                    step=10,
-                    key=f"add_alloc_{resource}",
-                )
+                start_date = st.date_input("Start Date", value=datetime.now().date())
             with col2:
-                resource_start_date = st.date_input(
-                    f"Start Date for {resource}",
-                    value=st.session_state.new_project_allocations[resource][
-                        "start_date"
-                    ],
-                    min_value=start_date,
-                    max_value=end_date,
-                    key=f"add_start_{resource}",
-                )
-            with col3:
-                resource_end_date = st.date_input(
-                    f"End Date for {resource}",
-                    value=st.session_state.new_project_allocations[resource][
-                        "end_date"
-                    ],
-                    min_value=start_date,
-                    max_value=end_date,
-                    key=f"add_end_{resource}",
+                end_date = st.date_input(
+                    "End Date", value=(datetime.now() + timedelta(days=30)).date()
                 )
 
-            # Update session state with the latest values
-            st.session_state.new_project_allocations[resource] = {
-                "allocation_percentage": allocation_percentage,
-                "start_date": resource_start_date,
-                "end_date": resource_end_date,
-            }
-
-            resource_allocations.append(
-                {
-                    "resource": resource,
-                    "allocation_percentage": allocation_percentage,
-                    "start_date": resource_start_date.strftime("%Y-%m-%d"),
-                    "end_date": resource_end_date.strftime("%Y-%m-%d"),
-                }
+            # Priority
+            priority = st.slider(
+                "Priority", min_value=1, max_value=5, value=3, help="1 = Low, 5 = High"
             )
 
-        # Submit button (no form wrapper)
-        if st.button("Add Project", key="add_project_button"):
-            # Ensure dates are converted to pd.Timestamp
-            start_date = pd.to_datetime(start_date)
-            end_date = pd.to_datetime(end_date)
-
-            # Pass all fields as a dictionary to match validate_project_input's expected input
-            project_data = {
-                "name": name,
-                "start_date": start_date,
-                "end_date": end_date,
-                "budget": budget,
-            }
-            if not validate_project_input(project_data):
-                st.error("Invalid project details. Please try again.")
-                return
-
-            # Assign the lowest priority (highest number)
-            new_priority = (
-                max(
-                    [p["priority"] for p in st.session_state.data["projects"]],
-                    default=0,
-                )
-                + 1
+            # Budget
+            currency, _ = load_currency_settings()
+            allocated_budget = st.number_input(
+                f"Allocated Budget ({currency})", min_value=0.0, step=1000.0
             )
 
-            st.session_state.data["projects"].append(
-                {
+            # Resource assignment
+            st.write("**Resource Assignment**")
+
+            # Initialize session state for resource selection
+            if "new_project_people" not in st.session_state:
+                st.session_state.new_project_people = []
+
+            if "new_project_teams" not in st.session_state:
+                st.session_state.new_project_teams = []
+
+            # Tabs for different resource types
+            resource_tabs = st.tabs(["People", "Teams", "Departments"])
+
+            with resource_tabs[0]:
+                # Get all people
+                people = [p["name"] for p in st.session_state.data["people"]]
+                selected_people = st.multiselect(
+                    "Select People",
+                    options=people,
+                    default=st.session_state.new_project_people,
+                )
+                st.session_state.new_project_people = selected_people
+
+            with resource_tabs[1]:
+                # Get all teams
+                teams = [t["name"] for t in st.session_state.data["teams"]]
+                selected_teams = st.multiselect(
+                    "Select Teams",
+                    options=teams,
+                    default=st.session_state.new_project_teams,
+                )
+                st.session_state.new_project_teams = selected_teams
+
+            with resource_tabs[2]:
+                # Get all departments
+                departments = [d["name"] for d in st.session_state.data["departments"]]
+                selected_departments = st.multiselect(
+                    "Select Departments", options=departments
+                )
+
+            # Project description
+            description = st.text_area("Project Description")
+
+            submitted = st.form_submit_button("Add Project")
+
+            if submitted:
+                # Validate project inputs
+                if not validate_name_field(name, "project"):
+                    st.error("Invalid project name. Please try again.")
+                    return
+
+                if not validate_date_range(start_date, end_date):
+                    st.error("End date must be after or equal to start date.")
+                    return
+
+                # Check if project name is unique
+                if any(p["name"] == name for p in st.session_state.data["projects"]):
+                    st.error(f"Project '{name}' already exists.")
+                    return
+
+                # Combine all selected resources
+                all_resources = selected_people + selected_teams + selected_departments
+
+                if not all_resources:
+                    st.warning("No resources assigned to project. Are you sure?")
+
+                # Create project object
+                project = {
                     "name": name,
-                    "start_date": start_date.strftime("%Y-%m-%d"),
-                    "end_date": end_date.strftime("%Y-%m-%d"),
-                    "priority": new_priority,
-                    "assigned_resources": st.session_state.new_project_resources,
-                    "allocated_budget": budget,
-                    "resource_allocations": resource_allocations,
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat(),
+                    "priority": priority,
+                    "assigned_resources": all_resources,
+                    "description": description,
+                    "allocated_budget": allocated_budget,
                 }
-            )
-            st.success(
-                f"Project '{name}' added successfully with priority {new_priority}."
-            )
-            st.rerun()
+
+                # Add project to session state
+                st.session_state.data["projects"].append(project)
+
+                # Reset resource selection
+                st.session_state.new_project_people = []
+                st.session_state.new_project_teams = []
+
+                st.success(f"Project '{name}' added successfully.")
+                st.rerun()
 
 
 def edit_project_form():
-    with st.expander("Edit Project", expanded=False):  # Set expanded=False
-        if not st.session_state.data["projects"]:
-            st.info("No projects available to edit.")
-            return
+    """Display form for editing a project."""
+    if not st.session_state.data["projects"]:
+        return
 
+    with st.expander("Edit Project", expanded=False):
+        # Project selection
         project_names = [p["name"] for p in st.session_state.data["projects"]]
-        selected_project = st.selectbox(
-            "Select Project to Edit",
-            project_names,
-            key="selected_project",
-            on_change=lambda: reset_edit_project_state(),
+        selected_project_name = st.selectbox(
+            "Select Project to Edit", options=project_names, key="edit_project_select"
         )
 
+        # Get the selected project
         project = next(
             (
                 p
                 for p in st.session_state.data["projects"]
-                if p["name"] == selected_project
+                if p["name"] == selected_project_name
             ),
             None,
         )
 
-        if project:
-            # Initialize session state for dynamic resource rows
-            if "selected_resources" not in st.session_state:
-                st.session_state.selected_resources = project["assigned_resources"]
+        if not project:
+            st.info("Please select a project to edit.")
+            return
 
-            # Callback to update selected resources dynamically
-            def update_selected_resources():
-                st.session_state.selected_resources = (
-                    st.session_state.edit_assigned_resources
-                )
+        # Initialize edit form state if needed
+        if (
+            "last_edited_project" not in st.session_state
+            or st.session_state.last_edited_project != selected_project_name
+            or not st.session_state.get("edit_form_initialized", False)
+        ):
+            st.session_state.last_edited_project = selected_project_name
 
-            # Group project details in a single row
-            st.markdown("### Project Details")
+            # Parse assigned resources
+            assigned_resources = project.get("assigned_resources", [])
+
+            # Determine resource types (simplified approach)
+            people = [p["name"] for p in st.session_state.data["people"]]
+            teams = [t["name"] for t in st.session_state.data["teams"]]
+            departments = [d["name"] for d in st.session_state.data["departments"]]
+
+            project_people = [r for r in assigned_resources if r in people]
+            project_teams = [r for r in assigned_resources if r in teams]
+            project_departments = [r for r in assigned_resources if r in departments]
+
+            st.session_state.edit_project_people = project_people
+            st.session_state.edit_project_teams = project_teams
+            st.session_state.edit_project_departments = project_departments
+            st.session_state.edit_form_initialized = True
+
+        with st.form("edit_project_form"):
+            # Basic project information
+            name = st.text_input("Project Name", value=project["name"])
+
             col1, col2 = st.columns(2)
             with col1:
-                name = st.text_input(
-                    "Project Name", value=project["name"], key="edit_name"
+                start_date = st.date_input(
+                    "Start Date", value=pd.to_datetime(project["start_date"]).date()
                 )
             with col2:
-                currency, _ = load_currency_settings()
-                budget = st.number_input(
-                    f"Budget ({currency})",
-                    min_value=0.0,
-                    step=1000.0,
-                    value=project["allocated_budget"],
-                    key="edit_budget",
+                end_date = st.date_input(
+                    "End Date", value=pd.to_datetime(project["end_date"]).date()
                 )
 
-            # Group date inputs in another row
-            st.markdown("### Project Timeline")
-            col3, col4 = st.columns(2)
-            with col3:
-                start_date = st.date_input(
-                    "Start Date",
-                    value=pd.to_datetime(project["start_date"]),
-                    min_value=pd.to_datetime(project["start_date"]),
-                    max_value=pd.to_datetime(project["end_date"]),
-                    key="edit_start_date",
-                )
-            with col4:
-                end_date = st.date_input(
-                    "End Date",
-                    value=pd.to_datetime(project["end_date"]),
-                    min_value=pd.to_datetime(project["start_date"]),
-                    max_value=pd.to_datetime(project["end_date"]),
-                    key="edit_end_date",
-                )
-            # Priority input
-            st.markdown("### Project Priority")
-            priority = st.number_input(
+            # Priority
+            priority = st.slider(
                 "Priority",
                 min_value=1,
-                step=1,
+                max_value=5,
                 value=project["priority"],
-                key="edit_priority",
+                help="1 = Low, 5 = High",
             )
 
-            # Assigned resources section
-            st.markdown("### Assigned Resources")
-            st.multiselect(
-                "Select Resources",
-                options=[
-                    *[p["name"] for p in st.session_state.data["people"]],
-                    *[t["name"] for t in st.session_state.data["teams"]],
-                ],
-                default=st.session_state.selected_resources,
-                key="edit_assigned_resources",
-                on_change=update_selected_resources,  # Trigger callback on change
+            # Budget
+            currency, _ = load_currency_settings()
+            allocated_budget = st.number_input(
+                f"Allocated Budget ({currency})",
+                min_value=0.0,
+                value=float(project.get("allocated_budget", 0)),
+                step=1000.0,
             )
 
-            # Resource allocation section
-            st.markdown("### Resource Allocation")
-            edited_resource_allocations = []
-            for resource in st.session_state.selected_resources:
-                st.markdown(f"**{resource}**")
+            # Resource assignment
+            st.write("**Resource Assignment**")
 
-                # Validate and adjust resource allocation dates
-                resource_allocation = next(
-                    (
-                        alloc
-                        for alloc in project["resource_allocations"]
-                        if alloc["resource"] == resource
-                    ),
-                    None,
+            # Tabs for different resource types
+            resource_tabs = st.tabs(["People", "Teams", "Departments"])
+
+            with resource_tabs[0]:
+                # Get all people
+                people = [p["name"] for p in st.session_state.data["people"]]
+                selected_people = st.multiselect(
+                    "Select People",
+                    options=people,
+                    default=st.session_state.edit_project_people,
                 )
-                if resource_allocation:
-                    resource_start_date = pd.to_datetime(
-                        resource_allocation["start_date"]
-                    )
-                    resource_end_date = pd.to_datetime(resource_allocation["end_date"])
+                st.session_state.edit_project_people = selected_people
 
-                    # Adjust dates to fit within project bounds
-                    resource_start_date = max(
-                        resource_start_date, pd.to_datetime(project["start_date"])
-                    )
-                    resource_end_date = min(
-                        resource_end_date, pd.to_datetime(project["end_date"])
-                    )
-                else:
-                    # Default to project start and end dates if no allocation exists
-                    resource_start_date = pd.to_datetime(project["start_date"])
-                    resource_end_date = pd.to_datetime(project["end_date"])
-
-                col1, col2, col3 = st.columns([2, 1, 1])
-                with col1:
-                    allocation_percentage = st.slider(
-                        f"Allocation % for {resource}",
-                        min_value=10,
-                        max_value=100,
-                        value=st.session_state.get(
-                            f"edit_alloc_{resource}", 100
-                        ),  # Use session state to persist values
-                        step=10,
-                        key=f"edit_alloc_{resource}",
-                    )
-                with col2:
-                    resource_start_date = st.date_input(
-                        f"Start Date for {resource}",
-                        value=resource_start_date,
-                        min_value=pd.to_datetime(project["start_date"]),
-                        max_value=pd.to_datetime(project["end_date"]),
-                        key=f"edit_start_{resource}",
-                    )
-                with col3:
-                    resource_end_date = st.date_input(
-                        f"End Date for {resource}",
-                        value=resource_end_date,
-                        min_value=pd.to_datetime(project["start_date"]),
-                        max_value=pd.to_datetime(project["end_date"]),
-                        key=f"edit_end_{resource}",
-                    )
-
-                edited_resource_allocations.append(
-                    {
-                        "resource": resource,
-                        "allocation_percentage": allocation_percentage,
-                        "start_date": resource_start_date.strftime("%Y-%m-%d"),
-                        "end_date": resource_end_date.strftime("%Y-%m-%d"),
-                    }
+            with resource_tabs[1]:
+                # Get all teams
+                teams = [t["name"] for t in st.session_state.data["teams"]]
+                selected_teams = st.multiselect(
+                    "Select Teams",
+                    options=teams,
+                    default=st.session_state.edit_project_teams,
                 )
+                st.session_state.edit_project_teams = selected_teams
 
-            # Submit button
-            if st.button("Update Project", key="update_project"):
-                # Ensure dates are converted to pd.Timestamp
-                start_date = pd.to_datetime(start_date)
-                end_date = pd.to_datetime(end_date)
+            with resource_tabs[2]:
+                # Get all departments
+                departments = [d["name"] for d in st.session_state.data["departments"]]
+                # Use the persisted value if it exists
+                default_deps = getattr(st.session_state, "edit_project_departments", [])
+                selected_departments = st.multiselect(
+                    "Select Departments", options=departments, default=default_deps
+                )
+                # Store the value for persistence
+                st.session_state.edit_project_departments = selected_departments
 
-                # Pass all fields as a dictionary to match validate_project_input's expected input
-                project_data = {
-                    "name": name,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "budget": budget,
-                }
-                if not validate_project_input(project_data):
-                    st.error("Invalid project details. Please try again.")
+            # Project description
+            description = st.text_area(
+                "Project Description", value=project.get("description", "")
+            )
+
+            submit_update = st.form_submit_button("Update Project")
+
+            if submit_update:
+                # Validate project inputs
+                if not validate_name_field(name, "project"):
+                    st.error("Invalid project name. Please try again.")
                     return
 
-                # Check for duplicate priorities
-                duplicate_projects = [
-                    p
-                    for p in st.session_state.data["projects"]
-                    if p["priority"] == priority and p["name"] != project["name"]
-                ]
-                if duplicate_projects:
-                    with st.expander("⚠️ Duplicate Priority Detected", expanded=True):
-                        st.warning(
-                            f"The priority {priority} is already assigned to the following projects:"
-                        )
-                        for p in duplicate_projects:
-                            st.write(
-                                f"- {p['name']} (Start: {p['start_date']}, End: {p['end_date']})"
-                            )
-                        st.info("Please assign a unique priority to each project.")
+                if not validate_date_range(start_date, end_date):
+                    st.error("End date must be after or equal to start date.")
                     return
 
-                # Update project details
-                project.update(
-                    {
-                        "name": name,
-                        "start_date": start_date.strftime("%Y-%m-%d"),
-                        "end_date": end_date.strftime("%Y-%m-%d"),
-                        "allocated_budget": budget,
-                        "assigned_resources": st.session_state.selected_resources,
-                        "priority": priority,
-                        "resource_allocations": edited_resource_allocations,
-                    }
-                )
+                # Check for name conflicts
+                if name != project["name"] and any(
+                    p["name"] == name for p in st.session_state.data["projects"]
+                ):
+                    st.error(f"Project '{name}' already exists.")
+                    return
+
+                # Combine all selected resources
+                all_resources = selected_people + selected_teams + selected_departments
+
+                if not all_resources:
+                    st.warning("No resources assigned to project. Are you sure?")
+
+                # Update project
+                project["name"] = name
+                project["start_date"] = start_date.isoformat()
+                project["end_date"] = end_date.isoformat()
+                project["priority"] = priority
+                project["assigned_resources"] = all_resources
+                project["description"] = description
+                project["allocated_budget"] = allocated_budget
+
                 st.success(f"Project '{name}' updated successfully.")
                 st.rerun()
 
 
-def reset_edit_project_state():
-    """Reset session state variables for editing a project."""
-    selected_project = st.session_state.get("selected_project")
-    if selected_project:
+def delete_project_form():
+    """Display form for deleting a project."""
+    if not st.session_state.data["projects"]:
+        return
+
+    with st.expander("Delete Project", expanded=False):
+        # Project selection
+        project_names = [p["name"] for p in st.session_state.data["projects"]]
+        selected_project = st.selectbox(
+            "Select Project to Delete",
+            options=[""] + project_names,
+            key="delete_project_select",
+        )
+
+        if not selected_project:
+            st.info("Please select a project to delete.")
+            return
+
+        # Find project details for confirmation
         project = next(
             (
                 p
@@ -479,58 +316,24 @@ def reset_edit_project_state():
             ),
             None,
         )
+
         if project:
-            st.session_state.selected_resources = project["assigned_resources"]
-            # Reset other session state variables related to resource allocation
-            for resource in project["assigned_resources"]:
-                st.session_state[f"edit_alloc_{resource}"] = next(
-                    (
-                        alloc["allocation_percentage"]
-                        for alloc in project["resource_allocations"]
-                        if alloc["resource"] == resource
-                    ),
-                    100,
-                )
-                st.session_state[f"edit_start_{resource}"] = pd.to_datetime(
-                    next(
-                        (
-                            alloc["start_date"]
-                            for alloc in project["resource_allocations"]
-                            if alloc["resource"] == resource
-                        ),
-                        project["start_date"],
-                    )
-                )
-                st.session_state[f"edit_end_{resource}"] = pd.to_datetime(
-                    next(
-                        (
-                            alloc["end_date"]
-                            for alloc in project["resource_allocations"]
-                            if alloc["resource"] == resource
-                        ),
-                        project["end_date"],
-                    )
-                )
+            # Display project details for confirmation
+            st.write(f"**Project:** {project['name']}")
+            st.write(f"**Duration:** {project['start_date']} to {project['end_date']}")
+            st.write(f"**Priority:** {project['priority']}")
+            st.write(f"**Resources:** {len(project.get('assigned_resources', []))}")
 
+            # Confirmation mechanism
+            from utils import confirm_action
 
-def delete_project_form():
-    with st.expander("Delete Project", expanded=False):  # Set expanded=False
-        if not st.session_state.data["projects"]:
-            st.info("No projects available to delete.")
-            return
+            if confirm_action(f"deleting project {selected_project}", "delete_project"):
+                # Remove project
+                st.session_state.data["projects"] = [
+                    p
+                    for p in st.session_state.data["projects"]
+                    if p["name"] != selected_project
+                ]
 
-        delete_project = st.selectbox(
-            "Select project to Delete",
-            [p["name"] for p in st.session_state.data["projects"]],
-            key="delete_project",
-        )
-
-        if confirm_action(f"deleting project {delete_project}", "delete_project"):
-            st.session_state.data["projects"] = [
-                p
-                for p in st.session_state.data["projects"]
-                if p["name"] != delete_project
-            ]
-
-            st.success(f"Deleted project {delete_project}")
-            st.rerun()
+                st.success(f"Project '{selected_project}' deleted successfully.")
+                st.rerun()
