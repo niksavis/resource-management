@@ -5,6 +5,7 @@ This module provides form components for creating, reading, updating, and deleti
 """
 
 import streamlit as st
+import pandas as pd
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from app.services.validation_service import validate_project

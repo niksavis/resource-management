@@ -18,6 +18,7 @@ from app.services.config_service import (
     load_department_colors,
     load_utilization_thresholds,
     load_heatmap_colorscale,
+    load_date_range_settings,  # Added missing import
 )
 
 from app.ui.visualizations import (
@@ -349,3 +350,292 @@ def display_resource_calendar_tab():
         st.warning("No data matches your filter criteria. Try adjusting the filters.")
     else:
         display_resource_calendar(filtered_data, start_date, end_date)
+
+
+def display_resource_matrix_view(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display resource data in a matrix visualization.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    st.subheader("Resource Matrix View")
+
+    if filtered_data.empty:
+        st.info("No data to display with current filters.")
+        return
+
+    # Create a Gantt chart using Plotly
+    fig = px.timeline(
+        filtered_data,
+        x_start="Start",
+        x_end="End",
+        y="Resource",
+        color="Project",
+        hover_name="Project",
+        hover_data=["Allocation %"],
+        title="Resource Allocation Timeline",
+        labels={"Resource": "Resource", "Project": "Project"},
+    )
+
+    # Add today's line
+    today = pd.Timestamp.now()
+    if start_date <= today <= end_date:
+        fig.add_vline(x=today, line_width=2, line_color="red", line_dash="dash")
+        fig.add_annotation(x=today, y=1.0, yref="paper", text="Today", showarrow=False)
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _display_resource_conflicts(filtered_data: pd.DataFrame) -> None:
+    """
+    Display resource conflicts (overallocations).
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+    """
+    from data_handlers import find_resource_conflicts
+
+    st.subheader("Resource Conflicts")
+    conflicts = find_resource_conflicts(filtered_data)
+
+    if conflicts.empty:
+        st.success("No resource conflicts detected in the selected date range.")
+        return
+
+    # Group conflicts by resource
+    resources = conflicts["Resource"].unique()
+    for resource in resources:
+        resource_conflicts = conflicts[conflicts["Resource"] == resource]
+
+        with st.expander(f"⚠️ {resource} ({len(resource_conflicts)} overallocations)"):
+            dates = resource_conflicts["Date"].dt.strftime("%Y-%m-%d").tolist()
+            allocations = resource_conflicts["Allocation"].tolist()
+            projects = resource_conflicts["Projects"].tolist()
+
+            # Create a simple table with the conflicts
+            conflict_data = pd.DataFrame(
+                {
+                    "Date": dates,
+                    "Allocation %": allocations,
+                    "Conflicting Projects": projects,
+                }
+            )
+
+            st.dataframe(conflict_data, use_container_width=True)
+
+
+def display_utilization_dashboard(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display the utilization dashboard with various charts.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    from data_handlers import calculate_resource_utilization
+
+    st.subheader("Utilization Dashboard")
+
+    # Calculate utilization metrics
+    utilization_df = calculate_resource_utilization(filtered_data)
+
+    if utilization_df.empty:
+        st.info("No utilization data available with current filters.")
+        return
+
+    # Display utilization metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        avg_util = utilization_df["Utilization %"].mean()
+        st.metric("Average Utilization", f"{avg_util:.1f}%")
+
+    with col2:
+        over_util = sum(utilization_df["Utilization %"] > 100)
+        st.metric("Overallocated Resources", over_util)
+
+    with col3:
+        under_util = sum(utilization_df["Utilization %"] < 50)
+        st.metric("Underutilized Resources", under_util)
+
+    # Display bar chart of utilization by resource
+    utilization_chart = px.bar(
+        utilization_df.sort_values("Utilization %", ascending=False),
+        x="Resource",
+        y="Utilization %",
+        color="Type",
+        title="Resource Utilization",
+        labels={"Resource": "Resource", "Utilization %": "Utilization %"},
+    )
+
+    # Add a 100% line to show full allocation
+    utilization_chart.add_hline(y=100, line_width=2, line_dash="dash", line_color="red")
+
+    st.plotly_chart(utilization_chart, use_container_width=True)
+
+
+def display_capacity_planning_dashboard(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display the capacity planning dashboard with forecast charts.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    from data_handlers import calculate_capacity_data
+
+    st.subheader("Capacity Planning Dashboard")
+
+    # Generate capacity data
+    capacity_data = calculate_capacity_data(filtered_data, start_date, end_date)
+
+    if capacity_data.empty:
+        st.info("No capacity data available with current filters.")
+        return
+
+    # Create a heatmap of resource allocations over time
+    # First, pivot the data to have resources as rows and dates as columns
+    pivot_data = capacity_data.pivot_table(
+        index="Resource", columns="Date", values="Allocation", aggfunc="sum"
+    )
+
+    # Create a heatmap using plotly
+    heatmap = px.imshow(
+        pivot_data.values,
+        labels=dict(x="Date", y="Resource", color="Allocation"),
+        x=pivot_data.columns.strftime("%Y-%m-%d"),
+        y=pivot_data.index,
+        color_continuous_scale=px.colors.sequential.Viridis,
+        title="Resource Allocation Heatmap",
+    )
+
+    st.plotly_chart(heatmap, use_container_width=True)
+
+
+def display_resource_calendar(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display a calendar view of resource allocations.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    st.subheader("Resource Calendar")
+
+    if filtered_data.empty:
+        st.info("No data available for the calendar view with current filters.")
+        return
+
+    # Select a resource to view
+    resources = filtered_data["Resource"].unique()
+    selected_resource = st.selectbox(
+        "Select Resource", options=resources, key="calendar_resource"
+    )
+
+    # Filter for the selected resource
+    resource_data = filtered_data[filtered_data["Resource"] == selected_resource]
+
+    # Display calendar with allocations
+    months = pd.date_range(start=start_date, end=end_date, freq="MS")
+
+    for month_start in months:
+        month_end = month_start + pd.offsets.MonthEnd(1)
+        month_name = month_start.strftime("%B %Y")
+
+        with st.expander(month_name, expanded=months[0] == month_start):
+            # Get days in the month
+            days_in_month = calendar.monthrange(month_start.year, month_start.month)[1]
+
+            # Create a calendar grid
+            rows = []
+            week = []
+
+            # Add empty cells for days before the 1st of the month
+            first_day_weekday = month_start.weekday()
+            for _ in range(first_day_weekday):
+                week.append("")
+
+            # Add days of the month
+            for day in range(1, days_in_month + 1):
+                date = pd.Timestamp(
+                    year=month_start.year, month=month_start.month, day=day
+                )
+
+                # Check if this date has allocations
+                day_allocations = resource_data[
+                    (resource_data["Start"] <= date) & (resource_data["End"] >= date)
+                ]
+
+                if not day_allocations.empty:
+                    # Calculate total allocation for this day
+                    total_allocation = day_allocations["Allocation %"].sum() / 100
+                    color = _get_allocation_color(total_allocation)
+
+                    projects = day_allocations["Project"].tolist()
+                    week.append(
+                        f"<div style='background-color:{color};padding:10px;'>"
+                        f"<strong>{day}</strong><br>"
+                        f"{total_allocation:.0%}<br>"
+                        f"{', '.join(projects)}"
+                        f"</div>"
+                    )
+                else:
+                    week.append(
+                        f"<div style='padding:10px;'><strong>{day}</strong></div>"
+                    )
+
+                # Start a new week after Saturday
+                if (first_day_weekday + day) % 7 == 0:
+                    rows.append(week)
+                    week = []
+
+            # Add the last week if it's not complete
+            if week:
+                # Pad with empty cells to complete the week
+                while len(week) < 7:
+                    week.append("")
+                rows.append(week)
+
+            # Display the calendar
+            calendar_html = "<table width='100%'><tr><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>"
+            for row in rows:
+                calendar_html += "<tr>"
+                for cell in row:
+                    calendar_html += f"<td style='border:1px solid #ddd;'>{cell}</td>"
+                calendar_html += "</tr>"
+            calendar_html += "</table>"
+
+            st.markdown(calendar_html, unsafe_allow_html=True)
+
+
+def _get_allocation_color(allocation: float) -> str:
+    """
+    Get a color based on allocation percentage.
+
+    Args:
+        allocation: Allocation as a decimal (0.0 to 1.0+)
+
+    Returns:
+        Hex color code
+    """
+    if allocation < 0.5:
+        return "#c6efce"  # Light green
+    elif allocation < 0.8:
+        return "#ffeb9c"  # Light yellow
+    elif allocation <= 1.0:
+        return "#ffc7ce"  # Light red
+    else:
+        return "#ff0000"  # Bright red for overallocation
