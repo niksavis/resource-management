@@ -5,78 +5,12 @@ import plotly.graph_objects as go
 import streamlit as st
 from typing import List, Tuple
 
-from configuration import manage_visualization_colors
 from data_handlers import (
     calculate_resource_utilization,
     calculate_capacity_data,
     find_resource_conflicts,
     _determine_resource_type,
 )
-
-
-def display_gantt_chart(df: pd.DataFrame, projects_to_include=None) -> None:
-    """
-    Displays an interactive Gantt chart using Plotly with optional project filtering.
-    """
-    if df.empty:
-        st.warning("No data available to visualize.")
-        return
-
-    # Prepare Gantt data with filtering support
-    df_with_utilization = _prepare_gantt_data(df, projects_to_include)
-
-    # Check if the DataFrame is empty or missing the Resource column
-    if df_with_utilization.empty or "Resource" not in df_with_utilization.columns:
-        st.warning("No data available to display after filtering.")
-        return
-
-    # Calculate utilization and overallocation
-    for resource in df_with_utilization["Resource"].unique():
-        resource_df = df_with_utilization[df_with_utilization["Resource"] == resource]
-        min_date = resource_df["Start"].min()
-        max_date = resource_df["Finish"].max()
-        total_days = (max_date - min_date).days + 1
-        utilization_percentage = (
-            resource_df["Duration (Days)"].sum() / total_days
-        ) * 100
-        df_with_utilization.loc[
-            df_with_utilization["Resource"] == resource, "Utilization %"
-        ] = min(utilization_percentage, 100)
-        df_with_utilization.loc[
-            df_with_utilization["Resource"] == resource, "Overallocation %"
-        ] = max(0, utilization_percentage - 100)
-
-    department_colors = {
-        dept: color.lower()
-        for dept, color in manage_visualization_colors(
-            df_with_utilization["Department"].unique()
-        ).items()
-    }
-
-    fig = px.timeline(
-        df_with_utilization,
-        x_start="Start",
-        x_end="Finish",
-        y="Resource",
-        color="Department",
-        hover_data=[
-            "Type",
-            "Department",
-            "Priority",
-            "Duration (Days)",
-            "Utilization %",
-            "Overallocation %",
-            "Cost",
-        ],
-        labels={"Resource": "Resource Name"},
-        height=600,
-        color_discrete_map=department_colors,
-    )
-
-    fig = _add_today_marker(fig)
-    fig = _highlight_overallocated_resources(fig, df_with_utilization)
-    st.plotly_chart(fig, use_container_width=True)
-    _display_chart_legend()
 
 
 def _prepare_gantt_data(df: pd.DataFrame, projects_to_include=None) -> pd.DataFrame:

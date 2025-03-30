@@ -213,7 +213,7 @@ def filter_dataframe(
             )
 
     with st.expander(
-        f"Search, Sort, and Filter {key.replace('_', ' ').title()}", expanded=False
+        f"Search and Filter {key.replace('_', ' ').title()}", expanded=False
     ):
         search_term = st.text_input(
             f"Search {key.replace('_', ' ').title()}", key=f"search_{unique_prefix}"
@@ -251,17 +251,6 @@ def filter_dataframe(
 
         for col, values in active_filters.items():
             df = df[df[col].isin(values)]
-
-        if not df.empty:
-            sort_options = ["None"] + list(df.columns)
-            sort_col = st.selectbox(
-                "Sort by", options=sort_options, key=f"sort_{unique_prefix}"
-            )
-            if sort_col != "None":
-                ascending = st.checkbox("Ascending", True, key=f"asc_{unique_prefix}")
-                df = df.sort_values(
-                    by=sort_col, ascending=ascending, na_position="first"
-                )
 
         df = paginate_dataframe(df, unique_prefix)  # Use unique prefix for pagination
 
@@ -632,34 +621,6 @@ def find_temporary_allocation_conflicts():
     return conflicts
 
 
-def filter_gantt_data(
-    df: pd.DataFrame,
-    start_date: pd.Timestamp,
-    end_date: pd.Timestamp,
-    resource_types: List[str],
-    utilization_threshold: float,
-) -> pd.DataFrame:
-    if df.empty:
-        return df
-
-    # Filter by date range
-    df = df[(df["Start"] <= end_date) & (df["Finish"] >= start_date)]
-
-    # Filter by resource type
-    if resource_types:
-        df = df[df["Type"].isin(resource_types)]
-
-    # Filter by utilization threshold
-    if utilization_threshold > 0:
-        resource_utilization = calculate_resource_utilization(df, start_date, end_date)
-        resources_to_keep = resource_utilization[
-            resource_utilization["Utilization %"] >= utilization_threshold
-        ]["Resource"].tolist()
-        df = df[df["Resource"].isin(resources_to_keep)]
-
-    return df
-
-
 def apply_filters(
     df: pd.DataFrame,
     filters: Dict[str, any],
@@ -677,13 +638,30 @@ def apply_filters(
     if df.empty:
         return df
 
+    # Apply search filter
+    if filters.get("search_term"):
+        search_term = filters["search_term"].lower()
+        # Create a mask for searchable text columns
+        search_columns = ["Resource", "Project", "Department", "Type"]
+        search_mask = np.column_stack(
+            [
+                df[col].astype(str).str.lower().str.contains(search_term, na=False)
+                for col in search_columns
+                if col in df.columns
+            ]
+        )
+        df = df[search_mask.any(axis=1)]
+
     # Filter by department
     if filters.get("dept_filter"):
         df = df[df["Department"].isin(filters["dept_filter"])]
 
-    # Filter by resource type
-    if filters.get("resource_type_filter"):
-        df = df[df["Type"].isin(filters["resource_type_filter"])]
+    # Filter by resource type - handle both key formats and empty selection (show all)
+    resource_types = filters.get("resource_types") or filters.get(
+        "resource_type_filter"
+    )
+    if resource_types and len(resource_types) > 0:  # Only filter if list is not empty
+        df = df[df["Type"].isin(resource_types)]
 
     # Filter by project
     if filters.get("project_filter"):
@@ -692,30 +670,33 @@ def apply_filters(
     # Filter by date range
     if "date_range" in filters and len(filters["date_range"]) == 2:
         start_date, end_date = filters["date_range"]
-        start_date = pd.to_datetime(start_date)
-        end_date = pd.to_datetime(end_date)
-        df = df[(df["Start"] <= end_date) & (df["Finish"] >= start_date)]
+        if start_date and end_date:
+            df = df[(df["Start"] <= end_date) & (df["Finish"] >= start_date)]
 
-    # Filter by utilization threshold
+    # Apply utilization threshold filter
     if filters.get("utilization_threshold", 0) > 0:
-        resource_utilization = {}
-        for resource in df["Resource"].unique():
-            resource_df = df[df["Resource"] == resource]
-            total_days = (end_date - start_date).days + 1
-            days_utilized = 0
-            for _, row in resource_df.iterrows():
-                overlap_start = max(start_date, row["Start"])
-                overlap_end = min(end_date, row["Finish"])
-                if overlap_start <= overlap_end:
-                    days_utilized += (overlap_end - overlap_start).days + 1
-            utilization_percentage = (days_utilized / total_days) * 100
-            resource_utilization[resource] = utilization_percentage
+        # Calculate utilization metrics if needed
+        if "Utilization %" not in df.columns:
+            # Get date range for utilization calculation
+            if "date_range" in filters and len(filters["date_range"]) == 2:
+                start_date, end_date = filters["date_range"]
+            else:
+                start_date, end_date = None, None
 
-        resources_to_keep = [
-            r
-            for r, u in resource_utilization.items()
-            if u >= filters["utilization_threshold"]
-        ]
-        df = df[df["Resource"].isin(resources_to_keep)]
+            # Calculate utilization metrics
+            util_df = calculate_resource_utilization(df, start_date, end_date)
+
+            # Merge utilization data back to original dataframe
+            if not util_df.empty:
+                # Keep only the Resource and utilization columns for merging
+                util_cols = ["Resource", "Utilization %", "Overallocation %"]
+                util_df = util_df[util_cols]
+
+                # Merge with original dataframe
+                df = pd.merge(df, util_df, on="Resource", how="left")
+
+        # Apply the filter if column exists
+        if "Utilization %" in df.columns:
+            df = df[df["Utilization %"] >= filters["utilization_threshold"]]
 
     return df

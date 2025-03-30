@@ -19,7 +19,6 @@ from data_handlers import (
     load_json,
     save_json,
     sort_projects_by_priority_and_date,
-    filter_gantt_data,
     apply_filters,
 )
 from person_crud_form import person_crud_form
@@ -35,7 +34,6 @@ from utils import (
 )
 from visualizations import (
     display_capacity_planning_dashboard,
-    display_gantt_chart,
     display_utilization_dashboard,
     _display_resource_conflicts,
     display_resource_calendar,
@@ -321,10 +319,10 @@ def display_consolidated_resources():
 
     st.write("### Resources Overview")
 
-    with st.expander("Search, Sort, and Filter Resources", expanded=False):
+    with st.expander("Search and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
-        col1, col2, col3 = st.columns([1, 1, 1])
+        col1, col2 = st.columns([1, 1])
         with col1:
             type_filter = st.multiselect(
                 "Filter by Type",
@@ -339,13 +337,6 @@ def display_consolidated_resources():
                 default=[],
                 key="filter_dept_all",
             )
-        with col3:
-            sort_option = st.selectbox(
-                "Sort by",
-                options=["Name", "Role", "Department", "Daily Cost"],
-                key="sort_option_all",
-            )
-            ascending = st.checkbox("Ascending", value=True, key="sort_ascending_all")
 
     if search_term:
         people = [p for p in people if search_term.lower() in str(p).lower()]
@@ -356,27 +347,6 @@ def display_consolidated_resources():
         people = [p for p in people if p["department"] in dept_filter]
         teams = [t for t in teams if t["department"] in dept_filter]
         departments = [d for d in departments if d["name"] in dept_filter]
-
-    if sort_option == "Name":
-        people.sort(key=lambda x: x["name"], reverse=not ascending)
-        teams.sort(key=lambda x: x["name"], reverse=not ascending)
-        departments.sort(key=lambda x: x["name"], reverse=not ascending)
-    elif sort_option == "Role":
-        people.sort(key=lambda x: x.get("role", ""), reverse=not ascending)
-    elif sort_option == "Department":
-        people.sort(key=lambda x: x["department"], reverse=not ascending)
-        teams.sort(key=lambda x: x["department"], reverse=not ascending)
-        departments.sort(key=lambda x: x["name"], reverse=not ascending)
-    elif sort_option == "Daily Cost":
-        people.sort(key=lambda x: x.get("daily_cost", 0), reverse=not ascending)
-        teams.sort(
-            key=lambda x: sum(
-                p["daily_cost"]
-                for p in st.session_state.data["people"]
-                if p["name"] in x.get("members", [])
-            ),
-            reverse=not ascending,
-        )
 
     view_option = st.radio("View As:", ["Cards", "Visual Map"], horizontal=True)
 
@@ -573,22 +543,12 @@ def _create_projects_dataframe():
 
 
 def _filter_projects_dataframe(projects_df):
-    with st.expander("Search, Sort and Filter Projects", expanded=False):
-        # First row: Search, Sort, and Date Filter
-        col1, col2, col3 = st.columns(3)
+    with st.expander("Search and Filter Projects", expanded=False):
+        # First row: Search and Date Filter
+        col1, col3 = st.columns([1, 1])
 
         with col1:
             search_term = st.text_input("Search Projects", key="search_projects")
-
-        with col2:
-            sort_col = st.selectbox(
-                "Sort by",
-                options=["None"] + list(projects_df.columns),
-                key="sort_projects",
-            )
-            sort_ascending = st.checkbox(
-                "Ascending", True, key="sort_ascending_projects"
-            )
 
         with col3:
             date_range = st.date_input(
@@ -674,13 +634,132 @@ def _filter_projects_dataframe(projects_df):
                 )
             ]
 
-        # Apply sorting
-        if sort_col != "None":
-            projects_df = projects_df.sort_values(by=sort_col, ascending=sort_ascending)
-
         projects_df = paginate_dataframe(projects_df, "projects")
 
     return projects_df
+
+
+def create_resource_analytics_filters(page_key):
+    """Create standardized filters for resource analytics pages."""
+    with st.expander("Search and Filter", expanded=False):
+        # First row: Search and Date Range
+        col1, col3 = st.columns([1, 1])
+
+        with col1:
+            search_term = st.text_input(
+                "Search Resources/Projects", key=f"search_{page_key}"
+            )
+
+        with col3:
+            # Date range selection with predefined options
+            date_options = {
+                "Next 30 days": (
+                    pd.to_datetime("today"),
+                    pd.to_datetime("today") + pd.Timedelta(days=30),
+                ),
+                "Next 90 days": (
+                    pd.to_datetime("today"),
+                    pd.to_datetime("today") + pd.Timedelta(days=90),
+                ),
+                "Next 180 days": (
+                    pd.to_datetime("today"),
+                    pd.to_datetime("today") + pd.Timedelta(days=180),
+                ),
+                "All time": (None, None),
+                "Custom range": (None, None),
+            }
+
+            date_selection = st.selectbox(
+                "Date Range",
+                options=list(date_options.keys()),
+                index=1,  # Default to Next 90 days
+                key=f"date_range_{page_key}",
+            )
+
+            start_date, end_date = date_options[date_selection]
+
+            # Show custom date inputs if custom range selected
+            if date_selection == "Custom range":
+                date_col1, date_col2 = st.columns(2)
+                with date_col1:
+                    start_date = pd.to_datetime(
+                        st.date_input(
+                            "From",
+                            value=pd.to_datetime("today"),
+                            key=f"start_date_{page_key}",
+                        )
+                    )
+                with date_col2:
+                    end_date = pd.to_datetime(
+                        st.date_input(
+                            "To",
+                            value=pd.to_datetime("today") + pd.Timedelta(days=90),
+                            key=f"end_date_{page_key}",
+                        )
+                    )
+            elif date_selection == "All time":
+                # Get min/max dates from projects
+                start_date = min(
+                    [
+                        pd.to_datetime(p["start_date"])
+                        for p in st.session_state.data["projects"]
+                    ]
+                )
+                end_date = max(
+                    [
+                        pd.to_datetime(p["end_date"])
+                        for p in st.session_state.data["projects"]
+                    ]
+                )
+
+        # Second row: Resource filters
+        col4, col5, col6 = st.columns(3)
+
+        with col4:
+            resource_types = st.multiselect(
+                "Resource Types",
+                options=["Person", "Team", "Department"],
+                default=[],
+                key=f"resource_types_{page_key}",
+            )
+
+        with col5:
+            dept_filter = st.multiselect(
+                "Filter by Department",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                default=[],
+                key=f"dept_filter_{page_key}",
+            )
+
+        with col6:
+            project_filter = st.multiselect(
+                "Filter by Project",
+                options=[p["name"] for p in st.session_state.data["projects"]],
+                default=[],
+                key=f"project_filter_{page_key}",
+            )
+
+        # Third row: Additional metrics filters
+        utilization_threshold = st.slider(
+            "Minimum Utilization %",
+            min_value=0,
+            max_value=100,
+            value=0,
+            step=5,
+            key=f"utilization_{page_key}",
+        )
+
+        # Assemble filters into a dictionary
+        filters = {
+            "search_term": search_term,
+            "date_range": [start_date, end_date],
+            "resource_types": resource_types,
+            "dept_filter": dept_filter,
+            "project_filter": project_filter,
+            "utilization_threshold": utilization_threshold,
+        }
+
+        return filters
 
 
 def display_visualize_data_tab():
@@ -702,8 +781,8 @@ def display_visualize_data_tab():
         )
         return
 
-    # Get current filters
-    filters = _get_visualization_filters()
+    # Get filters using the standardized filter component
+    filters = create_resource_analytics_filters("workload")
 
     # Sort projects by priority and end date
     sorted_projects = sort_projects_by_priority_and_date(
@@ -732,54 +811,6 @@ def display_visualize_data_tab():
     _display_resource_conflicts(filtered_data)
 
 
-def _get_visualization_filters():
-    """Get filters for the visualization tab."""
-    st.subheader("Filter Options")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        dept_filter = st.multiselect(
-            "Filter by Department",
-            options=[d["name"] for d in st.session_state.data["departments"]],
-            default=[],
-        )
-
-    with col2:
-        resource_type_filter = st.multiselect(
-            "Filter by Resource Type",
-            options=["Person", "Team", "Department"],
-            default=[],
-        )
-
-    with col3:
-        min_date = min(
-            [pd.to_datetime(p["start_date"]) for p in st.session_state.data["projects"]]
-        )
-        max_date = max(
-            [pd.to_datetime(p["end_date"]) for p in st.session_state.data["projects"]]
-        )
-        date_range = st.date_input(
-            "Date Range",
-            value=(min_date.date(), max_date.date()),
-            min_value=min_date.date(),
-            max_value=max_date.date(),
-        )
-
-    project_filter = st.multiselect(
-        "Filter by Project",
-        options=[p["name"] for p in st.session_state.data["projects"]],
-        default=[],
-    )
-
-    return {
-        "dept_filter": dept_filter,
-        "resource_type_filter": resource_type_filter,
-        "date_range": date_range,
-        "project_filter": project_filter,
-    }
-
-
 def display_resource_utilization_tab():
     display_action_bar()
 
@@ -799,153 +830,105 @@ def display_resource_utilization_tab():
         )
         return
 
-    # Get min/max dates from projects for the filter constraints
-    min_date = min(
-        [pd.to_datetime(p["start_date"]) for p in st.session_state.data["projects"]]
-    )
-    max_date = max(
-        [pd.to_datetime(p["end_date"]) for p in st.session_state.data["projects"]]
-    )
+    # Get filters using the standardized filter component
+    filters = create_resource_analytics_filters("performance")
 
     # Create the Gantt data
     gantt_data = create_gantt_data(
         st.session_state.data["projects"], st.session_state.data
     )
 
-    # Use the unified filter component but with project date constraints
-    with st.container():
-        st.subheader("Filter Criteria")
-        col1, col2 = st.columns(2)
-        with col1:
-            start_date = pd.to_datetime(
-                st.date_input(
-                    "From",
-                    value=min_date.date(),
-                    min_value=min_date.date(),
-                    max_value=max_date.date(),
-                )
-            )
-        with col2:
-            end_date = pd.to_datetime(
-                st.date_input(
-                    "To",
-                    value=max_date.date(),
-                    min_value=min_date.date(),
-                    max_value=max_date.date(),
-                )
-            )
-
-        resource_types = st.multiselect(
-            "Resource Types",
-            options=["Person", "Team", "Department"],
-            default=[],
-        )
-
-        utilization_threshold = st.slider(
-            "Minimum Utilization %", min_value=0, max_value=100, value=0, step=5
-        )
-
     # Apply filters
-    filters = {
-        "date_range": (start_date, end_date),
-        "resource_type_filter": resource_types,
-        "utilization_threshold": utilization_threshold,
-    }
-    gantt_data = apply_filters(gantt_data, filters)
+    filtered_data = apply_filters(gantt_data, filters)
+
+    # Extract date range
+    start_date = filters["date_range"][0]
+    end_date = filters["date_range"][1]
 
     # Display the dashboard with filtered data
-    if gantt_data.empty:
+    if filtered_data.empty:
         st.warning("No data matches your filter criteria. Try adjusting the filters.")
     else:
-        display_utilization_dashboard(gantt_data, start_date, end_date)
+        display_utilization_dashboard(filtered_data, start_date, end_date)
 
 
-def _display_filtered_gantt_chart(gantt_data, projects_to_include):
-    """Display Gantt chart with only specified projects."""
-    # Create a copy of projects for safe modification
-    original_projects = st.session_state.data["projects"].copy()
-    filtered_projects_data = [
-        p for p in original_projects if p["name"] in projects_to_include
-    ]
+def display_capacity_planning_tab():
+    display_action_bar()
+    st.subheader("Availability Forecast")
 
-    # Use a context manager pattern to safely modify session state
-    class SessionStateContext:
-        def __enter__(self):
-            st.session_state.data["_temp_original_projects"] = original_projects
-            st.session_state.data["projects"] = filtered_projects_data
+    if not st.session_state.data["projects"]:
+        st.warning("No projects found. Please add projects first.")
+        return
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            st.session_state.data["projects"] = st.session_state.data.pop(
-                "_temp_original_projects"
-            )
-
-    # Apply temporary state change safely
-    with SessionStateContext():
-        display_gantt_chart(gantt_data)
-
-
-def _display_resource_drill_down(gantt_data):
-    """Display drill-down view for resources."""
-    st.subheader("Resource Drill-Down")
-
-    if not gantt_data.empty:
-        drill_down_options = ["None"] + list(gantt_data["Resource"].unique())
-        resource_to_drill = st.selectbox(
-            "Select resource for details", options=drill_down_options
+    if not (
+        st.session_state.data["people"]
+        or st.session_state.data["teams"]
+        or st.session_state.data["departments"]
+    ):
+        st.warning(
+            "No resources found. Please add people, teams, or departments first."
         )
+        return
 
-        if resource_to_drill != "None":
-            resource_data = gantt_data[gantt_data["Resource"] == resource_to_drill]
+    # Get filters using the standardized filter component
+    filters = create_resource_analytics_filters("availability")
 
-            col1, col2 = st.columns([1, 2])
+    # Create and filter data
+    gantt_data = create_gantt_data(
+        st.session_state.data["projects"], st.session_state.data
+    )
 
-            with col1:
-                st.markdown(f"**Resource:** {resource_to_drill}")
-                st.markdown(f"**Type:** {resource_data['Type'].iloc[0]}")
-                st.markdown(f"**Department:** {resource_data['Department'].iloc[0]}")
+    # Apply filters
+    filtered_data = apply_filters(gantt_data, filters)
 
-                resource_util = calculate_resource_utilization(resource_data)
-                if not resource_util.empty:
-                    st.markdown(
-                        f"**Utilization:** {resource_util['Utilization %'].iloc[0]:.1f}%"
-                    )
-                    st.markdown(
-                        f"**Overallocation:** {resource_util['Overallocation %'].iloc[0]:.1f}%"
-                    )
-                    st.markdown(f"**Projects Assigned:** {len(resource_data)}")
+    # Extract date range
+    start_date = filters["date_range"][0]
+    end_date = filters["date_range"][1]
 
-            with col2:
-                fig = px.timeline(
-                    resource_data,
-                    x_start="Start",
-                    x_end="Finish",
-                    y="Project",
-                    color="Project",
-                    height=200,
-                )
-                fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-                st.plotly_chart(fig, use_container_width=True)
+    # Display the dashboard with filtered data
+    if filtered_data.empty:
+        st.warning("No data matches your filter criteria. Try adjusting the filters.")
+    else:
+        display_capacity_planning_dashboard(filtered_data, start_date, end_date)
 
-            st.markdown("**Project Assignments:**")
-            projects_data = resource_data.copy()
-            projects_data["Duration (Days)"] = (
-                projects_data["Finish"] - projects_data["Start"]
-            ).dt.days + 1
-            projects_data["Start"] = projects_data["Start"].dt.strftime("%Y-%m-%d")
-            projects_data["Finish"] = projects_data["Finish"].dt.strftime("%Y-%m-%d")
 
-            st.dataframe(
-                projects_data[
-                    [
-                        "Project",
-                        "Start",
-                        "Finish",
-                        "Priority",
-                        "Duration (Days)",
-                    ]
-                ],
-                use_container_width=True,
-            )
+def display_resource_calendar_tab():
+    display_action_bar()
+    st.subheader("Resource Calendar")
+
+    if not st.session_state.data["projects"]:
+        st.warning("No projects found. Please add projects first.")
+        return
+    elif not (
+        st.session_state.data["people"]
+        or st.session_state.data["teams"]
+        or st.session_state.data["departments"]
+    ):
+        st.warning(
+            "No resources found. Please add people, teams, or departments first."
+        )
+        return
+
+    # Get filters using the standardized filter component
+    filters = create_resource_analytics_filters("calendar")
+
+    # Create and filter data
+    gantt_data = create_gantt_data(
+        st.session_state.data["projects"], st.session_state.data
+    )
+
+    # Apply filters
+    filtered_data = apply_filters(gantt_data, filters)
+
+    # Extract date range
+    start_date = filters["date_range"][0]
+    end_date = filters["date_range"][1]
+
+    # Display the calendar with filtered data
+    if filtered_data.empty:
+        st.warning("No data matches your filter criteria. Try adjusting the filters.")
+    else:
+        display_resource_calendar(filtered_data, start_date, end_date)
 
 
 def display_import_export_data_tab():
@@ -1034,7 +1017,6 @@ def display_settings_tab():
 
     st.subheader("Daily Cost Settings")
     from configuration import save_daily_cost_settings
-
     from configuration import load_daily_cost_settings
 
     max_daily_cost = load_daily_cost_settings()
@@ -1273,196 +1255,6 @@ def main():
         display_resource_calendar_tab()
     else:
         display_home_tab()
-
-
-def display_resource_calendar_tab():
-    display_action_bar()
-    st.subheader("Resource Calendar")
-
-    if not st.session_state.data["projects"]:
-        st.warning("No projects found. Please add projects first.")
-        return
-    elif not (
-        st.session_state.data["people"]
-        or st.session_state.data["teams"]
-        or st.session_state.data["departments"]
-    ):
-        st.warning(
-            "No resources found. Please add people, teams, or departments first."
-        )
-        return
-
-    # Get min/max dates from projects for filter constraints
-    min_date = min(
-        [pd.to_datetime(p["start_date"]) for p in st.session_state.data["projects"]]
-    )
-    max_date = max(
-        [pd.to_datetime(p["end_date"]) for p in st.session_state.data["projects"]]
-    )
-
-    # Use the unified filter component with project date constraints
-    with st.container():
-        st.subheader("Filter Criteria")
-        col1, col2 = st.columns(2)
-        with col1:
-            start_date = pd.to_datetime(
-                st.date_input(
-                    "From",
-                    value=min_date.date(),
-                    min_value=min_date.date(),
-                    max_value=max_date.date(),
-                )
-            )
-        with col2:
-            end_date = pd.to_datetime(
-                st.date_input(
-                    "To",
-                    value=max_date.date(),
-                    min_value=min_date.date(),
-                    max_value=max_date.date(),
-                )
-            )
-
-        resource_types = st.multiselect(
-            "Resource Types",
-            options=["Person", "Team", "Department"],
-            default=[],
-        )
-
-        utilization_threshold = st.slider(
-            "Minimum Utilization %", min_value=0, max_value=100, value=0, step=5
-        )
-
-    # Create and filter data
-    gantt_data = create_gantt_data(
-        st.session_state.data["projects"], st.session_state.data
-    )
-
-    filtered_data = filter_gantt_data(
-        gantt_data, start_date, end_date, resource_types, utilization_threshold
-    )
-
-    # Display the calendar with filtered data
-    if filtered_data.empty:
-        st.warning("No data matches your filter criteria. Try adjusting the filters.")
-    else:
-        display_resource_calendar(filtered_data, start_date, end_date)
-
-
-def display_capacity_planning_tab():
-    display_action_bar()
-    st.subheader("Availability Forecast")
-
-    if not st.session_state.data["projects"]:
-        st.warning("No projects found. Please add projects first.")
-        return
-
-    if not (
-        st.session_state.data["people"]
-        or st.session_state.data["teams"]
-        or st.session_state.data["departments"]
-    ):
-        st.warning(
-            "No resources found. Please add people, teams, or departments first."
-        )
-        return
-
-    # Get min/max dates from projects for filter constraints
-    min_date = min(
-        [pd.to_datetime(p["start_date"]) for p in st.session_state.data["projects"]]
-    )
-    max_date = max(
-        [pd.to_datetime(p["end_date"]) for p in st.session_state.data["projects"]]
-    )
-
-    # Use the unified filter component with project date constraints
-    with st.container():
-        st.subheader("Filter Criteria")
-        col1, col2 = st.columns(2)
-        with col1:
-            start_date = pd.to_datetime(
-                st.date_input(
-                    "From",
-                    value=min_date.date(),
-                    min_value=min_date.date(),
-                    max_value=max_date.date(),
-                )
-            )
-        with col2:
-            end_date = pd.to_datetime(
-                st.date_input(
-                    "To",
-                    value=max_date.date(),
-                    min_value=min_date.date(),
-                    max_value=max_date.date(),
-                )
-            )
-
-        resource_types = st.multiselect(
-            "Resource Types",
-            options=["Person", "Team", "Department"],
-            default=[],
-        )
-
-        utilization_threshold = st.slider(
-            "Minimum Utilization %", min_value=0, max_value=100, value=0, step=5
-        )
-
-    # Create and filter data
-    gantt_data = create_gantt_data(
-        st.session_state.data["projects"], st.session_state.data
-    )
-
-    filtered_data = filter_gantt_data(
-        gantt_data, start_date, end_date, resource_types, utilization_threshold
-    )
-
-    # Display the dashboard with filtered data
-    if filtered_data.empty:
-        st.warning("No data matches your filter criteria. Try adjusting the filters.")
-    else:
-        display_capacity_planning_dashboard(filtered_data, start_date, end_date)
-
-
-def display_visualization_tab():
-    display_action_bar()
-    st.subheader("Resource Insights")
-
-    # Add date filters here at the top level if they should apply to all visualizations
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = st.date_input("Start Date", value=pd.to_datetime("today"))
-    with col2:
-        end_date = st.date_input(
-            "End Date", value=pd.to_datetime("today") + pd.Timedelta(days=90)
-        )
-
-    # Create gantt data
-    gantt_data = create_gantt_data(
-        st.session_state.data["projects"], st.session_state.data
-    )
-
-    # Define the main navigation tabs
-    viz_tabs = st.tabs(
-        [
-            "Workload Distribution",
-            "Performance Metrics",
-            "Availability Forecast",
-            "Resource Calendar",
-        ]
-    )
-
-    with viz_tabs[0]:
-        display_gantt_chart(gantt_data)
-
-    with viz_tabs[1]:
-        display_utilization_dashboard(gantt_data, start_date, end_date)
-
-    with viz_tabs[2]:
-        display_capacity_planning_dashboard(start_date, end_date)
-
-    with viz_tabs[3]:
-        display_resource_calendar(start_date, end_date)
 
 
 if __name__ == "__main__":
