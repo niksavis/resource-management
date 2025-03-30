@@ -14,7 +14,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional, Any, Union
 from app.services.data_service import paginate_dataframe
-from configuration import load_currency_settings
+from app.services.config_service import load_currency_settings
 
 
 def load_json(file: Union[io.TextIOWrapper, io.BytesIO]) -> Dict[str, Any]:

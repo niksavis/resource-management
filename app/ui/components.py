@@ -10,7 +10,7 @@ import numpy as np
 from typing import List, Dict, Any, Optional, Tuple, Union
 from app.services.data_service import paginate_dataframe, _apply_all_filters
 from app.utils.formatting import format_currency
-from configuration import load_currency_settings, load_display_preferences
+from app.services.config_service import load_currency_settings, load_display_preferences
 
 
 def display_filtered_resource(

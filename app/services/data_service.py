@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
-from configuration import load_display_preferences
+from app.services.config_service import load_display_preferences
 
 
 def load_demo_data() -> Dict[str, List[Dict[str, Any]]]:

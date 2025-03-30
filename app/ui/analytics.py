@@ -6,21 +6,29 @@ This module provides the UI components for analytics and data visualization.
 
 import streamlit as st
 import pandas as pd
-from typing import Dict, Any, List, Tuple
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+import calendar
+from typing import List, Dict, Any, Optional, Tuple
 
-from app.utils.ui_components import display_action_bar
-from app.services.config_service import load_date_range_settings
-from data_handlers import (
-    create_gantt_data,
-    sort_projects_by_priority_and_date,
-    apply_filters,
+from app.services.config_service import (
+    load_currency_settings,
+    load_department_colors,
+    load_utilization_thresholds,
+    load_heatmap_colorscale,
 )
-from visualizations import (
-    display_capacity_planning_dashboard,
-    display_utilization_dashboard,
-    _display_resource_conflicts,
-    display_resource_calendar,
-    display_resource_matrix_view,
+
+from app.ui.visualizations import (
+    display_gantt_chart,
+    display_utilization_chart,
+)
+from app.services.visualization_service import (
+    prepare_gantt_data,
+    prepare_utilization_data,
+    prepare_capacity_data,
+    prepare_budget_data,
 )
 
 

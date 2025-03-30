@@ -69,4 +69,4 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from typing import List, Dict, Any, Optional, Tuple, Union
-from configuration import load_currency_settings, load_display_preferences
+from app.services.config_service import load_currency_settings, load_display_preferences

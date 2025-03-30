@@ -1,7 +1,7 @@
 """
-Configuration service for resource management application.
+Configuration service for the resource management application.
 
-This module provides functions to load and save configuration settings.
+This module handles loading, saving, and accessing application configuration.
 """
 
 import os
@@ -112,6 +112,22 @@ def regenerate_department_colors(departments: List[str]) -> None:
             department_colors[department] = colorscale[i % len(colorscale)].lower()
 
     settings["department_colors"] = department_colors
+    save_settings(settings)
+
+
+def add_department_color(department: str, color: str) -> None:
+    """
+    Add a department color to the settings.
+
+    Args:
+        department: Name of the department
+        color: Color value (hex code or named color)
+    """
+    settings = load_settings()
+    if "department_colors" not in settings:
+        settings["department_colors"] = {}
+
+    settings["department_colors"][department] = color
     save_settings(settings)
 
 
