@@ -14,7 +14,7 @@ from app.services.config_service import load_currency_settings, load_display_pre
 from app.utils.resource_utils import calculate_team_cost, calculate_department_cost
 from person_crud_form import person_crud_form
 from team_crud_form import team_crud_form
-from department_crud_form import department_crud_form
+from app.ui.forms.department_form import display_department_form as department_crud_form
 from app.utils.validation import validate_team_integrity
 
 
@@ -160,7 +160,7 @@ def display_consolidated_resources():
             key=lambda x: x.get("daily_cost", 0), reverse=not ascending
         )
         filtered_teams.sort(
-            key=lambda x: calculate_team_cost(x["name"]),
+            key=lambda x: calculate_team_cost(x, filtered_people),
             reverse=not ascending,
         )
 
@@ -233,7 +233,7 @@ def _display_teams_summary(
     """Display a summary for teams."""
     total_teams = len(teams)
     if total_teams > 0:
-        team_costs = [calculate_team_cost(team["name"]) for team in teams]
+        team_costs = [calculate_team_cost(team, people) for team in teams]
         avg_team_cost = sum(team_costs) / total_teams
         st.write(f"**Total Teams:** {total_teams}")
         st.write(f"**Average Team Daily Cost:** {currency} {avg_team_cost:,.2f}")
@@ -247,7 +247,10 @@ def _display_departments_summary(
     """Display a summary for departments."""
     total_departments = len(departments)
     if total_departments > 0:
-        dept_costs = [calculate_department_cost(dept["name"]) for dept in departments]
+        teams = st.session_state.data["teams"]
+        dept_costs = [
+            calculate_department_cost(dept, teams, people) for dept in departments
+        ]
         avg_department_cost = sum(dept_costs) / total_departments
         st.write(f"**Total Departments:** {total_departments}")
         st.write(
@@ -289,7 +292,7 @@ def _display_team_cards(
     for idx, team in enumerate(teams):
         with cols[idx % 3]:
             with st.container():
-                team_cost = calculate_team_cost(team["name"])
+                team_cost = calculate_team_cost(team, people)
                 st.markdown(
                     f"""
                     <div class="card team-card">
@@ -308,9 +311,10 @@ def _display_department_cards(
 ):
     """Display department cards in a consistent grid."""
     cols = st.columns(3)
+    teams = st.session_state.data["teams"]
     for idx, dept in enumerate(departments):
         with cols[idx % 3]:
-            dept_cost = calculate_department_cost(dept["name"])
+            dept_cost = calculate_department_cost(dept, teams, people)
             st.markdown(
                 f"""
                 <div class="card department-card">
@@ -331,7 +335,7 @@ def _display_resource_visual_map(
     type_filter: List[str],
 ):
     """Display resources as a network using sunburst visualization."""
-    from visualizations import display_sunburst_organization
+    from app.ui.visualizations import display_sunburst_organization
 
     # Prepare filtered data for the visualization
     filtered_data = {

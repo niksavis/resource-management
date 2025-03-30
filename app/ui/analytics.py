@@ -30,6 +30,12 @@ from app.services.visualization_service import (
     prepare_capacity_data,
     prepare_budget_data,
 )
+from app.utils.ui_components import display_action_bar
+from app.services.data_service import sort_projects_by_priority_and_date
+from data_handlers import (
+    create_gantt_data,
+    apply_filters,
+)
 
 
 def create_resource_analytics_filters(page_key: str) -> Dict[str, Any]:

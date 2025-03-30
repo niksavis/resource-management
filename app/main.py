@@ -23,6 +23,7 @@ from app.utils.styling import apply_custom_css
 from app.services.data_service import check_data_integrity
 from app.services.data_service import check_circular_dependencies
 from app.ui.components import display_filtered_resource
+from app.ui.forms.department_form import display_department_form as department_crud_form
 
 
 def main():

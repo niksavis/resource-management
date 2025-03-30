@@ -32,10 +32,14 @@ def display_department_form(
     """
     st.header("Department Form")
 
+    # Generate a unique form key based on the department data to avoid duplicate element IDs
+    form_key = f"dept_form_{id(department_data)}"
+
     # Pre-fill form fields if editing
     name = st.text_input(
         "Department Name",
         value=department_data.get("name", "") if department_data else "",
+        key=f"{form_key}_name",
     )
 
     # Teams selection
@@ -44,6 +48,7 @@ def display_department_form(
         "Teams",
         options=available_teams,
         default=department_data.get("teams", []) if department_data else [],
+        key=f"{form_key}_teams",
     )
 
     # Members selection (direct department members, not through teams)
@@ -52,13 +57,14 @@ def display_department_form(
         "Direct Members",
         options=available_people,
         default=department_data.get("members", []) if department_data else [],
+        key=f"{form_key}_members",
     )
 
     # Department color selection
     department_colors = load_department_colors()
     current_color = department_colors.get(name, "#1f77b4")
 
-    color = st.color_picker("Department Color", current_color)
+    color = st.color_picker("Department Color", current_color, key=f"{form_key}_color")
 
     # Cost calculation and display
     if teams or members:
@@ -78,7 +84,7 @@ def display_department_form(
     # Form buttons
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Submit"):
+        if st.button("Submit", key=f"{form_key}_submit"):
             # Basic validation
             if not name:
                 st.error("Department name is required")
@@ -99,5 +105,5 @@ def display_department_form(
                 on_submit(department_info)
 
     with col2:
-        if st.button("Cancel") and on_cancel:
+        if st.button("Cancel", key=f"{form_key}_cancel") and on_cancel:
             on_cancel()
