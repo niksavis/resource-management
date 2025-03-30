@@ -1609,8 +1609,8 @@
     },
     {
       "name": "Website Redesign",
-      "start_date": "2023-01-01",
-      "end_date": "2023-03-31",
+      "start_date": "2025-01-01",
+      "end_date": "2025-03-31",
       "priority": 2,
       "assigned_resources": ["John Doe", "Web Team", "Design Team"],
       "description": "Redesign the company website with new branding.",
@@ -1618,8 +1618,8 @@
     },
     {
       "name": "Mobile App Development",
-      "start_date": "2023-02-15",
-      "end_date": "2023-06-30",
+      "start_date": "2025-02-15",
+      "end_date": "2025-06-30",
       "priority": 1,
       "assigned_resources": ["Jane Smith", "Web Team"],
       "description": "Develop a native mobile app for Android and iOS.",
