@@ -85,6 +85,32 @@ def delete_resource(
     """
     for i, resource in enumerate(resource_list):
         if resource.get("name") == resource_name:
+            # Before deleting, handle references to this resource
+            if resource_type == "person":
+                # Remove this person from all teams
+                for team in st.session_state.data["teams"]:
+                    if resource_name in team.get("members", []):
+                        team["members"].remove(resource_name)
+
+                # Remove this person from all departments
+                for dept in st.session_state.data["departments"]:
+                    if resource_name in dept.get("members", []):
+                        dept["members"].remove(resource_name)
+
+                # Remove from all projects
+                for project in st.session_state.data["projects"]:
+                    if resource_name in project.get("assigned_resources", []):
+                        project["assigned_resources"].remove(resource_name)
+
+                    # Also remove from resource allocations
+                    if "resource_allocations" in project:
+                        project["resource_allocations"] = [
+                            alloc
+                            for alloc in project["resource_allocations"]
+                            if alloc.get("resource") != resource_name
+                        ]
+
+            # Now delete the resource
             del resource_list[i]
             st.success(
                 f"{resource_type.title()} '{resource_name}' deleted successfully."

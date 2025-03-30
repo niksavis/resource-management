@@ -6,6 +6,7 @@ This module provides validation functions for resource data.
 
 from typing import Dict, Any, List, Tuple
 import re
+import pandas as pd
 
 
 def validate_person(person_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
@@ -30,16 +31,15 @@ def validate_person(person_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     if not person_data.get("department"):
         errors.append("Department is required.")
 
-    # Validate daily cost
-    if "daily_cost" in person_data:
-        try:
-            daily_cost = float(person_data["daily_cost"])
-            if daily_cost < 0:
-                errors.append("Daily cost must be a positive number.")
-        except ValueError:
-            errors.append("Daily cost must be a valid number.")
+    # Validate work days
+    if not person_data.get("work_days"):
+        errors.append("At least one work day must be selected.")
 
-    return len(errors) == 0, errors
+    # Validate work hours
+    if person_data.get("daily_work_hours", 0) <= 0:
+        errors.append("Daily work hours must be greater than zero.")
+
+    return (len(errors) == 0, errors)
 
 
 def validate_team(team_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
@@ -70,7 +70,7 @@ def validate_team(team_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     elif not isinstance(team_data["members"], list):
         errors.append("Members must be a list.")
 
-    return len(errors) == 0, errors
+    return (len(errors) == 0, errors)
 
 
 def validate_project(project_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
@@ -114,4 +114,4 @@ def validate_project(project_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         except ValueError:
             errors.append("Priority must be a valid integer.")
 
-    return len(errors) == 0, errors
+    return (len(errors) == 0, errors)

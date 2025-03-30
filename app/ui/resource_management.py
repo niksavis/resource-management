@@ -43,30 +43,199 @@ def display_manage_resources_tab():
             display_consolidated_resources()
 
     with resource_tabs[1]:
+        st.subheader("Manage People")
         if not st.session_state.data["people"]:
-            st.info("No people found. Please add people to manage them.")
+            st.info("No people found. Add your first person using the form below.")
         else:
-            st.subheader("Manage People")
             display_filtered_resource("people", "people")
-            person_crud_form()
+
+        # People CRUD forms
+        with st.expander("➕ Add Person"):
+            person_crud_form(
+                on_submit=lambda person: _add_person(person), form_type="add"
+            )
+
+        if st.session_state.data["people"]:
+            with st.expander("✏️ Edit Person"):
+                # Person selection for editing
+                person_to_edit = st.selectbox(
+                    "Select Person to Edit",
+                    options=[p["name"] for p in st.session_state.data["people"]],
+                    key="select_person_to_edit",
+                )
+                selected_person = next(
+                    (
+                        p
+                        for p in st.session_state.data["people"]
+                        if p["name"] == person_to_edit
+                    ),
+                    None,
+                )
+                if selected_person:
+                    person_crud_form(
+                        person_data=selected_person,
+                        on_submit=lambda person: _update_person(person, person_to_edit),
+                        form_type="edit",
+                    )
+
+            with st.expander("🗑️ Delete Person"):
+                # Person selection for deletion
+                person_to_delete = st.selectbox(
+                    "Select Person to Delete",
+                    options=[p["name"] for p in st.session_state.data["people"]],
+                    key="select_person_to_delete",
+                )
+                selected_person = next(
+                    (
+                        p
+                        for p in st.session_state.data["people"]
+                        if p["name"] == person_to_delete
+                    ),
+                    None,
+                )
+                if selected_person:
+                    st.write(f"You are about to delete: **{person_to_delete}**")
+                    if st.button(
+                        "Delete Person",
+                        key="delete_person_button",
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        _delete_person(person_to_delete)
+                        st.rerun()
 
     with resource_tabs[2]:
+        st.subheader("Manage Teams")
         if not st.session_state.data["teams"]:
-            st.info("No teams found. Please add teams to manage them.")
+            st.info("No teams found. Add your first team using the form below.")
         else:
-            st.subheader("Manage Teams")
             display_filtered_resource("teams", "teams", distinct_filters=True)
-            team_crud_form()
+
+        # Team CRUD forms
+        with st.expander("➕ Add Team"):
+            team_crud_form(on_submit=lambda team: _add_team(team), form_type="add")
+
+        if st.session_state.data["teams"]:
+            with st.expander("✏️ Edit Team"):
+                # Team selection for editing
+                team_to_edit = st.selectbox(
+                    "Select Team to Edit",
+                    options=[t["name"] for t in st.session_state.data["teams"]],
+                    key="select_team_to_edit",
+                )
+                selected_team = next(
+                    (
+                        t
+                        for t in st.session_state.data["teams"]
+                        if t["name"] == team_to_edit
+                    ),
+                    None,
+                )
+                if selected_team:
+                    team_crud_form(
+                        team_data=selected_team,
+                        on_submit=lambda team: _update_team(team, team_to_edit),
+                        form_type="edit",
+                    )
+
+            with st.expander("🗑️ Delete Team"):
+                # Team selection for deletion
+                team_to_delete = st.selectbox(
+                    "Select Team to Delete",
+                    options=[t["name"] for t in st.session_state.data["teams"]],
+                    key="select_team_to_delete",
+                )
+                selected_team = next(
+                    (
+                        t
+                        for t in st.session_state.data["teams"]
+                        if t["name"] == team_to_delete
+                    ),
+                    None,
+                )
+                if selected_team:
+                    st.write(f"You are about to delete: **{team_to_delete}**")
+                    st.write(
+                        f"This team has **{len(selected_team.get('members', []))} members** who will be affected."
+                    )
+                    if st.button(
+                        "Delete Team",
+                        key="delete_team_button",
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        _delete_team(team_to_delete)
+                        st.rerun()
 
     with resource_tabs[3]:
+        st.subheader("Manage Departments")
         if not st.session_state.data["departments"]:
-            st.info("No departments found. Please add departments to manage them.")
+            st.info(
+                "No departments found. Add your first department using the form below."
+            )
         else:
-            st.subheader("Manage Departments")
             display_filtered_resource(
                 "departments", "departments", distinct_filters=True, filter_by="teams"
             )
-            department_crud_form()
+
+        # Department CRUD forms with expanders
+        with st.expander("➕ Add Department"):
+            department_crud_form(
+                on_submit=lambda dept: _add_department(dept), form_type="add"
+            )
+
+        if st.session_state.data["departments"]:
+            with st.expander("✏️ Edit Department"):
+                # Department selection for editing
+                dept_to_edit = st.selectbox(
+                    "Select Department to Edit",
+                    options=[d["name"] for d in st.session_state.data["departments"]],
+                    key="select_department_to_edit",
+                )
+                selected_department = next(
+                    (
+                        d
+                        for d in st.session_state.data["departments"]
+                        if d["name"] == dept_to_edit
+                    ),
+                    None,
+                )
+                if selected_department:
+                    department_crud_form(
+                        department_data=selected_department,
+                        on_submit=lambda dept: _update_department(dept, dept_to_edit),
+                        form_type="edit",
+                    )
+
+            with st.expander("🗑️ Delete Department"):
+                # Department selection for deletion
+                dept_to_delete = st.selectbox(
+                    "Select Department to Delete",
+                    options=[d["name"] for d in st.session_state.data["departments"]],
+                    key="select_department_to_delete",
+                )
+                selected_department = next(
+                    (
+                        d
+                        for d in st.session_state.data["departments"]
+                        if d["name"] == dept_to_delete
+                    ),
+                    None,
+                )
+                if selected_department:
+                    st.write(f"You are about to delete: **{dept_to_delete}**")
+                    st.write(
+                        f"This department has **{len(selected_department.get('teams', []))} teams** "
+                        + f"and **{len(selected_department.get('members', []))} direct members** who will be affected."
+                    )
+                    if st.button(
+                        "Delete Department",
+                        key="delete_department_button",
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        _delete_department(dept_to_delete)
+                        st.rerun()
 
     _check_and_display_dependency_warnings()
 
@@ -344,3 +513,81 @@ def _display_resource_visual_map(
     }
 
     display_sunburst_organization(filtered_data)
+
+
+def _update_person(person, old_name=None):
+    from app.utils.resource_utils import update_resource_references, update_resource
+
+    if old_name is None:
+        old_name = person["name"]
+
+    if old_name and old_name != person["name"]:
+        update_resource_references(old_name, person["name"], "person")
+    update_resource(st.session_state.data["people"], old_name, person)
+    st.success(f"Person {person['name']} updated successfully!")
+
+
+def _add_person(person):
+    from app.utils.resource_utils import add_resource
+
+    add_resource(st.session_state.data["people"], person)
+
+
+def _delete_person(name):
+    from app.utils.resource_utils import delete_resource
+
+    delete_resource(st.session_state.data["people"], name, "person")
+
+
+def _add_team(team):
+    from app.utils.resource_utils import add_resource
+
+    if add_resource(st.session_state.data["teams"], team):
+        st.success(f"Team {team['name']} added successfully!")
+    else:
+        st.error(f"Team {team['name']} already exists!")
+
+
+def _update_team(team, old_name=None):
+    from app.utils.resource_utils import update_resource_references, update_resource
+
+    if old_name is None:
+        old_name = team["name"]
+
+    if old_name and old_name != team["name"]:
+        update_resource_references(old_name, team["name"], "team")
+    update_resource(st.session_state.data["teams"], old_name, team)
+    st.success(f"Team {team['name']} updated successfully!")
+
+
+def _delete_team(name):
+    from app.utils.resource_utils import delete_resource
+
+    delete_resource(st.session_state.data["teams"], name, "team")
+
+
+def _add_department(department):
+    from app.utils.resource_utils import add_resource
+
+    if add_resource(st.session_state.data["departments"], department):
+        st.success(f"Department {department['name']} added successfully!")
+    else:
+        st.error(f"Department {department['name']} already exists!")
+
+
+def _update_department(department, old_name=None):
+    from app.utils.resource_utils import update_resource_references, update_resource
+
+    if old_name is None:
+        old_name = department["name"]
+
+    if old_name and old_name != department["name"]:
+        update_resource_references(old_name, department["name"], "department")
+    update_resource(st.session_state.data["departments"], old_name, department)
+    st.success(f"Department {department['name']} updated successfully!")
+
+
+def _delete_department(name):
+    from app.utils.resource_utils import delete_resource
+
+    delete_resource(st.session_state.data["departments"], name, "department")
