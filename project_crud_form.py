@@ -19,8 +19,12 @@ def search_filter_projects():
 
         with col2:
             sort_options = ["Name", "Start Date", "End Date", "Priority", "Budget"]
+            default_sort = "Name"
             st.session_state.project_sort_by = st.selectbox(
-                "Sort by", sort_options, key="project_sort_by"
+                "Sort by",
+                options=sort_options,
+                index=sort_options.index(default_sort),
+                key="project_sort_by",
             )
             st.session_state.project_sort_ascending = st.checkbox(
                 "Ascending",

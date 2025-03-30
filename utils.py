@@ -3,8 +3,9 @@ import math
 import numpy as np
 import pandas as pd
 import streamlit as st
-from typing import List
+from typing import List, Optional
 from configuration import load_currency_settings
+import uuid
 
 
 def display_filtered_resource(
@@ -56,7 +57,7 @@ def display_filtered_resource(
         }
 
     # Create friendly sort options
-    sort_options = ["None"]
+    sort_options = []
     sort_mapping = {}  # Maps friendly names back to original column names
 
     for col in df.columns:
@@ -131,9 +132,7 @@ def display_filtered_resource(
             )
 
             # Convert friendly name back to original column name for sorting
-            sort_col = None
-            if sort_col_friendly != "None":
-                sort_col = sort_mapping.get(sort_col_friendly)
+            sort_col = sort_mapping.get(sort_col_friendly)
 
             ascending = st.checkbox("Ascending", True, key=f"asc_{label}")
 
@@ -149,7 +148,7 @@ def display_filtered_resource(
         )
 
         # Apply sorting using the original column name
-        if sort_col and sort_col_friendly != "None":
+        if sort_col:
             df = df.sort_values(by=sort_col, ascending=ascending, na_position="first")
 
     df = paginate_dataframe(df, label)
@@ -178,6 +177,89 @@ def display_filtered_resource(
         },
         use_container_width=True,
     )
+
+
+def filter_dataframe(
+    df: pd.DataFrame, key: str, columns: Optional[List[str]] = None
+) -> pd.DataFrame:
+    """Enhances a DataFrame with search, sort, and pagination capabilities."""
+    if columns is None:
+        columns = df.columns
+
+    # Generate a unique prefix for this instance of filter_dataframe
+    unique_prefix = f"{key}_{uuid.uuid4().hex[:8]}"
+
+    for col in df.columns:
+        if df[col].apply(lambda v: isinstance(v, list)).any():
+            df[col] = df[col].apply(
+                lambda v: ", ".join(map(str, v)) if isinstance(v, list) else str(v)
+            )
+
+    with st.expander(
+        f"Search and Filter {key.replace('_', ' ').title()}", expanded=False
+    ):
+        search_term = st.text_input(
+            f"Search {key.replace('_', ' ').title()}", key=f"search_{unique_prefix}"
+        )
+
+        col_filters = st.columns(min(4, len(columns)))
+        active_filters = {}
+
+        for i, col in enumerate(columns):
+            with col_filters[i % 4]:
+                if df[col].dtype == "object" or df[col].dtype == "string":
+                    unique_col_key = f"filter_{unique_prefix}_{col}"  # Unique key for each column filter
+                    unique_values = sorted(df[col].dropna().unique())
+                    if len(unique_values) < 15:
+                        selected = st.multiselect(
+                            f"Filter {col}",
+                            options=unique_values,
+                            default=[],
+                            key=unique_col_key,
+                        )
+                        if selected:
+                            active_filters[col] = selected
+
+        if search_term:
+            mask = np.column_stack(
+                [
+                    df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in df.columns
+                ]
+            )
+            df = df[mask.any(axis=1)]
+
+        for col, values in active_filters.items():
+            df = df[df[col].isin(values)]
+
+        if not df.empty:
+            # Create sort options with "Name" as default if it exists in columns
+            default_sort = (
+                "Name"
+                if "Name" in df.columns or "name" in df.columns
+                else df.columns[0]
+            )
+            sort_col = st.selectbox(
+                "Sort by",
+                options=list(df.columns),
+                index=list(df.columns).index(default_sort)
+                if default_sort in df.columns
+                else 0,
+                key=f"sort_{unique_prefix}",
+            )
+
+            # Always show ascending checkbox
+            ascending = st.checkbox("Ascending", True, key=f"asc_{unique_prefix}")
+
+            # Always apply sorting
+            df = df.sort_values(by=sort_col, ascending=ascending, na_position="first")
+
+        df = paginate_dataframe(df, unique_prefix)  # Use unique prefix for pagination
+
+    return df
 
 
 def _display_filters(
