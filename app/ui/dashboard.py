@@ -64,32 +64,40 @@ def _display_project_insights():
     """Display project insights in a dedicated expander."""
     # Calculate project insights
     total_projects = len(st.session_state.data["projects"])
-    active_projects_count = 0
-    upcoming_count = 0
-    completed_count = 0
     high_priority_count = 0
     over_budget_count = 0
 
+    # New metrics
+    total_duration_days = 0
+    total_assigned_resources = 0
+    total_budget = 0
+    total_estimated_cost = 0
+    projects_with_budget = 0
+    completed_projects = 0
+
     if st.session_state.data["projects"]:
-        # Count active, upcoming, completed and high priority projects
+        # Calculate metrics
         today = datetime.now()
         for project in st.session_state.data["projects"]:
-            start_date = pd.to_datetime(project["start_date"])
-            end_date = pd.to_datetime(project["end_date"])
-
-            # Count by status
-            if start_date <= today <= end_date:
-                active_projects_count += 1
-            elif start_date > today:
-                upcoming_count += 1
-            elif end_date < today:
-                completed_count += 1
-
             # Count high priority
             if project.get("priority") == 1:
                 high_priority_count += 1
 
-            # Count over budget
+            # Calculate duration in days
+            start_date = pd.to_datetime(project["start_date"])
+            end_date = pd.to_datetime(project["end_date"])
+            duration_days = (end_date - start_date).days
+            total_duration_days += duration_days
+
+            # Count resources
+            resources = project.get("assigned_resources", [])
+            total_assigned_resources += len(resources)
+
+            # Count completed projects
+            if end_date < today:
+                completed_projects += 1
+
+            # Budget metrics
             if "allocated_budget" in project:
                 actual_cost = calculate_project_cost(
                     project,
@@ -99,6 +107,29 @@ def _display_project_insights():
                 if actual_cost > project["allocated_budget"]:
                     over_budget_count += 1
 
+                total_budget += project["allocated_budget"]
+                total_estimated_cost += actual_cost
+                projects_with_budget += 1
+
+        # Calculate averages
+        avg_duration = total_duration_days / total_projects if total_projects > 0 else 0
+        avg_resources = (
+            total_assigned_resources / total_projects if total_projects > 0 else 0
+        )
+        budget_utilization = (
+            (total_estimated_cost / total_budget * 100) if total_budget > 0 else 0
+        )
+        completion_rate = (
+            (completed_projects / total_projects * 100) if total_projects > 0 else 0
+        )
+
+    else:
+        # Set defaults if no projects
+        avg_duration = 0
+        avg_resources = 0
+        budget_utilization = 0
+        completion_rate = 0
+
     # Display project insights in collapsible card
     with st.expander("📊 Project Insights", expanded=True):
         # First row (3 columns)
@@ -106,14 +137,22 @@ def _display_project_insights():
         with col1:
             st.metric("Total Projects", total_projects)
         with col2:
-            st.metric("Active Projects", active_projects_count)
+            st.metric("Avg Duration", f"{avg_duration:.0f} days")
         with col3:
-            st.metric("Upcoming Projects", upcoming_count)
+            st.metric(
+                "Completion Rate",
+                f"{completion_rate:.1f}%",
+                help="Percentage of projects that have been completed",
+            )
 
         # Second row (3 columns)
         col4, col5, col6 = st.columns(3)
         with col4:
-            st.metric("Completed Projects", completed_count)
+            st.metric(
+                "Avg Resources/Project",
+                f"{avg_resources:.1f}",
+                help="Average number of resources assigned per project",
+            )
         with col5:
             st.metric(
                 "High Priority Projects",
@@ -123,11 +162,15 @@ def _display_project_insights():
                 else None,
             )
         with col6:
+            budget_color = "inverse" if budget_utilization > 100 else "normal"
             st.metric(
-                "Over Budget Projects",
-                over_budget_count,
-                delta=f"{over_budget_count}" if over_budget_count > 0 else None,
-                delta_color="inverse" if over_budget_count > 0 else "normal",
+                "Budget Utilization",
+                f"{budget_utilization:.1f}%",
+                delta=f"{'Over' if budget_utilization > 100 else 'Under'} Budget"
+                if projects_with_budget > 0
+                else None,
+                delta_color=budget_color,
+                help="Average percentage of allocated budget being used across all projects",
             )
 
 
@@ -460,11 +503,27 @@ def _display_utilization_summary():
     under_threshold = thresholds.get("under", 50)
     over_threshold = thresholds.get("over", 100)
 
-    # Add resource type filter
+    # Handle missing or unknown resource types
+    utilization_df["Type"] = utilization_df["Type"].fillna("Unknown")
+
+    # Get unique resource types and filter out 'Unknown' from default selection
     resource_types = sorted(utilization_df["Type"].unique().tolist())
+    default_types = [t for t in resource_types if t != "Unknown"]
+
+    # Add resource type filter with a better default selection
     selected_types = st.multiselect(
-        "Filter by resource type:", options=resource_types, default=resource_types
+        "Filter by resource type:",
+        options=resource_types,
+        default=default_types,
+        help="Select resource types to display. 'Unknown' resources may indicate data issues.",
     )
+
+    # Display warning if unknown resources exist
+    if "Unknown" in resource_types:
+        st.warning(
+            "Some resources have an 'Unknown' type. This may indicate missing type information "
+            "in your resource assignments. Consider updating resource data."
+        )
 
     if selected_types:
         filtered_df = utilization_df[utilization_df["Type"].isin(selected_types)]
