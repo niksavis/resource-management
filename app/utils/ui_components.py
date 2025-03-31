@@ -16,60 +16,68 @@ def display_action_bar():
     st.markdown(f"**{breadcrumb}**")
 
 
-def paginate_dataframe(df, key_prefix, items_per_page=None):
+def paginate_dataframe(df, key_prefix, items_per_page=10):
     """
-    Paginate a DataFrame and provide navigation.
+    Paginate a dataframe and display pagination controls.
 
     Args:
-        df: DataFrame to paginate
-        key_prefix: Prefix for session state keys
-        items_per_page: Number of items per page. If None, uses settings.
+        df: The dataframe to paginate
+        key_prefix: A prefix for the session state keys to avoid conflicts
+        items_per_page: Number of items to display per page
 
     Returns:
-        Paginated DataFrame
+        Paginated dataframe slice
     """
-    from app.services.config_service import load_display_preferences
-
-    if items_per_page is None:
-        # Get page size from settings
-        display_prefs = load_display_preferences()
-        items_per_page = display_prefs.get("page_size", 10)
-
-    # Initialize page number in session state if not exists
+    # Initialize page number in session state if not present
     if f"{key_prefix}_page" not in st.session_state:
         st.session_state[f"{key_prefix}_page"] = 0
 
-    # Calculate total pages
-    n_pages = max(1, len(df) // items_per_page)
+    # Get total number of pages
+    total_rows = len(df)
+    total_pages = max(1, (total_rows + items_per_page - 1) // items_per_page)
 
-    # Only show pagination if needed
-    if len(df) > items_per_page:
-        # Create pagination controls
-        col1, col2, col3 = st.columns([1, 3, 1])
-        with col1:
-            if st.button("◀️ Previous", key=f"{key_prefix}_prev"):
-                st.session_state[f"{key_prefix}_page"] = max(
-                    0, st.session_state[f"{key_prefix}_page"] - 1
-                )
-
-        with col2:
-            st.write(f"Page {st.session_state[f'{key_prefix}_page'] + 1} of {n_pages}")
-
-        with col3:
-            if st.button("Next ▶️", key=f"{key_prefix}_next"):
-                st.session_state[f"{key_prefix}_page"] = min(
-                    n_pages - 1, st.session_state[f"{key_prefix}_page"] + 1
-                )
-
-    # Get current page number
-    current_page = st.session_state[f"{key_prefix}_page"]
+    # Ensure page index is valid after filtering might have reduced total pages
+    if st.session_state[f"{key_prefix}_page"] >= total_pages:
+        st.session_state[f"{key_prefix}_page"] = max(0, total_pages - 1)
 
     # Calculate start and end indices
-    start_idx = current_page * items_per_page
-    end_idx = min(start_idx + items_per_page, len(df))
+    start_idx = st.session_state[f"{key_prefix}_page"] * items_per_page
+    end_idx = min(start_idx + items_per_page, total_rows)
 
-    # Return the sliced DataFrame
-    return df.iloc[start_idx:end_idx].reset_index(drop=True)
+    # Reset the index to start from 1 instead of 0
+    df_display = df.copy()
+    df_display.index = range(1, len(df) + 1)
+
+    # Get the paginated slice
+    paginated_df = df_display.iloc[start_idx:end_idx]
+
+    # Display pagination controls
+    col1, col2, col3 = st.columns([1, 3, 1])
+
+    with col1:
+        if st.button(
+            "⬅️ Previous",  # Added back the left arrow icon
+            key=f"{key_prefix}_prev",
+            disabled=st.session_state[f"{key_prefix}_page"] == 0,
+        ):
+            st.session_state[f"{key_prefix}_page"] -= 1
+            st.rerun()
+
+    with col2:
+        # Display page info with correct 1-based page numbering
+        current_page_display = st.session_state[f"{key_prefix}_page"] + 1
+        st.markdown(f"**Page {current_page_display} of {total_pages}**")
+
+    with col3:
+        if st.button(
+            "Next ➡️",  # Added back the right arrow icon
+            key=f"{key_prefix}_next",
+            disabled=st.session_state[f"{key_prefix}_page"] >= total_pages - 1,
+        ):
+            st.session_state[f"{key_prefix}_page"] += 1
+            st.rerun()
+
+    return paginated_df
 
 
 def confirm_action(action_name: str, key_suffix: str) -> bool:
