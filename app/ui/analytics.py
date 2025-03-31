@@ -19,6 +19,7 @@ from app.services.config_service import (
     load_utilization_thresholds,
     load_heatmap_colorscale,
     load_date_range_settings,
+    load_display_preferences,
 )
 
 from app.ui.visualizations import (
@@ -290,6 +291,10 @@ def display_workload_distribution_chart(filtered_data: pd.DataFrame) -> None:
     if filtered_data.empty:
         return
 
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     st.subheader("Workload Distribution")
 
     # Calculate allocation by resource
@@ -313,7 +318,7 @@ def display_workload_distribution_chart(filtered_data: pd.DataFrame) -> None:
         color="Type",
         title="Resource Allocation Distribution",
         labels={"Resource": "Resource", "Allocation %": "Allocation %"},
-        height=500,
+        height=chart_height,  # Use configurable chart height
     )
 
     # Add bands for optimal utilization
@@ -346,6 +351,10 @@ def display_project_workload_breakdown(filtered_data: pd.DataFrame) -> None:
     if filtered_data.empty:
         return
 
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -364,7 +373,7 @@ def display_project_workload_breakdown(filtered_data: pd.DataFrame) -> None:
             y="Resource",
             title="Resources Per Project",
             labels={"Project": "Project", "Resource": "Number of Resources"},
-            height=400,
+            height=chart_height,  # Use configurable chart height
         )
 
         fig1.update_layout(xaxis_tickangle=-45)
@@ -387,7 +396,7 @@ def display_project_workload_breakdown(filtered_data: pd.DataFrame) -> None:
             values="Allocation %",
             names="Department",
             title="Workload by Department",
-            height=400,
+            height=chart_height,  # Use configurable chart height
         )
 
         st.plotly_chart(fig2, use_container_width=True)
@@ -400,6 +409,10 @@ def display_resource_conflicts_enhanced(filtered_data: pd.DataFrame) -> None:
     Args:
         filtered_data: Filtered DataFrame of resource allocation data
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     st.subheader("Resource Conflicts")
     conflicts = find_resource_conflicts(filtered_data)
 
@@ -434,7 +447,7 @@ def display_resource_conflicts_enhanced(filtered_data: pd.DataFrame) -> None:
         title="Resource Conflict Severity",
         labels={"Resource": "Resource", "Allocation": "Peak Allocation (%)"},
         color_discrete_map={"Critical": "red", "High": "orange", "Medium": "yellow"},
-        height=400,
+        height=chart_height,  # Use configurable chart height
     )
 
     fig.add_hline(y=100, line_width=2, line_dash="dash", line_color="gray")
@@ -525,6 +538,10 @@ def display_performance_metrics_dashboard(
         start_date: Start date for the visualization
         end_date: End date for the visualization
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     # Calculate utilization metrics
     utilization_df = calculate_resource_utilization(filtered_data)
 
@@ -716,7 +733,7 @@ def display_performance_metrics_dashboard(
             yaxis=dict(
                 gridcolor="rgba(128,128,128,0.2)",
             ),
-            # Moved stars 50% closer to bars by reducing offset
+            height=chart_height,  # Add configurable chart height
             annotations=[
                 dict(
                     x=row["Performance Score"]
@@ -826,6 +843,7 @@ def display_performance_metrics_dashboard(
                     "Resource Count": "Total Resources",
                 },
                 title="Department Utilization by Status",
+                height=chart_height,  # Add configurable chart height
             )
 
             # Format text to show percentages
@@ -902,6 +920,7 @@ def display_performance_metrics_dashboard(
                     xanchor="right",
                     x=1,
                 ),
+                height=chart_height,  # Add configurable chart height
             )
 
             st.plotly_chart(fig3, use_container_width=True)
@@ -1052,6 +1071,7 @@ def display_performance_metrics_dashboard(
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
                     margin=dict(l=10, r=10, t=40, b=100),
+                    height=chart_height,  # Add configurable chart height
                 )
 
                 st.plotly_chart(fig_dist, use_container_width=True)
@@ -1201,6 +1221,7 @@ def display_performance_metrics_dashboard(
                     # No bgcolor setting to allow default theme-aware colors
                     font_size=12,
                 ),
+                height=chart_height,  # Add configurable chart height
             )
 
             st.plotly_chart(fig4, use_container_width=True)
@@ -1344,6 +1365,10 @@ def display_resource_matrix_view(
         start_date: Start date for the visualization
         end_date: End date for the visualization
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     st.subheader("Resource Matrix View")
 
     if filtered_data.empty:
@@ -1361,6 +1386,7 @@ def display_resource_matrix_view(
         hover_data=["Allocation %"],
         title="Resource Allocation Timeline",
         labels={"Resource": "Resource", "Project": "Project"},
+        height=chart_height,  # Add configurable chart height
     )
 
     # Add today's line
@@ -1419,6 +1445,10 @@ def display_utilization_dashboard(
         start_date: Start date for the visualization
         end_date: End date for the visualization
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     st.subheader("Utilization Dashboard")
 
     # Calculate utilization metrics
@@ -1450,6 +1480,7 @@ def display_utilization_dashboard(
         color="Type",
         title="Resource Utilization",
         labels={"Resource": "Resource", "Utilization %": "Utilization %"},
+        height=chart_height,  # Add configurable chart height
     )
 
     # Add a 100% line to show full allocation
@@ -1469,6 +1500,10 @@ def display_capacity_planning_dashboard(
         start_date: Start date for the visualization
         end_date: End date for the visualization
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     st.subheader("Capacity Planning Dashboard")
 
     # Generate capacity data
@@ -1492,6 +1527,7 @@ def display_capacity_planning_dashboard(
         y=pivot_data.index,
         color_continuous_scale=px.colors.sequential.Viridis,
         title="Resource Allocation Heatmap",
+        height=chart_height,  # Add configurable chart height
     )
 
     st.plotly_chart(heatmap, use_container_width=True)

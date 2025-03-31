@@ -17,6 +17,7 @@ from app.services.config_service import (
     load_department_colors,
     load_currency_settings,
     load_heatmap_colorscale,
+    load_display_preferences,
 )
 
 
@@ -30,6 +31,10 @@ def display_gantt_chart(
         projects: List of project dictionaries
         resources: Dictionary of resource lists (people, teams, departments)
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     gantt_data = prepare_gantt_data(projects, resources)
 
     if gantt_data.empty:
@@ -44,6 +49,7 @@ def display_gantt_chart(
         color="Project",
         title="Gantt Chart",
         labels={"Resource": "Resource", "Project": "Project"},
+        height=chart_height,
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -59,6 +65,10 @@ def display_utilization_chart(
         projects: List of project dictionaries
         resources: Dictionary of resource lists (people, teams, departments)
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     utilization_data = prepare_utilization_data(projects, resources)
 
     if utilization_data.empty:
@@ -72,6 +82,7 @@ def display_utilization_chart(
         color="Type",
         title="Resource Utilization",
         labels={"Resource": "Resource", "Utilization %": "Utilization %"},
+        height=chart_height,
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -86,6 +97,10 @@ def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None
     """
     # Get department colors from settings
     dept_colors = load_department_colors()
+
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
 
     # Create a flattened DataFrame for the visualization
     rows = []
@@ -168,7 +183,7 @@ def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None
     # Update layout
     fig.update_layout(
         margin=dict(t=30, l=0, r=0, b=0),
-        height=600,
+        height=chart_height,
     )
 
     # Display the chart
@@ -185,6 +200,10 @@ def display_department_distribution(
         departments: List of department dictionaries
         department_colors: Dictionary mapping department names to colors
     """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
     if not departments:
         st.info("No department data available for visualization.")
         return
@@ -227,6 +246,7 @@ def display_department_distribution(
         color_discrete_map={
             dept: color for dept, color in zip(dept_df["Department"], dept_df["Color"])
         },
+        height=chart_height,
     )
 
     st.plotly_chart(fig, use_container_width=True)
