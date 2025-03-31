@@ -9,7 +9,16 @@
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
+      "capacity_hours_per_month": 173.2,
+      "skills": [
+        "Leadership",
+        "Network Architecture",
+        "Strategy",
+        "Budget Management",
+        "Enterprise Planning",
+        "Risk Management"
+      ],
+      "description": "Department leader with 15+ years experience in network infrastructure planning"
     },
     {
       "name": "Sarah Johnson",
@@ -17,10 +26,18 @@
       "department": "Network Engineering",
       "team": "Network Planning Team",
       "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "work_days": ["MO", "TU", "WE", "TH"],
       "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
+      "capacity_hours_per_week": 32,
+      "capacity_hours_per_month": 138.6,
+      "skills": [
+        "Network Design",
+        "Infrastructure Planning",
+        "Telecommunications",
+        "Routing Protocols",
+        "Load Balancing",
+        "Network Security"
+      ]
     },
     {
       "name": "Michael Chen",
@@ -31,7 +48,15 @@
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
+      "capacity_hours_per_month": 173.2,
+      "skills": [
+        "Network Configuration",
+        "Troubleshooting",
+        "Cisco Systems",
+        "Firewalls",
+        "VPN",
+        "WAN/LAN"
+      ]
     },
     {
       "name": "Emma Rodriguez",
@@ -967,7 +992,15 @@
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2,
-      "skills": ["Programming", "Design"]
+      "skills": [
+        "JavaScript",
+        "React",
+        "Node.js",
+        "CSS",
+        "HTML5",
+        "API Development"
+      ],
+      "description": "Full-stack developer specializing in web applications"
     },
     {
       "name": "Jane Smith",
@@ -979,7 +1012,14 @@
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2,
-      "skills": ["Project Management"]
+      "skills": [
+        "Project Management",
+        "Agile",
+        "Budgeting",
+        "Resource Planning",
+        "Risk Management"
+      ],
+      "description": "Certified PMP with experience leading cross-functional technical teams"
     }
   ],
   "teams": [
@@ -1331,11 +1371,14 @@
         "Mia Jackson",
         "Thomas Wilson"
       ],
-      "allocated_budget": 13000000.0,
+      "allocated_budget": 950000.0,
+      "actual_cost": 1050000.0,
+      "description": "Expand 5G network infrastructure across metropolitan areas to increase coverage and capacity",
+      "status": "At Risk",
       "resource_allocations": [
         {
           "resource": "Network Planning Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 85,
           "start_date": "2025-04-01",
           "end_date": "2025-07-01"
         },
@@ -1347,7 +1390,7 @@
         },
         {
           "resource": "Thomas Wilson",
-          "allocation_percentage": 100,
+          "allocation_percentage": 50,
           "start_date": "2025-04-01",
           "end_date": "2025-07-01"
         }
@@ -1358,18 +1401,31 @@
       "start_date": "2025-03-15",
       "end_date": "2025-06-15",
       "priority": 2,
-      "assigned_resources": ["User Experience Team", "John Mitchell"],
-      "allocated_budget": 4000000.0,
+      "assigned_resources": [
+        "User Experience Team",
+        "Frontend Team",
+        "John Mitchell"
+      ],
+      "allocated_budget": 270000.0,
+      "actual_cost": 252000.0,
+      "description": "Develop a customer-facing portal for self-service account management and support",
+      "status": "On Track",
       "resource_allocations": [
         {
           "resource": "User Experience Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 90,
           "start_date": "2025-03-15",
           "end_date": "2025-06-15"
         },
         {
+          "resource": "Frontend Team",
+          "allocation_percentage": 75,
+          "start_date": "2025-04-01",
+          "end_date": "2025-06-15"
+        },
+        {
           "resource": "John Mitchell",
-          "allocation_percentage": 100,
+          "allocation_percentage": 60,
           "start_date": "2025-03-15",
           "end_date": "2025-06-15"
         }
@@ -1380,19 +1436,32 @@
       "start_date": "2025-05-01",
       "end_date": "2025-09-30",
       "priority": 3,
-      "assigned_resources": ["Ian Barnes", "Backend Team"],
-      "allocated_budget": 18000000.0,
+      "assigned_resources": [
+        "Ian Barnes",
+        "Backend Team",
+        "Enterprise Systems Team"
+      ],
+      "allocated_budget": 1200000.0,
+      "actual_cost": 1150000.0,
+      "description": "Comprehensive upgrade of enterprise billing and invoicing systems",
+      "status": "Under Budget",
       "resource_allocations": [
         {
           "resource": "Ian Barnes",
-          "allocation_percentage": 100,
+          "allocation_percentage": 75,
           "start_date": "2025-05-01",
           "end_date": "2025-09-30"
         },
         {
           "resource": "Backend Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 90,
           "start_date": "2025-05-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "Enterprise Systems Team",
+          "allocation_percentage": 65,
+          "start_date": "2025-06-15",
           "end_date": "2025-09-30"
         }
       ]
@@ -1402,19 +1471,32 @@
       "start_date": "2025-02-15",
       "end_date": "2025-06-30",
       "priority": 4,
-      "assigned_resources": ["Thomas Wilson", "Security Team"],
-      "allocated_budget": 9000000.0,
+      "assigned_resources": [
+        "Thomas Wilson",
+        "Security Team",
+        "Network Operations Team"
+      ],
+      "allocated_budget": 650000.0,
+      "actual_cost": 780000.0,
+      "description": "Implement enhanced security measures across the network infrastructure",
+      "status": "Over Budget",
       "resource_allocations": [
         {
           "resource": "Thomas Wilson",
-          "allocation_percentage": 100,
+          "allocation_percentage": 30,
           "start_date": "2025-02-15",
           "end_date": "2025-06-30"
         },
         {
           "resource": "Security Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 85,
           "start_date": "2025-02-15",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "Network Operations Team",
+          "allocation_percentage": 40,
+          "start_date": "2025-03-01",
           "end_date": "2025-06-30"
         }
       ]
@@ -1424,19 +1506,32 @@
       "start_date": "2025-04-15",
       "end_date": "2025-07-31",
       "priority": 5,
-      "assigned_resources": ["John Mitchell", "Mobile App Team"],
-      "allocated_budget": 7000000.0,
+      "assigned_resources": [
+        "Mobile App Team",
+        "User Experience Team",
+        "QA Team"
+      ],
+      "allocated_budget": 420000.0,
+      "actual_cost": 435000.0,
+      "description": "Complete redesign of mobile applications for improved user experience and functionality",
+      "status": "Slightly Over Budget",
       "resource_allocations": [
         {
-          "resource": "John Mitchell",
-          "allocation_percentage": 100,
+          "resource": "Mobile App Team",
+          "allocation_percentage": 95,
           "start_date": "2025-04-15",
           "end_date": "2025-07-31"
         },
         {
-          "resource": "Mobile App Team",
-          "allocation_percentage": 100,
+          "resource": "User Experience Team",
+          "allocation_percentage": 60,
           "start_date": "2025-04-15",
+          "end_date": "2025-05-30"
+        },
+        {
+          "resource": "QA Team",
+          "allocation_percentage": 40,
+          "start_date": "2025-06-15",
           "end_date": "2025-07-31"
         }
       ]
@@ -1446,19 +1541,32 @@
       "start_date": "2025-03-01",
       "end_date": "2025-05-30",
       "priority": 6,
-      "assigned_resources": ["Innovation Team", "Technical Support Team"],
-      "allocated_budget": 11000000.0,
+      "assigned_resources": [
+        "Innovation Team",
+        "Technical Support Team",
+        "Customer Support Team"
+      ],
+      "allocated_budget": 720000.0,
+      "actual_cost": 650000.0,
+      "description": "Implement AI technologies to enhance customer support capabilities",
+      "status": "Under Budget",
       "resource_allocations": [
         {
           "resource": "Innovation Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 80,
           "start_date": "2025-03-01",
           "end_date": "2025-05-30"
         },
         {
           "resource": "Technical Support Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 70,
           "start_date": "2025-03-01",
+          "end_date": "2025-05-30"
+        },
+        {
+          "resource": "Customer Support Team",
+          "allocation_percentage": 35,
+          "start_date": "2025-04-01",
           "end_date": "2025-05-30"
         }
       ]
@@ -1468,19 +1576,32 @@
       "start_date": "2025-05-15",
       "end_date": "2025-08-15",
       "priority": 7,
-      "assigned_resources": ["Technology Research Team", "Backend Team"],
-      "allocated_budget": 15000000.0,
+      "assigned_resources": [
+        "Technology Research Team",
+        "Backend Team",
+        "Network Planning Team"
+      ],
+      "allocated_budget": 980000.0,
+      "actual_cost": 1180000.0,
+      "description": "Develop a platform for managing IoT devices and data processing",
+      "status": "Over Budget",
       "resource_allocations": [
         {
           "resource": "Technology Research Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 75,
           "start_date": "2025-05-15",
           "end_date": "2025-08-15"
         },
         {
           "resource": "Backend Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 65,
           "start_date": "2025-05-15",
+          "end_date": "2025-08-15"
+        },
+        {
+          "resource": "Network Planning Team",
+          "allocation_percentage": 35,
+          "start_date": "2025-06-01",
           "end_date": "2025-08-15"
         }
       ]
@@ -1490,18 +1611,31 @@
       "start_date": "2025-01-01",
       "end_date": "2025-12-31",
       "priority": 8,
-      "assigned_resources": ["Oliver Brown", "Infrastructure Team"],
-      "allocated_budget": 20000000.0,
+      "assigned_resources": [
+        "Oliver Brown",
+        "Infrastructure Team",
+        "Enterprise Systems Team"
+      ],
+      "allocated_budget": 1580000.0,
+      "actual_cost": 1680000.0,
+      "description": "Migrate all on-premises systems to cloud infrastructure for improved scalability",
+      "status": "Slightly Over Budget",
       "resource_allocations": [
         {
           "resource": "Oliver Brown",
-          "allocation_percentage": 100,
+          "allocation_percentage": 50,
           "start_date": "2025-01-01",
           "end_date": "2025-12-31"
         },
         {
           "resource": "Infrastructure Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 85,
+          "start_date": "2025-01-01",
+          "end_date": "2025-12-31"
+        },
+        {
+          "resource": "Enterprise Systems Team",
+          "allocation_percentage": 55,
           "start_date": "2025-01-01",
           "end_date": "2025-12-31"
         }
@@ -1513,23 +1647,26 @@
       "end_date": "2025-09-30",
       "priority": 9,
       "assigned_resources": ["Frontend Team", "Backend Team", "QA Team"],
-      "allocated_budget": 10000000.0,
+      "allocated_budget": 650000.0,
+      "actual_cost": 630000.0,
+      "description": "Upgrade and enhance e-commerce platform for improved performance and features",
+      "status": "On Track",
       "resource_allocations": [
         {
           "resource": "Frontend Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 80,
           "start_date": "2025-06-01",
           "end_date": "2025-09-30"
         },
         {
           "resource": "Backend Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 75,
           "start_date": "2025-06-01",
           "end_date": "2025-09-30"
         },
         {
           "resource": "QA Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 60,
           "start_date": "2025-06-01",
           "end_date": "2025-09-30"
         }
@@ -1540,24 +1677,31 @@
       "start_date": "2025-03-01",
       "end_date": "2026-02-28",
       "priority": 10,
-      "assigned_resources": ["Innovation Team", "Backend Team", "Oliver Brown"],
-      "allocated_budget": 25000000.0,
+      "assigned_resources": [
+        "Innovation Team",
+        "Backend Team",
+        "Data Science Team"
+      ],
+      "allocated_budget": 1750000.0,
+      "actual_cost": 1520000.0,
+      "description": "Build a comprehensive data analytics platform for business intelligence",
+      "status": "Under Budget",
       "resource_allocations": [
         {
           "resource": "Innovation Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 65,
           "start_date": "2025-03-01",
           "end_date": "2026-02-28"
         },
         {
           "resource": "Backend Team",
-          "allocation_percentage": 100,
+          "allocation_percentage": 55,
           "start_date": "2025-03-01",
           "end_date": "2026-02-28"
         },
         {
-          "resource": "Oliver Brown",
-          "allocation_percentage": 100,
+          "resource": "Data Science Team",
+          "allocation_percentage": 90,
           "start_date": "2025-03-01",
           "end_date": "2026-02-28"
         }
@@ -1568,19 +1712,32 @@
       "start_date": "2025-04-01",
       "end_date": "2025-06-30",
       "priority": 11,
-      "assigned_resources": ["Ella Carter", "Service Design Team"],
-      "allocated_budget": 6000000.0,
+      "assigned_resources": [
+        "Service Design Team",
+        "Customer Support Team",
+        "Frontend Team"
+      ],
+      "allocated_budget": 340000.0,
+      "actual_cost": 320000.0,
+      "description": "Implement a comprehensive customer feedback collection and analysis system",
+      "status": "On Track",
       "resource_allocations": [
         {
-          "resource": "Ella Carter",
-          "allocation_percentage": 100,
+          "resource": "Service Design Team",
+          "allocation_percentage": 85,
           "start_date": "2025-04-01",
           "end_date": "2025-06-30"
         },
         {
-          "resource": "Service Design Team",
-          "allocation_percentage": 100,
+          "resource": "Customer Support Team",
+          "allocation_percentage": 40,
           "start_date": "2025-04-01",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "Frontend Team",
+          "allocation_percentage": 30,
+          "start_date": "2025-05-01",
           "end_date": "2025-06-30"
         }
       ]
@@ -1590,18 +1747,21 @@
       "start_date": "2025-01-15",
       "end_date": "2025-11-15",
       "priority": 12,
-      "assigned_resources": ["Oliver Brown", "Data Science Team"],
-      "allocated_budget": 30000000.0,
+      "assigned_resources": ["Data Science Team", "Research and Development"],
+      "allocated_budget": 1800000.0,
+      "actual_cost": 1720000.0,
+      "description": "Research and develop cutting-edge AI technologies for future applications",
+      "status": "Under Budget",
       "resource_allocations": [
         {
-          "resource": "Oliver Brown",
-          "allocation_percentage": 100,
+          "resource": "Data Science Team",
+          "allocation_percentage": 95,
           "start_date": "2025-01-15",
           "end_date": "2025-11-15"
         },
         {
-          "resource": "Data Science Team",
-          "allocation_percentage": 100,
+          "resource": "Research and Development",
+          "allocation_percentage": 70,
           "start_date": "2025-01-15",
           "end_date": "2025-11-15"
         }
@@ -1611,19 +1771,234 @@
       "name": "Website Redesign",
       "start_date": "2025-01-01",
       "end_date": "2025-03-31",
-      "priority": 2,
-      "assigned_resources": ["John Doe", "Web Team", "Design Team"],
-      "description": "Redesign the company website with new branding.",
-      "allocated_budget": 50000
+      "priority": 13,
+      "assigned_resources": ["Web Team", "Design Team", "Jane Smith"],
+      "description": "Redesign the company website with new branding and improved UX",
+      "allocated_budget": 18500,
+      "actual_cost": 17800,
+      "status": "On Track",
+      "resource_allocations": [
+        {
+          "resource": "Web Team",
+          "allocation_percentage": 85,
+          "start_date": "2025-01-01",
+          "end_date": "2025-03-31"
+        },
+        {
+          "resource": "Design Team",
+          "allocation_percentage": 65,
+          "start_date": "2025-01-01",
+          "end_date": "2025-02-15"
+        },
+        {
+          "resource": "Jane Smith",
+          "allocation_percentage": 40,
+          "start_date": "2025-01-01",
+          "end_date": "2025-03-31"
+        }
+      ]
     },
     {
       "name": "Mobile App Development",
       "start_date": "2025-02-15",
       "end_date": "2025-06-30",
+      "priority": 14,
+      "assigned_resources": [
+        "Mobile App Team",
+        "QA Team",
+        "User Experience Team"
+      ],
+      "description": "Develop native mobile apps for Android and iOS platforms",
+      "allocated_budget": 32000,
+      "actual_cost": 34500,
+      "status": "Slightly Over Budget",
+      "resource_allocations": [
+        {
+          "resource": "Mobile App Team",
+          "allocation_percentage": 90,
+          "start_date": "2025-02-15",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "QA Team",
+          "allocation_percentage": 35,
+          "start_date": "2025-04-01",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "User Experience Team",
+          "allocation_percentage": 30,
+          "start_date": "2025-02-15",
+          "end_date": "2025-03-31"
+        }
+      ]
+    },
+    {
+      "name": "Annual Marketing Campaign",
+      "start_date": "2025-03-01",
+      "end_date": "2025-05-31",
       "priority": 1,
-      "assigned_resources": ["Jane Smith", "Web Team"],
-      "description": "Develop a native mobile app for Android and iOS.",
-      "allocated_budget": 80000
+      "assigned_resources": ["Marketing", "Design Team", "Customer Experience"],
+      "description": "Comprehensive marketing campaign to increase brand awareness and market share",
+      "allocated_budget": 215000,
+      "actual_cost": 230000,
+      "status": "Over Budget",
+      "resource_allocations": [
+        {
+          "resource": "Marketing",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2025-05-31"
+        },
+        {
+          "resource": "Design Team",
+          "allocation_percentage": 50,
+          "start_date": "2025-03-01",
+          "end_date": "2025-04-15"
+        },
+        {
+          "resource": "Customer Experience",
+          "allocation_percentage": 25,
+          "start_date": "2025-04-01",
+          "end_date": "2025-05-31"
+        }
+      ]
+    },
+    {
+      "name": "Employee Training Program",
+      "start_date": "2025-04-01",
+      "end_date": "2025-07-31",
+      "priority": 15,
+      "assigned_resources": ["HR Department", "William Davis", "Audrey Ward"],
+      "description": "Comprehensive training program for employee skill development",
+      "allocated_budget": 62000,
+      "actual_cost": 57500,
+      "status": "Under Budget",
+      "resource_allocations": [
+        {
+          "resource": "HR Department",
+          "allocation_percentage": 35,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-31"
+        },
+        {
+          "resource": "William Davis",
+          "allocation_percentage": 20,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-31"
+        },
+        {
+          "resource": "Audrey Ward",
+          "allocation_percentage": 15,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-31"
+        }
+      ]
+    },
+    {
+      "name": "Product Launch: NextGen Service",
+      "start_date": "2025-05-01",
+      "end_date": "2025-09-30",
+      "priority": 2,
+      "assigned_resources": [
+        "Marketing",
+        "Product Management",
+        "Innovation Team"
+      ],
+      "description": "Launch of a new flagship service offering targeting enterprise clients",
+      "allocated_budget": 480000,
+      "actual_cost": 520000,
+      "status": "At Risk",
+      "resource_allocations": [
+        {
+          "resource": "Marketing",
+          "allocation_percentage": 75,
+          "start_date": "2025-06-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "Product Management",
+          "allocation_percentage": 80,
+          "start_date": "2025-05-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "Innovation Team",
+          "allocation_percentage": 30,
+          "start_date": "2025-05-01",
+          "end_date": "2025-07-31"
+        }
+      ]
+    },
+    {
+      "name": "Sales Team Enablement",
+      "start_date": "2025-03-15",
+      "end_date": "2025-06-15",
+      "priority": 8,
+      "assigned_resources": [
+        "Sales Department",
+        "Product Management",
+        "Technical Support Team"
+      ],
+      "description": "Provide sales team with tools, training and resources to increase efficiency",
+      "allocated_budget": 125000,
+      "actual_cost": 127000,
+      "status": "On Track",
+      "resource_allocations": [
+        {
+          "resource": "Sales Department",
+          "allocation_percentage": 65,
+          "start_date": "2025-03-15",
+          "end_date": "2025-06-15"
+        },
+        {
+          "resource": "Product Management",
+          "allocation_percentage": 25,
+          "start_date": "2025-03-15",
+          "end_date": "2025-06-15"
+        },
+        {
+          "resource": "Technical Support Team",
+          "allocation_percentage": 20,
+          "start_date": "2025-04-01",
+          "end_date": "2025-05-30"
+        }
+      ]
+    },
+    {
+      "name": "Network Capacity Expansion",
+      "start_date": "2025-05-01",
+      "end_date": "2025-09-30",
+      "priority": 3,
+      "assigned_resources": [
+        "Network Planning Team",
+        "Network Implementation Team",
+        "Field Operations Team"
+      ],
+      "description": "Increase network capacity in high-demand regions",
+      "allocated_budget": 430000,
+      "actual_cost": 410000,
+      "status": "Under Budget",
+      "resource_allocations": [
+        {
+          "resource": "Network Planning Team",
+          "allocation_percentage": 45,
+          "start_date": "2025-05-01",
+          "end_date": "2025-06-30"
+        },
+        {
+          "resource": "Network Implementation Team",
+          "allocation_percentage": 70,
+          "start_date": "2025-06-01",
+          "end_date": "2025-09-30"
+        },
+        {
+          "resource": "Field Operations Team",
+          "allocation_percentage": 60,
+          "start_date": "2025-06-15",
+          "end_date": "2025-09-30"
+        }
+      ]
     }
   ]
 }

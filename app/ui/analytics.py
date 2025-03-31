@@ -322,7 +322,7 @@ def display_workload_distribution_chart(filtered_data: pd.DataFrame) -> None:
         y1=optimal_max,
         line_width=0,
         fillcolor="green",
-        opacity=0.1,
+        opacity=0.5,
         annotation_text="Optimal Zone",
         annotation_position="top right",
     )
@@ -974,6 +974,27 @@ def display_performance_metrics_dashboard(
                     "#FF5252",
                 ]
 
+                # FIXED: First, determine if the data is already showing all resources in a specific category
+                all_in_one_category = True
+                primary_category = None
+
+                for col in allocation_cols:
+                    # Check if any department has resources in this category
+                    if (display_df[col] > 0).any():
+                        if primary_category is None:
+                            primary_category = col
+                        elif primary_category != col and (display_df[col] > 0).any():
+                            all_in_one_category = False
+                            break
+
+                # Show warning if all resources are in one category
+                if all_in_one_category and primary_category:
+                    st.warning(
+                        f"All resources are currently in the '{primary_category}' allocation range. "
+                        + "This may be due to all resources being allocated at the same percentage level in the data. "
+                        + "Consider varying resource allocations to get a more meaningful distribution."
+                    )
+
                 for i, col in enumerate(allocation_cols):
                     fig_dist.add_trace(
                         go.Bar(
@@ -1045,6 +1066,7 @@ def display_performance_metrics_dashboard(
                     <li>The <strong>cyan line</strong> represents the Balance Score - higher scores indicate more resources in the optimal utilization range (70-90%).</li>
                     <li>An ideally balanced department would have most resources in the "Optimal" category with minimal overallocation or underutilization.</li>
                 </ul>
+                <p><strong>Note:</strong> If all resources show the same allocation level (e.g., all at 100%), this indicates all resources are allocated at the same percentage in your project data.</p>
                 </div>
                 """,
                     unsafe_allow_html=True,
