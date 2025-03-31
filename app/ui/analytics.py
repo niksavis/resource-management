@@ -141,7 +141,7 @@ def create_resource_analytics_filters(page_key: str) -> Dict[str, Any]:
             resource_types = st.multiselect(
                 "Resource Types",
                 options=["Person", "Team", "Department"],
-                default=["Person", "Team", "Department"],
+                default=[],  # Changed from ["Person", "Team", "Department"] to empty list
                 key=f"resource_types_{page_key}",
             )
 
