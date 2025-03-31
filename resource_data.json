@@ -1358,6 +1358,16 @@
       "name": "Marketing",
       "teams": [],
       "members": []
+    },
+    {
+      "name": "HR Department",
+      "teams": [],
+      "members": []
+    },
+    {
+      "name": "Sales Department",
+      "teams": [],
+      "members": []
     }
   ],
   "projects": [
