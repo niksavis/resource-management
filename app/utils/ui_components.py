@@ -51,31 +51,38 @@ def paginate_dataframe(df, key_prefix, items_per_page=10):
     # Get the paginated slice
     paginated_df = df_display.iloc[start_idx:end_idx]
 
-    # Display pagination controls
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # Display pagination controls with improved layout
+    col1, col2 = st.columns([7, 3])
 
     with col1:
-        if st.button(
-            "⬅️ Previous",  # Added back the left arrow icon
-            key=f"{key_prefix}_prev",
-            disabled=st.session_state[f"{key_prefix}_page"] == 0,
-        ):
-            st.session_state[f"{key_prefix}_page"] -= 1
-            st.rerun()
+        # Display page info with left alignment
+        current_page_display = st.session_state[f"{key_prefix}_page"] + 1
+        st.markdown(
+            f"**Page {current_page_display} of {total_pages}** ({total_rows} items)"
+        )
 
     with col2:
-        # Display page info with correct 1-based page numbering
-        current_page_display = st.session_state[f"{key_prefix}_page"] + 1
-        st.markdown(f"**Page {current_page_display} of {total_pages}**")
+        # Group navigation buttons together on the right
+        button_cols = st.columns([1, 1])
+        with button_cols[0]:
+            if st.button(
+                "⬅️ Previous",
+                key=f"{key_prefix}_prev",
+                disabled=st.session_state[f"{key_prefix}_page"] == 0,
+                use_container_width=True,
+            ):
+                st.session_state[f"{key_prefix}_page"] -= 1
+                st.rerun()
 
-    with col3:
-        if st.button(
-            "Next ➡️",  # Added back the right arrow icon
-            key=f"{key_prefix}_next",
-            disabled=st.session_state[f"{key_prefix}_page"] >= total_pages - 1,
-        ):
-            st.session_state[f"{key_prefix}_page"] += 1
-            st.rerun()
+        with button_cols[1]:
+            if st.button(
+                "Next ➡️",
+                key=f"{key_prefix}_next",
+                disabled=st.session_state[f"{key_prefix}_page"] >= total_pages - 1,
+                use_container_width=True,
+            ):
+                st.session_state[f"{key_prefix}_page"] += 1
+                st.rerun()
 
     return paginated_df
 
