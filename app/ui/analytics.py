@@ -511,7 +511,767 @@ def display_resource_utilization_tab():
     if filtered_data.empty:
         st.warning("No data matches your filter criteria. Try adjusting the filters.")
     else:
-        display_utilization_dashboard(filtered_data, start_date, end_date)
+        display_performance_metrics_dashboard(filtered_data, start_date, end_date)
+
+
+def display_performance_metrics_dashboard(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display comprehensive performance metrics dashboard with visualizations focused on resource efficiency.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    # Calculate utilization metrics
+    utilization_df = calculate_resource_utilization(filtered_data)
+
+    if utilization_df.empty:
+        st.info("No utilization data available with current filters.")
+        return
+
+    # Load utilization thresholds
+    thresholds = load_utilization_thresholds()
+    under_threshold = thresholds.get("under", 50)
+    optimal_min = thresholds.get("optimal_min", 70)
+    optimal_max = thresholds.get("optimal_max", 90)
+    over_threshold = thresholds.get("over", 100)
+
+    # 1. Display Key Performance Indicators (REVISED: Single row with most important metrics)
+    st.subheader("Performance Summary")
+
+    # Calculate key metrics
+    avg_util = utilization_df["Utilization %"].mean()
+    median_util = utilization_df["Utilization %"].median()
+    std_util = utilization_df[
+        "Utilization %"
+    ].std()  # Standard deviation for variability
+
+    # Calculate resource distribution
+    total_resources = len(utilization_df)
+    over_utilized = sum(utilization_df["Utilization %"] > over_threshold)
+    under_utilized = sum(utilization_df["Utilization %"] < under_threshold)
+    optimal_utilized = sum(
+        (utilization_df["Utilization %"] >= optimal_min)
+        & (utilization_df["Utilization %"] <= optimal_max)
+    )
+
+    # Calculate efficiency score (percentage of resources in optimal range)
+    efficiency_score = (
+        (optimal_utilized / total_resources * 100) if total_resources > 0 else 0
+    )
+
+    # REVISED: Display most important metrics in a single row (5 columns)
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.metric(
+            "Average Utilization",
+            f"{avg_util:.1f}%",
+            delta=f"{avg_util - 75:.1f}%" if avg_util != 75 else None,
+            delta_color="normal"
+            if optimal_min <= avg_util <= optimal_max
+            else "inverse",
+        )
+
+    with col2:
+        optimal_pct = (
+            (optimal_utilized / total_resources * 100) if total_resources > 0 else 0
+        )
+        st.metric(
+            "Optimally Utilized",
+            f"{optimal_utilized} ({optimal_pct:.1f}%)",
+            help=f"Resources within {optimal_min}% to {optimal_max}%",
+        )
+
+    with col3:
+        over_pct = (over_utilized / total_resources * 100) if total_resources > 0 else 0
+        st.metric(
+            "Overallocated",
+            f"{over_utilized} ({over_pct:.1f}%)",
+            delta_color="inverse",
+            help=f"Resources above {over_threshold}%",
+        )
+
+    with col4:
+        st.metric(
+            "Efficiency Score",
+            f"{efficiency_score:.1f}%",
+            help=f"Percentage of resources within optimal utilization range ({optimal_min}%-{optimal_max}%)",
+        )
+
+    with col5:
+        st.metric(
+            "Resource Balance",
+            f"{std_util:.1f}%",
+            help="Lower values indicate more balanced allocation across resources (standard deviation)",
+        )
+
+    # 2. Resource Efficiency Analysis
+    st.subheader("Resource Efficiency Analysis")
+
+    # Create two column layout - REVISED with 8:2 ratio to give even more space to the chart
+    col1, col2 = st.columns([8, 2])
+
+    with col1:
+        # Define a performance score - higher for being in optimal range
+        def calculate_performance_score(util):
+            if optimal_min <= util <= optimal_max:
+                return 100  # Full score for optimal range
+            elif util < optimal_min:
+                # Linear scale from 0 to score at optimal_min
+                return (util / optimal_min) * 80
+            else:  # util > optimal_max
+                if util <= over_threshold:
+                    # Linear scale from score at optimal_max to score at over_threshold
+                    over_range = over_threshold - optimal_max
+                    over_percent = (util - optimal_max) / over_range
+                    return 80 - (over_percent * 30)  # Score decreases from 80 to 50
+                else:
+                    # Linear scale from score at over_threshold to 0 at 150%
+                    excess = min(util - over_threshold, 50)  # Cap at 50% over
+                    return 50 - (excess)  # Score decreases from 50 to 0
+
+        # Add performance score
+        utilization_df["Performance Score"] = utilization_df["Utilization %"].apply(
+            calculate_performance_score
+        )
+
+        # Add visual performance rating with high-contrast symbols
+        def get_performance_rating(score):
+            if score >= 90:
+                return "⭐⭐⭐⭐⭐"  # Using emoji stars for better visibility
+            elif score >= 75:
+                return "⭐⭐⭐⭐☆"
+            elif score >= 60:
+                return "⭐⭐⭐☆☆"
+            elif score >= 40:
+                return "⭐⭐☆☆☆"
+            else:
+                return "⭐☆☆☆☆"
+
+        utilization_df["Rating"] = utilization_df["Performance Score"].apply(
+            get_performance_rating
+        )
+
+        # Get top performers
+        top_performers = utilization_df.sort_values(
+            "Performance Score", ascending=False
+        ).head(10)
+
+        # Create horizontal bar chart - IMPROVED COLOR SCHEME
+        # Using a more neutral color palette that works better in both themes
+        colors = [
+            "#4285F4",  # Blue
+            "#34A853",  # Green
+            "#FBBC05",  # Yellow
+            "#EA4335",  # Red
+        ]
+
+        # Assign colors based on resource type
+        def get_type_color(resource_type):
+            type_colors = {
+                "Person": colors[0],
+                "Team": colors[1],
+                "Department": colors[2],
+            }
+            return type_colors.get(resource_type, colors[3])
+
+        top_performers["Color"] = top_performers["Type"].apply(get_type_color)
+
+        # Create chart - REVISED for better star visibility with perfect scores
+        fig1 = go.Figure()
+
+        # Add bars for each resource
+        for idx, row in top_performers.iterrows():
+            fig1.add_trace(
+                go.Bar(
+                    y=[row["Resource"]],
+                    x=[row["Performance Score"]],
+                    orientation="h",
+                    name=row["Type"],
+                    marker_color=row["Color"],
+                    textposition="none",
+                    hovertext=f"{row['Resource']} - {row['Type']}<br>Utilization: {row['Utilization %']:.1f}%<br>Score: {row['Performance Score']:.1f}",
+                    hoverinfo="text",
+                )
+            )
+
+        # Update layout - IMPROVED to ensure stars show even at 100% score
+        fig1.update_layout(
+            title="Top 10 Most Efficient Resources",
+            xaxis_title="Performance Score",
+            yaxis_title="Resource",
+            showlegend=False,
+            margin=dict(l=10, r=120, t=40, b=10),  # INCREASED right margin even more
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(
+                range=[
+                    0,
+                    120,
+                ],  # EXTENDED range further for better visibility of annotations
+                gridcolor="rgba(128,128,128,0.2)",
+                tickvals=[0, 20, 40, 60, 80, 100],  # Keep ticks at standard values
+            ),
+            yaxis=dict(
+                gridcolor="rgba(128,128,128,0.2)",
+            ),
+            # Add annotations for the scores and stars to the right of each bar
+            annotations=[
+                dict(
+                    x=row["Performance Score"] + 10,  # INCREASED offset for more space
+                    y=i,
+                    text=f"{row['Rating']} ({row['Utilization %']:.1f}%)",
+                    showarrow=False,
+                    font=dict(size=14),
+                    xanchor="left",
+                    bgcolor="rgba(255,255,255,0.7)",
+                    bordercolor="rgba(0,0,0,0.2)",
+                    borderwidth=1,
+                    borderpad=4,
+                    opacity=0.8,
+                )
+                for i, (_, row) in enumerate(top_performers.iterrows())
+            ],
+        )
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+    # IMPROVED: Rating legend with reduced font size
+    with col2:
+        # Reduced vertical spacing to align with graph title
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Create a styled box for the legend with consistent but smaller star styling
+        st.markdown(
+            """
+        <div style="border:1px solid rgba(128,128,128,0.3); border-radius:5px; padding:8px; background-color:rgba(128,128,128,0.05);">
+        <p style="font-weight:bold; margin-bottom:6px; font-size:0.95em;">Performance Rating Scale</p>
+        <p style="margin:4px 0;"><span style="font-size:1.05em;">⭐⭐⭐⭐⭐</span> <span style="opacity:0.8; font-size:0.85em;">(90-100): Excellent</span></p>
+        <p style="margin:4px 0;"><span style="font-size:1.05em;">⭐⭐⭐⭐☆</span> <span style="opacity:0.8; font-size:0.85em;">(75-89): Very good</span></p>
+        <p style="margin:4px 0;"><span style="font-size:1.05em;">⭐⭐⭐☆☆</span> <span style="opacity:0.8; font-size:0.85em;">(60-74): Good</span></p>
+        <p style="margin:4px 0;"><span style="font-size:1.05em;">⭐⭐☆☆☆</span> <span style="opacity:0.8; font-size:0.85em;">(40-59): Fair</span></p>
+        <p style="margin:4px 0;"><span style="font-size:1.05em;">⭐☆☆☆☆</span> <span style="opacity:0.8; font-size:0.85em;">(0-39): Poor</span></p>
+        <hr style="margin:6px 0; opacity:0.2;">
+        <p style="font-size:0.8em; opacity:0.8; margin-bottom:0;">The Performance Score reflects how close a resource is to optimal utilization (70-90% range).</p>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+    # Resource Allocation Balance - FIX for Balance Score line color in dark theme
+    if "Department" in filtered_data.columns:
+        # Calculate department/team metrics
+        dept_util = (
+            filtered_data.groupby(["Department", "Resource"])["Allocation %"]
+            .sum()
+            .reset_index()
+        )
+
+        dept_metrics = []
+        for dept, group in dept_util.groupby("Department"):
+            avg_util = group["Allocation %"].mean()
+            optimal_count = sum(
+                (group["Allocation %"] >= optimal_min)
+                & (group["Allocation %"] <= optimal_max)
+            )
+            efficiency = (optimal_count / len(group) * 100) if len(group) > 0 else 0
+
+            # REVISED status calculation to ensure proper categorization
+            status = "Optimal"
+            if avg_util < optimal_min:
+                status = "Underutilized"
+            elif avg_util > over_threshold:
+                status = "Overutilized"
+
+            dept_metrics.append(
+                {
+                    "Department": dept,
+                    "Average Utilization": avg_util,
+                    "Resource Count": len(group),
+                    "Efficiency Score": efficiency,
+                    "Optimal Resources": optimal_count,
+                    "Utilization Status": status,  # Corrected status logic
+                }
+            )
+
+        if dept_metrics:
+            dept_df = pd.DataFrame(dept_metrics)
+
+            # Sort by efficiency score
+            dept_df = dept_df.sort_values("Efficiency Score", ascending=False)
+
+            # Create color map for utilization status with more distinct colors
+            status_colors = {
+                "Optimal": "#66bb6a",  # Green
+                "Underutilized": "#ffca28",  # Amber
+                "Overutilized": "#ff7043",  # Orange
+            }
+
+            # Create bar chart - IMPROVED for better reference line visibility
+            fig3 = px.bar(
+                dept_df,
+                x="Department",
+                y="Average Utilization",
+                color="Utilization Status",
+                color_discrete_map=status_colors,
+                text="Average Utilization",
+                hover_data=["Efficiency Score", "Optimal Resources", "Resource Count"],
+                labels={
+                    "Department": "Department/Team",
+                    "Average Utilization": "Average Utilization (%)",
+                    "Efficiency Score": "Efficiency Score (%)",
+                    "Optimal Resources": "Resources in Optimal Range",
+                    "Resource Count": "Total Resources",
+                },
+                title="Department Utilization by Status",
+            )
+
+            # Format text to show percentages
+            fig3.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+
+            # Create custom hover template
+            fig3.update_traces(
+                hovertemplate="<b>%{x}</b><br>"
+                + "Utilization: %{y:.1f}%<br>"
+                + "Resources: %{customdata[2]}<br>"
+                + "Efficiency Score: %{customdata[0]:.1f}%<br>"
+                + "Optimal Resources: %{customdata[1]}<extra></extra>"
+            )
+
+            # IMPROVED: Add reference lines with stronger visibility and contrast
+            # Make lines appear on top of bars and use higher contrast colors with patterns
+            fig3.add_shape(
+                type="line",
+                x0=-0.5,
+                x1=len(dept_df) - 0.5,
+                y0=optimal_min,
+                y1=optimal_min,
+                line=dict(
+                    color="#1B5E20",  # Dark green for better contrast
+                    width=3,
+                    dash="dot",
+                ),
+                layer="above",  # Place above the bars
+            )
+
+            fig3.add_shape(
+                type="line",
+                x0=-0.5,
+                x1=len(dept_df) - 0.5,
+                y0=optimal_max,
+                y1=optimal_max,
+                line=dict(
+                    color="#1B5E20",  # Dark green for better contrast
+                    width=3,
+                    dash="dot",
+                ),
+                layer="above",  # Place above the bars
+            )
+
+            fig3.add_shape(
+                type="line",
+                x0=-0.5,
+                x1=len(dept_df) - 0.5,
+                y0=over_threshold,
+                y1=over_threshold,
+                line=dict(
+                    color="#B71C1C",  # Dark red for better contrast
+                    width=3,
+                    dash="dot",
+                ),
+                layer="above",  # Place above the bars
+            )
+
+            # Add line annotations
+            fig3.add_annotation(
+                x=len(dept_df) - 0.5,
+                y=optimal_min,
+                text="Optimal Min",
+                showarrow=False,
+                font=dict(color="#1B5E20", size=12),
+                bgcolor="rgba(255,255,255,0.7)",
+                bordercolor="#1B5E20",
+                borderwidth=1,
+                borderpad=3,
+                xanchor="right",
+            )
+
+            fig3.add_annotation(
+                x=len(dept_df) - 0.5,
+                y=optimal_max,
+                text="Optimal Max",
+                showarrow=False,
+                font=dict(color="#1B5E20", size=12),
+                bgcolor="rgba(255,255,255,0.7)",
+                bordercolor="#1B5E20",
+                borderwidth=1,
+                borderpad=3,
+                xanchor="right",
+            )
+
+            fig3.add_annotation(
+                x=len(dept_df) - 0.5,
+                y=over_threshold,
+                text="Overallocated",
+                showarrow=False,
+                font=dict(color="#B71C1C", size=12),
+                bgcolor="rgba(255,255,255,0.7)",
+                bordercolor="#B71C1C",
+                borderwidth=1,
+                borderpad=3,
+                xanchor="right",
+            )
+
+            # Update layout for better visibility in both themes
+            fig3.update_layout(
+                margin=dict(l=10, r=10, t=40, b=80),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=dict(gridcolor="rgba(128,128,128,0.2)", tickangle=-45),
+                yaxis=dict(
+                    gridcolor="rgba(128,128,128,0.2)",
+                    range=[0, max(150, dept_df["Average Utilization"].max() * 1.1)],
+                ),
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+                ),
+            )
+
+            st.plotly_chart(fig3, use_container_width=True)
+
+            # REPLACEMENT: New metric instead of the radar chart
+            st.subheader("Resource Allocation Balance")
+
+            # Create resource allocation distribution analysis
+            allocation_ranges = [
+                (0, 30, "Very Low (0-30%)"),
+                (30, 50, "Low (30-50%)"),
+                (50, 70, "Moderate (50-70%)"),
+                (70, 90, "Optimal (70-90%)"),
+                (90, 100, "High (90-100%)"),
+                (100, float("inf"), "Overallocated (>100%)"),
+            ]
+
+            distribution_data = []
+            for dept, group in dept_util.groupby("Department"):
+                dept_data = {"Department": dept}
+                total_resources = len(group)
+
+                # Calculate distribution across allocation ranges
+                for lower, upper, label in allocation_ranges:
+                    count = sum(
+                        (group["Allocation %"] >= lower)
+                        & (group["Allocation %"] < upper)
+                    )
+                    pct = (count / total_resources * 100) if total_resources > 0 else 0
+                    dept_data[label] = pct
+
+                # Add additional metrics
+                dept_data["Total Resources"] = total_resources
+                # Calculate balance score (higher when most resources are in optimal range)
+                optimal_count = sum(
+                    (group["Allocation %"] >= 70) & (group["Allocation %"] <= 90)
+                )
+                dept_data["Balance Score"] = (
+                    (optimal_count / total_resources * 100)
+                    if total_resources > 0
+                    else 0
+                )
+
+                distribution_data.append(dept_data)
+
+            if distribution_data:
+                dist_df = pd.DataFrame(distribution_data)
+
+                # Sort by Balance Score
+                dist_df = dist_df.sort_values("Balance Score", ascending=False)
+
+                # Select top 5 departments for better visibility
+                if len(dist_df) > 5:
+                    display_df = dist_df.head(5)
+                    st.caption(
+                        f"Showing top 5 departments by Balance Score. {len(dist_df) - 5} departments not shown."
+                    )
+                else:
+                    display_df = dist_df
+
+                # Create a stacked bar chart to show distribution
+                allocation_cols = [
+                    col
+                    for col in dist_df.columns
+                    if col not in ["Department", "Total Resources", "Balance Score"]
+                ]
+
+                fig_dist = go.Figure()
+
+                # Use a color scale appropriate for allocation levels (low to high)
+                colors = [
+                    "#E3F2FD",
+                    "#90CAF9",
+                    "#42A5F5",
+                    "#2196F3",
+                    "#1976D2",
+                    "#FF5252",
+                ]
+
+                for i, col in enumerate(allocation_cols):
+                    fig_dist.add_trace(
+                        go.Bar(
+                            name=col,
+                            x=display_df["Department"],
+                            y=display_df[col],
+                            marker_color=colors[i],
+                            hovertemplate="%{y:.1f}% of resources",
+                        )
+                    )
+
+                # Add balance score as a line with high-visibility color
+                fig_dist.add_trace(
+                    go.Scatter(
+                        x=display_df["Department"],
+                        y=display_df["Balance Score"],
+                        mode="lines+markers",
+                        name="Balance Score",
+                        line=dict(
+                            color="#00BCD4", width=3
+                        ),  # Bright cyan - visible in both themes
+                        marker=dict(size=10, symbol="diamond", color="#00BCD4"),
+                        yaxis="y2",
+                    )
+                )
+
+                # Update layout - FIX for yaxis2 title definition and improved styling
+                fig_dist.update_layout(
+                    title="Department Resource Allocation Distribution",
+                    xaxis=dict(title="Department", tickangle=-45),
+                    yaxis=dict(
+                        title="Percentage of Resources",
+                        gridcolor="rgba(128,128,128,0.2)",
+                    ),
+                    yaxis2=dict(
+                        title=dict(
+                            text="Balance Score",
+                            font=dict(color="#00BCD4"),  # Match the line color
+                        ),
+                        tickfont=dict(color="#00BCD4"),  # Match the line color
+                        overlaying="y",
+                        side="right",
+                        range=[0, 100],
+                        gridcolor="rgba(0,0,0,0)",
+                        zerolinecolor="rgba(0,0,0,0)",
+                    ),
+                    barmode="stack",
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="center",
+                        x=0.5,
+                    ),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    margin=dict(l=10, r=10, t=40, b=100),
+                )
+
+                st.plotly_chart(fig_dist, use_container_width=True)
+
+                # IMPROVED: More informative explanation with better formatting
+                st.markdown(
+                    """
+                <div style="background-color:rgba(0,188,212,0.1); border-left:3px solid #00BCD4; padding:10px; border-radius:2px;">
+                <p><strong>Understanding the Resource Allocation Distribution:</strong></p>
+                <ul>
+                    <li>The <strong>stacked bars</strong> show how resources are distributed across utilization ranges within each department.</li>
+                    <li>The <strong>cyan line</strong> represents the Balance Score - higher scores indicate more resources in the optimal utilization range (70-90%).</li>
+                    <li>An ideally balanced department would have most resources in the "Optimal" category with minimal overallocation or underutilization.</li>
+                </ul>
+                </div>
+                """,
+                    unsafe_allow_html=True,
+                )
+
+    # 4. Performance Trends Over Time - FIX: Corrected weekly data filtering logic
+    st.subheader("Performance Trends")
+
+    # Create date range with weekly intervals
+    date_range = pd.date_range(start=start_date, end=end_date, freq="W")
+
+    if len(date_range) > 1:
+        # Create a dataframe to store utilization over time
+        weekly_data = []
+
+        for i in range(len(date_range) - 1):
+            week_start = date_range[i]
+            week_end = date_range[i + 1]
+
+            # Filter data for this week - FIX: Use filtered_data in the condition, not week_data
+            week_data = filtered_data[
+                (filtered_data["Start"] <= week_end)
+                & (filtered_data["End"] >= week_start)
+            ]
+
+            if not week_data.empty:
+                # Calculate utilization for resources this week
+                week_util = calculate_resource_utilization(week_data)
+
+                # Calculate metrics
+                avg_util = week_util["Utilization %"].mean()
+                median_util = week_util["Utilization %"].median()
+                optimal_count = sum(
+                    (week_util["Utilization %"] >= optimal_min)
+                    & (week_util["Utilization %"] <= optimal_max)
+                )
+                total_count = len(week_util)
+                efficiency = (
+                    (optimal_count / total_count * 100) if total_count > 0 else 0
+                )
+
+                weekly_data.append(
+                    {
+                        "Week": week_start.strftime("%b %d"),
+                        "Average Utilization": avg_util,
+                        "Median Utilization": median_util,
+                        "Efficiency Score": efficiency,
+                        "Resource Count": total_count,
+                    }
+                )
+
+        if weekly_data:
+            # Create dataframe
+            trend_df = pd.DataFrame(weekly_data)
+
+            # Create line chart - REVERTED to original style with theme improvements
+            fig4 = go.Figure()
+
+            # Add lines for key metrics
+            fig4.add_trace(
+                go.Scatter(
+                    x=trend_df["Week"],
+                    y=trend_df["Average Utilization"],
+                    mode="lines+markers",
+                    name="Average Utilization",
+                    line=dict(color="#42a5f5", width=3),  # Blue
+                    marker=dict(size=8),
+                )
+            )
+
+            fig4.add_trace(
+                go.Scatter(
+                    x=trend_df["Week"],
+                    y=trend_df["Median Utilization"],
+                    mode="lines+markers",
+                    name="Median Utilization",
+                    line=dict(color="#66bb6a", width=3),  # Green
+                    marker=dict(size=8),
+                )
+            )
+
+            fig4.add_trace(
+                go.Scatter(
+                    x=trend_df["Week"],
+                    y=trend_df["Efficiency Score"],
+                    mode="lines+markers",
+                    name="Efficiency Score",
+                    line=dict(color="#ab47bc", width=3),  # Purple
+                    marker=dict(size=8),
+                )
+            )
+
+            # Add reference zones
+            fig4.add_hrect(
+                y0=optimal_min,
+                y1=optimal_max,
+                fillcolor="rgba(102, 187, 106, 0.1)",  # Very light green
+                line_width=0,
+                annotation_text="Optimal Zone",
+                annotation_position="top right",
+            )
+
+            # Add line for 100% utilization
+            fig4.add_hline(
+                y=100,
+                line_dash="dash",
+                line_color="rgba(244, 67, 54, 0.7)",  # Semi-transparent red
+            )
+
+            # REVERTED: Go back to standard hover with theme-aware styling
+            fig4.update_layout(
+                title="Weekly Performance Trends",
+                xaxis_title="Week",
+                yaxis_title="Metrics (%)",
+                margin=dict(l=10, r=10, t=40, b=40),
+                paper_bgcolor="rgba(0,0,0,0)",  # Transparent background
+                plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+                ),
+                xaxis=dict(
+                    gridcolor="rgba(128,128,128,0.2)",  # Light grid that works in both themes
+                ),
+                yaxis=dict(
+                    gridcolor="rgba(128,128,128,0.2)",  # Light grid that works in both themes
+                    range=[0, 110],  # Slightly above 100% to show the full range
+                ),
+                # Use default hover mode but with theme-compatible styling
+                hovermode="x unified",
+                hoverlabel=dict(
+                    bordercolor="rgba(0, 0, 0, 0.3)",
+                    # No bgcolor setting to allow default theme-aware colors
+                    font_size=12,
+                ),
+            )
+
+            st.plotly_chart(fig4, use_container_width=True)
+        else:
+            st.info("Insufficient time-based data to display performance trends.")
+    else:
+        st.info(
+            "Selected date range is too short to display meaningful trends. Please select a longer period."
+        )
+
+    # 5. Detailed Performance Data Table - No changes needed
+    with st.expander("Detailed Resource Performance Data", expanded=False):
+        # Prepare table data
+        table_data = utilization_df.copy()
+
+        # Sort by performance score
+        table_data = table_data.sort_values("Performance Score", ascending=False)
+
+        # Format display columns
+        display_cols = [
+            "Resource",
+            "Type",
+            "Department",
+            "Utilization %",
+            "Performance Score",
+            "Rating",
+            "Utilization Category",
+        ]
+
+        # Select only columns that exist
+        display_cols = [col for col in display_cols if col in table_data.columns]
+
+        st.dataframe(
+            table_data[display_cols],
+            column_config={
+                "Utilization %": st.column_config.NumberColumn(
+                    "Utilization %",
+                    format="%.1f%%",
+                ),
+                "Performance Score": st.column_config.ProgressColumn(
+                    "Performance Score",
+                    format="%.1f",
+                    min_value=0,
+                    max_value=100,
+                ),
+            },
+            hide_index=True,
+            use_container_width=True,
+        )
 
 
 def display_capacity_planning_tab():
