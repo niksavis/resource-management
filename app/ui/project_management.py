@@ -80,7 +80,7 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
     """
     with st.expander("🔍 Search, Sort, and Filter Projects", expanded=False):
         # First row: Search, Date Range, and Sort options
-        col1, col2, col3, col4 = st.columns([1, 1, 0.7, 0.3])
+        col1, col2, col3 = st.columns([1, 1, 1])
 
         with col1:
             search_term = st.text_input("Search Projects", key="search_projects")
@@ -110,8 +110,7 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
                 index=3,  # Default to Priority
                 key="sort_by_projects",
             )
-
-        with col4:
+            # Moved checkbox here, below the dropdown and in the same column
             sort_ascending = st.checkbox(
                 "Ascending", value=True, key="sort_ascending_projects"
             )
