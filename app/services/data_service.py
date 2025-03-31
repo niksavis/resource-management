@@ -387,73 +387,100 @@ def parse_resources(resources: List[str]) -> Tuple[List[str], List[str], List[st
 
 
 def calculate_capacity_data(
-    gantt_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
 ) -> pd.DataFrame:
     """
-    Calculate capacity data for resources in the given date range.
+    Calculate daily capacity data for each resource in the given date range.
 
     Args:
-        gantt_data: DataFrame containing Gantt chart data
-        start_date: Start date for capacity calculation
-        end_date: End date for capacity calculation
+        filtered_data: Filtered DataFrame containing resource assignments
+        start_date: Start date to calculate from
+        end_date: End date to calculate to
 
     Returns:
-        DataFrame with capacity data
+        DataFrame with daily capacity data for each resource
     """
-    if gantt_data.empty:
-        return pd.DataFrame(
-            columns=[
-                "Resource",
-                "Type",
-                "Department",
-                "Date",
-                "Allocation",
-                "Available",
-                "Overallocated",
-            ]
-        )
+    if filtered_data.empty or start_date is None or end_date is None:
+        return pd.DataFrame()
 
-    # Create a date range
-    all_dates = pd.date_range(start=start_date, end=end_date)
+    # Create list to hold capacity data rows
+    capacity_rows = []
 
-    # Get all resources from Gantt data
-    resources = gantt_data["Resource"].unique()
+    # Create date range
+    date_range = pd.date_range(start=start_date, end=end_date)
+
+    # Get unique resources
+    resources = filtered_data["Resource"].unique()
 
     # For each resource and date, calculate allocation
-    capacity_data = []
-
-    for resource in resources:
-        resource_rows = gantt_data[gantt_data["Resource"] == resource]
-        resource_type = resource_rows["Type"].iloc[0]
-        department = resource_rows["Department"].iloc[0]
-
-        # For each date in range, calculate total allocation
-        for date in all_dates:
-            # Get allocations for this resource on this date
-            allocations = resource_rows[
-                (resource_rows["Start"] <= date) & (resource_rows["End"] >= date)
+    for date in date_range:
+        for resource in resources:
+            # Filter assignments for this resource on this date
+            assignments = filtered_data[
+                (filtered_data["Resource"] == resource)
+                & (filtered_data["Start"] <= date)
+                & (filtered_data["End"] >= date)
             ]
 
-            # Calculate total allocation percentage
-            total_allocation = allocations["Allocation %"].sum() / 100
+            # Fix: Use sum() instead of mean() for allocation
+            if not assignments.empty:
+                # Sum all allocations for this resource on this date
+                allocation = assignments["Allocation %"].sum()
 
-            # Calculate availability and over-allocation
-            available = max(0, 1 - total_allocation)  # Can't be less than 0
-            overallocated = max(0, total_allocation - 1)  # Can't be less than 0
+                # Get additional resource attributes
+                department = (
+                    assignments["Department"].iloc[0]
+                    if "Department" in assignments.columns
+                    else None
+                )
+                team = (
+                    assignments["Team"].iloc[0]
+                    if "Team" in assignments.columns
+                    else None
+                )
+                resource_type = (
+                    assignments["Type"].iloc[0]
+                    if "Type" in assignments.columns
+                    else None
+                )
+            else:
+                # No assignments for this resource on this date
+                allocation = 0
 
-            capacity_data.append(
+                # Try to get resource attributes from any record for this resource
+                resource_info = filtered_data[filtered_data["Resource"] == resource]
+                department = (
+                    resource_info["Department"].iloc[0]
+                    if not resource_info.empty and "Department" in resource_info.columns
+                    else None
+                )
+                team = (
+                    resource_info["Team"].iloc[0]
+                    if not resource_info.empty and "Team" in resource_info.columns
+                    else None
+                )
+                resource_type = (
+                    resource_info["Type"].iloc[0]
+                    if not resource_info.empty and "Type" in resource_info.columns
+                    else None
+                )
+
+            # Add row to capacity data
+            capacity_rows.append(
                 {
-                    "Resource": resource,
-                    "Type": resource_type,
-                    "Department": department,
                     "Date": date,
-                    "Allocation": total_allocation,
-                    "Available": available,
-                    "Overallocated": overallocated,
+                    "Resource": resource,
+                    "Allocation": allocation,  # Now using the sum of allocations
+                    "Department": department,
+                    "Team": team,
+                    "Type": resource_type,
                 }
             )
 
-    return pd.DataFrame(capacity_data)
+    # Create DataFrame from rows
+    capacity_df = pd.DataFrame(capacity_rows)
+
+    return capacity_df
 
 
 def apply_filters(df: pd.DataFrame, filters: Dict[str, Any]) -> pd.DataFrame:
@@ -525,12 +552,6 @@ def sort_projects_by_priority_and_date(
 ) -> List[Dict[str, Any]]:
     """
     Sort projects by priority (ascending) and end date (ascending).
-
-    Args:
-        projects: List of project dictionaries
-
-    Returns:
-        Sorted list of projects
     """
     return sorted(
         projects,
@@ -578,10 +599,8 @@ def paginate_dataframe(
                 st.session_state[f"{key_prefix}_page"] = max(
                     0, st.session_state[f"{key_prefix}_page"] - 1
                 )
-
         with col2:
             st.write(f"Page {st.session_state[f'{key_prefix}_page'] + 1} of {n_pages}")
-
         with col3:
             if st.button("Next ▶️", key=f"{key_prefix}_next"):
                 st.session_state[f"{key_prefix}_page"] = min(
@@ -626,14 +645,12 @@ def check_circular_dependencies() -> Tuple[
     for team in st.session_state.data["teams"]:
         dependency_graph[team["name"]] = set()
         team_departments[team["name"]] = team["department"]
-
         for member in team["members"]:
             if member in team_membership:
                 if member not in multi_team_members:
                     multi_team_members[member] = [team_membership[member]]
                 multi_team_members[member].append(team["name"])
             team_membership[member] = team["name"]
-
         for other_team in st.session_state.data["teams"]:
             if team != other_team and any(
                 member in other_team["members"] for member in team["members"]
@@ -647,7 +664,6 @@ def check_circular_dependencies() -> Tuple[
                     multi_department_members[member] = [department_membership[member]]
                 multi_department_members[member].append(department["name"])
             department_membership[member] = department["name"]
-
         for team in department["teams"]:
             if team in team_departments:
                 if team_departments[team] != department["name"]:
@@ -663,24 +679,19 @@ def check_circular_dependencies() -> Tuple[
     def dfs(node, current_path=None):
         if current_path is None:
             current_path = []
-
         if node in path:
             # Cycle detected - capture the full path
             cycle_path = current_path + [node]
             cycle_paths.append(" → ".join(cycle_path))
             return True
-
         if node in visited:
             return False
-
         visited.add(node)
         path.add(node)
         current_path.append(node)
-
         for neighbor in dependency_graph.get(node, []):
             if dfs(neighbor, current_path):
                 return True
-
         path.remove(node)
         current_path.pop()
         return False
@@ -798,7 +809,6 @@ def find_resource_conflicts(
 
     # Create a date range for all dates
     dates = pd.date_range(start=min_date, end=max_date)
-
     conflicts = []
 
     # For each resource, check daily allocations
@@ -813,7 +823,6 @@ def find_resource_conflicts(
             allocations = resource_data[
                 (resource_data["Start"] <= date) & (resource_data["End"] >= date)
             ]
-
             total_allocation = allocations["Allocation %"].sum() / 100
 
             # If allocation exceeds threshold, report as conflict

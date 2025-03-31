@@ -1014,7 +1014,7 @@ def display_performance_metrics_dashboard(
                         + "Consider varying resource allocations to get a more meaningful distribution."
                     )
 
-                for i, col in enumerate(allocation_cols):
+                for i, col in allocation_cols:
                     fig_dist.add_trace(
                         go.Bar(
                             name=col,
@@ -1314,6 +1314,780 @@ def display_capacity_planning_tab():
         display_capacity_planning_dashboard(filtered_data, start_date, end_date)
 
 
+def display_capacity_planning_dashboard(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display the capacity planning dashboard with forecast charts.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
+    st.subheader("Capacity Planning Dashboard")
+
+    # Generate capacity data
+    capacity_data = calculate_capacity_data(filtered_data, start_date, end_date)
+
+    if capacity_data.empty:
+        st.info("No capacity data available with current filters.")
+        return
+
+    # Add diagnostic toggle
+    show_diagnostics = st.sidebar.checkbox("Show Data Diagnostics", value=False)
+
+    if show_diagnostics:
+        with st.expander("Allocation Data Diagnostics", expanded=True):
+            st.write("### Allocation Statistics")
+
+            # Calculate key statistics
+            avg_allocation = capacity_data["Allocation"].mean()
+            median_allocation = capacity_data["Allocation"].median()
+            max_allocation = capacity_data["Allocation"].max()
+            min_allocation = capacity_data["Allocation"].min()
+
+            # Calculate resource statistics
+            resource_allocations = capacity_data.groupby("Resource")[
+                "Allocation"
+            ].mean()
+            fully_allocated = sum(resource_allocations >= 100)
+            high_allocated = sum(
+                (resource_allocations >= 70) & (resource_allocations < 100)
+            )
+            low_allocated = sum(resource_allocations < 30)
+
+            # Display statistics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Average Allocation", f"{avg_allocation:.1f}%")
+                st.metric("Minimum Allocation", f"{min_allocation:.1f}%")
+            with col2:
+                st.metric("Median Allocation", f"{median_allocation:.1f}%")
+                st.metric("Maximum Allocation", f"{max_allocation:.1f}%")
+            with col3:
+                st.metric("Fully Allocated Resources", fully_allocated)
+                st.metric("Low Allocated (<30%)", low_allocated)
+
+            # Show data samples
+            st.write("### Sample Allocations")
+            st.dataframe(capacity_data.head(10))
+
+            # Show allocation distribution
+            st.write("### Allocation Distribution")
+            fig = px.histogram(
+                capacity_data,
+                x="Allocation",
+                nbins=20,
+                title="Distribution of Allocation Values",
+                labels={"Allocation": "Allocation %"},
+            )
+            fig.update_layout(xaxis_range=[0, max(100, max_allocation * 1.1)])
+            st.plotly_chart(fig, use_container_width=True)
+
+    # Display availability summary metrics
+    display_availability_summary_metrics(capacity_data)
+
+    # Display availability timeline
+    display_availability_timeline(capacity_data, chart_height)
+
+    # Display department/team availability breakdown
+    display_availability_by_group(capacity_data, chart_height)
+
+    # Create a heatmap of resource allocations over time
+    # First, pivot the data to have resources as rows and dates as columns
+    pivot_data = capacity_data.pivot_table(
+        index="Resource", columns="Date", values="Allocation", aggfunc="sum"
+    )
+
+    # Convert allocation to availability (100% - allocation)
+    availability_data = 100 - pivot_data
+
+    # Sort resources by average availability
+    avg_availability = availability_data.mean(axis=1).sort_values(ascending=False)
+    sorted_availability = availability_data.loc[avg_availability.index]
+
+    # Create a heatmap using plotly with availability data
+    heatmap = px.imshow(
+        sorted_availability.values,
+        labels=dict(x="Date", y="Resource", color="Availability %"),
+        x=sorted_availability.columns.strftime("%Y-%m-%d"),
+        y=sorted_availability.index,
+        color_continuous_scale="YlGnBu",  # Using YlGnBu - works well in both themes
+        title="Resource Availability Heatmap",
+        height=chart_height,
+    )
+
+    # Add better axis formatting
+    heatmap.update_layout(
+        xaxis=dict(
+            tickangle=-45,
+            tickmode="auto",
+            nticks=20,
+            tickformat="%b %d",
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        coloraxis_colorbar=dict(
+            title="Availability %",
+            ticksuffix="%",
+        ),
+        margin=dict(l=10, r=10, t=40, b=80),
+    )
+
+    # Add annotation to explain the heatmap
+    heatmap.add_annotation(
+        x=0.5,
+        y=-0.15,
+        xref="paper",
+        yref="paper",
+        text="Darker blue indicates higher resource availability. Resources with highest average availability are shown at the top.",
+        showarrow=False,
+        font=dict(size=12),
+        opacity=0.8,
+        align="center",
+    )
+
+    st.plotly_chart(heatmap, use_container_width=True)
+
+    # Display resource capacity forecast
+    display_capacity_forecast(capacity_data, start_date, end_date, chart_height)
+
+
+def display_availability_summary_metrics(capacity_data: pd.DataFrame) -> None:
+    """
+    Display summary metrics for resource availability.
+
+    Args:
+        capacity_data: DataFrame containing resource allocation data
+    """
+    if capacity_data.empty:
+        return
+
+    # Calculate availability metrics
+    # 1. Average availability across all resources
+    avg_allocation = capacity_data["Allocation"].mean()
+    avg_availability = 100 - avg_allocation
+
+    # 2. Find days with highest availability
+    daily_allocation = capacity_data.groupby("Date")["Allocation"].mean()
+    daily_availability = 100 - daily_allocation
+
+    # Find the date with highest availability
+    if not daily_availability.empty:
+        best_date = daily_availability.idxmax()
+        best_date_availability = daily_availability.max()
+        best_date_str = best_date.strftime("%b %d, %Y")
+    else:
+        best_date_str = "N/A"
+        best_date_availability = 0
+
+    # 3. Count resources with high availability (>50%)
+    high_avail_resources = capacity_data.groupby("Resource")["Allocation"].mean()
+    high_avail_count = sum(
+        high_avail_resources < 50
+    )  # Less than 50% allocated means >50% available
+
+    # 4. Calculate availability trend (increasing or decreasing)
+    if len(daily_availability) > 1:
+        # Simple linear regression slope to determine trend
+        x = np.arange(len(daily_availability))
+        y = daily_availability.values
+        slope = np.polyfit(x, y, 1)[0]
+        trend_direction = (
+            "Increasing" if slope > 0 else "Decreasing" if slope < 0 else "Stable"
+        )
+        trend_value = abs(slope) * len(daily_availability)  # Total change over period
+    else:
+        trend_direction = "Stable"
+        trend_value = 0
+
+    # Display metrics in columns
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "Average Availability",
+            f"{avg_availability:.1f}%",
+            help="Average resource availability across the entire period",
+        )
+
+    with col2:
+        st.metric(
+            "Best Date for Planning",
+            best_date_str,
+            delta=f"{best_date_availability:.1f}% Available",
+            help="Date with highest average resource availability",
+        )
+
+    with col3:
+        st.metric(
+            "Resources >50% Available",
+            high_avail_count,
+            help="Number of resources with more than 50% availability",
+        )
+
+    with col4:
+        delta_color = (
+            "normal"
+            if trend_direction == "Increasing"
+            else "inverse"
+            if trend_direction == "Decreasing"
+            else "off"
+        )
+        st.metric(
+            "Availability Trend",
+            trend_direction,
+            delta=f"{trend_value:.1f}% {trend_direction}"
+            if trend_value > 0.5
+            else None,
+            delta_color=delta_color,
+            help="Whether resource availability is increasing or decreasing over time",
+        )
+
+
+def display_availability_timeline(
+    capacity_data: pd.DataFrame, chart_height: int = 600
+) -> None:
+    """
+    Display a timeline chart showing resource availability over time.
+
+    Args:
+        capacity_data: DataFrame containing resource allocation data
+        chart_height: Height of the chart in pixels
+    """
+    if capacity_data.empty:
+        return
+
+    st.subheader("Availability Timeline")
+
+    # Calculate daily allocation metrics
+    daily_metrics = (
+        capacity_data.groupby("Date")
+        .agg({"Allocation": ["mean", "min", "max", "count"]})
+        .reset_index()
+    )
+
+    # Flatten the column names
+    daily_metrics.columns = [
+        "Date",
+        "Mean Allocation",
+        "Min Allocation",
+        "Max Allocation",
+        "Resource Count",
+    ]
+
+    # Calculate availability metrics (100% - allocation)
+    daily_metrics["Mean Availability"] = 100 - daily_metrics["Mean Allocation"]
+    daily_metrics["Max Availability"] = (
+        100 - daily_metrics["Min Allocation"]
+    )  # Min allocation = Max availability
+    daily_metrics["Min Availability"] = (
+        100 - daily_metrics["Max Allocation"]
+    )  # Max allocation = Min availability
+
+    # Create the timeline chart
+    fig = go.Figure()
+
+    # Add range area for availability range
+    fig.add_trace(
+        go.Scatter(
+            x=daily_metrics["Date"],
+            y=daily_metrics["Max Availability"],
+            fill=None,
+            mode="lines",
+            line_color="rgba(0,176,246,0.2)",
+            name="Max Availability",
+            line=dict(width=0),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=daily_metrics["Date"],
+            y=daily_metrics["Min Availability"],
+            fill="tonexty",  # Fill to the trace before
+            mode="lines",
+            line_color="rgba(0,176,246,0.2)",
+            name="Min Availability",
+            line=dict(width=0),
+        )
+    )
+
+    # Add mean availability line
+    fig.add_trace(
+        go.Scatter(
+            x=daily_metrics["Date"],
+            y=daily_metrics["Mean Availability"],
+            mode="lines+markers",
+            line=dict(color="#2196F3", width=3),  # Blue color
+            marker=dict(size=7),
+            name="Average Availability",
+        )
+    )
+
+    # Add resource count as a secondary axis
+    fig.add_trace(
+        go.Scatter(
+            x=daily_metrics["Date"],
+            y=daily_metrics["Resource Count"],
+            mode="lines",
+            line=dict(color="#FF9800", width=2, dash="dot"),  # Orange color
+            name="Resource Count",
+            yaxis="y2",
+        )
+    )
+
+    # Add reference lines
+    fig.add_hline(
+        y=70,
+        line_width=1,
+        line_dash="dash",
+        line_color="green",
+        annotation_text="High Availability (70%+)",
+        annotation_position="top right",
+    )
+    fig.add_hline(
+        y=30,
+        line_width=1,
+        line_dash="dash",
+        line_color="red",
+        annotation_text="Low Availability (<30%)",
+        annotation_position="bottom right",
+    )
+
+    # Update layout with dual y-axis
+    fig.update_layout(
+        title="Resource Availability Over Time",
+        xaxis_title="Date",
+        yaxis=dict(
+            title="Availability %",
+            range=[0, 100],
+            gridcolor="rgba(128,128,128,0.2)",
+            ticksuffix="%",
+        ),
+        yaxis2=dict(
+            title=dict(  # Fix: Use title dict with font property instead of titlefont
+                text="Resource Count", font=dict(color="#FF9800")
+            ),
+            tickfont=dict(color="#FF9800"),
+            anchor="x",
+            overlaying="y",
+            side="right",
+            gridcolor="rgba(0,0,0,0)",
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=40, b=40),
+        height=chart_height,
+        hovermode="x unified",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Add explanation of the chart
+    with st.expander("Understanding the Availability Timeline"):
+        st.markdown("""
+        - **Blue line**: Average resource availability across all resources for each day
+        - **Light blue area**: Range between minimum and maximum resource availability
+        - **Orange dotted line**: Number of resources available on each day
+        - **Green dashed line**: High availability threshold (70%)
+        - **Red dashed line**: Low availability threshold (30%)
+        
+        This chart helps you identify days with higher resource availability for planning new work.
+        """)
+
+
+def display_availability_by_group(
+    capacity_data: pd.DataFrame, chart_height: int = 600
+) -> None:
+    """
+    Display availability breakdown by department and team.
+
+    Args:
+        capacity_data: DataFrame containing resource allocation data
+        chart_height: Height of the chart in pixels
+    """
+    if capacity_data.empty or "Department" not in capacity_data.columns:
+        return
+
+    st.subheader("Department & Team Availability")
+
+    # Calculate average allocation by department
+    dept_allocation = (
+        capacity_data.groupby("Department")["Allocation"].mean().reset_index()
+    )
+    dept_allocation["Availability"] = 100 - dept_allocation["Allocation"]
+    dept_allocation = dept_allocation.sort_values("Availability", ascending=False)
+
+    # Get department colors
+    dept_colors = load_department_colors()
+
+    # Create color map for departments
+    color_map = {
+        dept: color
+        for dept, color in dept_colors.items()
+        if dept in dept_allocation["Department"].values
+    }
+
+    # Create two-column layout
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Create horizontal bar chart for department availability
+        fig1 = px.bar(
+            dept_allocation,
+            x="Availability",
+            y="Department",
+            orientation="h",
+            title="Availability by Department",
+            color="Department",
+            color_discrete_map=color_map,
+            labels={"Availability": "Availability %", "Department": "Department"},
+            text_auto=".1f",
+            height=chart_height,
+        )
+
+        # Update text to show percentages
+        fig1.update_traces(
+            texttemplate="%{x:.1f}%",
+            textposition="outside",
+        )
+
+        # Add vertical reference lines
+        fig1.add_vline(
+            x=30,
+            line_width=1,
+            line_dash="dash",
+            line_color="rgba(244,67,54,0.7)",
+            annotation=dict(
+                text="Low",
+                showarrow=False,
+                font=dict(color="rgba(244,67,54,0.7)"),
+                xanchor="left",
+            ),
+        )
+        fig1.add_vline(
+            x=70,
+            line_width=1,
+            line_dash="dash",
+            line_color="rgba(76,175,80,0.7)",
+            annotation=dict(
+                text="High",
+                showarrow=False,
+                font=dict(color="rgba(76,175,80,0.7)"),
+                xanchor="right",
+            ),
+        )
+
+        # Update layout
+        fig1.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(
+                range=[0, 100],
+                gridcolor="rgba(128,128,128,0.2)",
+                ticksuffix="%",
+            ),
+            yaxis=dict(
+                gridcolor="rgba(128,128,128,0.2)",
+            ),
+            margin=dict(l=10, r=10, t=40, b=40),
+            showlegend=False,
+        )
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col2:
+        # Check if "Team" column exists
+        if "Team" in capacity_data.columns:
+            # Calculate team availability only for teams with data
+            team_data = capacity_data.dropna(subset=["Team"])
+
+            if not team_data.empty:
+                team_allocation = (
+                    team_data.groupby(["Department", "Team"])["Allocation"]
+                    .mean()
+                    .reset_index()
+                )
+                team_allocation["Availability"] = 100 - team_allocation["Allocation"]
+                team_allocation = team_allocation.sort_values(
+                    "Availability", ascending=False
+                )
+
+                # Create team availability chart colored by department
+                fig2 = px.bar(
+                    team_allocation,
+                    x="Availability",
+                    y="Team",
+                    orientation="h",
+                    title="Availability by Team",
+                    color="Department",
+                    color_discrete_map=color_map,
+                    labels={"Availability": "Availability %", "Team": "Team"},
+                    text_auto=".1f",
+                    height=chart_height,
+                )
+
+                # Update text to show percentages
+                fig2.update_traces(
+                    texttemplate="%{x:.1f}%",
+                    textposition="outside",
+                )
+
+                # Add vertical reference lines
+                fig2.add_vline(
+                    x=30,
+                    line_width=1,
+                    line_dash="dash",
+                    line_color="rgba(244,67,54,0.7)",
+                )
+                fig2.add_vline(
+                    x=70,
+                    line_width=1,
+                    line_dash="dash",
+                    line_color="rgba(76,175,80,0.7)",
+                )
+
+                # Update layout
+                fig2.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(
+                        range=[0, 100],
+                        gridcolor="rgba(128,128,128,0.2)",
+                        ticksuffix="%",
+                    ),
+                    yaxis=dict(
+                        gridcolor="rgba(128,128,128,0.2)",
+                    ),
+                    margin=dict(l=10, r=10, t=40, b=40),
+                )
+
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("No team data available for display.")
+        else:
+            # If no team data exists, show resource type availability instead
+            if "Type" in capacity_data.columns:
+                type_allocation = (
+                    capacity_data.groupby("Type")["Allocation"].mean().reset_index()
+                )
+                type_allocation["Availability"] = 100 - type_allocation["Allocation"]
+                type_allocation = type_allocation.sort_values(
+                    "Availability", ascending=False
+                )
+
+                # Create type availability chart
+                fig2 = px.bar(
+                    type_allocation,
+                    x="Availability",
+                    y="Type",
+                    orientation="h",
+                    title="Availability by Resource Type",
+                    color="Type",
+                    color_discrete_map={
+                        "Person": "#2196F3",
+                        "Team": "#FF9800",
+                        "Department": "#4CAF50",
+                    },
+                    labels={"Availability": "Availability %", "Type": "Resource Type"},
+                    text_auto=".1f",
+                    height=chart_height,
+                )
+
+                # Update text to show percentages
+                fig2.update_traces(
+                    texttemplate="%{x:.1f}%",
+                    textposition="outside",
+                )
+
+                # Add vertical reference lines
+                fig2.add_vline(
+                    x=30,
+                    line_width=1,
+                    line_dash="dash",
+                    line_color="rgba(244,67,54,0.7)",
+                )
+                fig2.add_vline(
+                    x=70,
+                    line_width=1,
+                    line_dash="dash",
+                    line_color="rgba(76,175,80,0.7)",
+                )
+
+                # Update layout
+                fig2.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(
+                        range=[0, 100],
+                        gridcolor="rgba(128,128,128,0.2)",
+                        ticksuffix="%",
+                    ),
+                    yaxis=dict(
+                        gridcolor="rgba(128,128,128,0.2)",
+                    ),
+                    margin=dict(l=10, r=10, t=40, b=40),
+                    showlegend=False,
+                )
+
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("No team or resource type data available for display.")
+
+
+def display_capacity_forecast(
+    capacity_data: pd.DataFrame,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    chart_height: int = 600,
+) -> None:
+    """
+    Display capacity forecast visualization showing upcoming resource availability.
+
+    Args:
+        capacity_data: DataFrame containing resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+        chart_height: Height of the chart in pixels
+    """
+    if capacity_data.empty:
+        return
+
+    st.subheader("Resource Capacity Forecast")
+
+    # Calculate total capacity and used capacity by date
+    resource_count = capacity_data.groupby("Date")["Resource"].nunique()
+    daily_allocations = capacity_data.groupby("Date")["Allocation"].sum()
+
+    # Each resource has 100% capacity, so total daily capacity is resource_count * 100
+    daily_capacity = resource_count * 100
+
+    # Calculate available capacity (total - used)
+    available_capacity = daily_capacity - daily_allocations
+    available_capacity_pct = available_capacity / daily_capacity * 100
+
+    # Create forecast dataframe
+    forecast_df = pd.DataFrame(
+        {
+            "Date": available_capacity.index,
+            "Available Capacity (person-%)": available_capacity.values,
+            "Available Capacity %": available_capacity_pct.values,
+            "Resource Count": resource_count.values,
+        }
+    )
+
+    # Create area chart for available capacity
+    fig = go.Figure()
+
+    # Add total capacity area
+    fig.add_trace(
+        go.Scatter(
+            x=forecast_df["Date"],
+            y=daily_capacity.values,
+            fill=None,
+            mode="lines",
+            line=dict(width=0, color="rgba(33, 150, 243, 0.1)"),
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
+
+    # Add used capacity area
+    fig.add_trace(
+        go.Scatter(
+            x=forecast_df["Date"],
+            y=available_capacity.values,
+            fill="tonexty",
+            mode="lines",
+            line=dict(width=0),
+            fillcolor="rgba(244, 67, 54, 0.2)",
+            name="Allocated Capacity",
+            hovertemplate="%{x|%b %d, %Y}<br>Allocated: %{customdata:.1f}%<extra></extra>",
+            customdata=100 - available_capacity_pct.values,
+        )
+    )
+
+    # Add available capacity area
+    fig.add_trace(
+        go.Scatter(
+            x=forecast_df["Date"],
+            y=[0] * len(forecast_df),
+            fill="tonexty",
+            mode="lines",
+            line=dict(width=0),
+            fillcolor="rgba(76, 175, 80, 0.2)",
+            name="Available Capacity",
+            hovertemplate="%{x|%b %d, %Y}<br>Available: %{customdata:.1f}%<extra></extra>",
+            customdata=available_capacity_pct.values,
+        )
+    )
+
+    # Add line for available capacity percentage
+    fig.add_trace(
+        go.Scatter(
+            x=forecast_df["Date"],
+            y=available_capacity_pct.values,
+            mode="lines",
+            line=dict(color="#4CAF50", width=3),
+            name="Available Capacity %",
+            yaxis="y2",
+            hovertemplate="%{x|%b %d, %Y}<br>Available: %{y:.1f}%<extra></extra>",
+        )
+    )
+
+    # Update layout with dual y-axis
+    fig.update_layout(
+        title="Resource Capacity Forecast",
+        xaxis_title="Date",
+        yaxis=dict(
+            title="Capacity (person-%)",
+            gridcolor="rgba(128,128,128,0.2)",
+        ),
+        yaxis2=dict(
+            title=dict(  # Fix: Use title dict with font property instead of titlefont
+                text="Available Capacity %", font=dict(color="#4CAF50")
+            ),
+            tickfont=dict(color="#4CAF50"),
+            anchor="x",
+            overlaying="y",
+            side="right",
+            range=[0, 100],
+            gridcolor="rgba(0,0,0,0)",
+            ticksuffix="%",
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=40, b=40),
+        height=chart_height,
+        hovermode="x unified",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Add explanation for the capacity forecast
+    with st.expander("Understanding the Capacity Forecast"):
+        st.markdown("""
+        This chart shows the forecast of available resource capacity over time:
+        
+        - **Green area**: Available capacity that can be allocated to new work
+        - **Red area**: Already allocated capacity
+        - **Green line**: Percentage of total capacity that is available
+        
+        The capacity is measured in person-percentages. For example, if there are 10 resources and each has 
+        100% capacity, the total daily capacity is 1000 person-%.
+        
+        The chart helps you identify periods with higher available capacity for planning new projects or tasks.
+        """)
+
+
 def display_resource_calendar_tab():
     """Display the resource calendar tab."""
     display_action_bar()
@@ -1487,50 +2261,6 @@ def display_utilization_dashboard(
     utilization_chart.add_hline(y=100, line_width=2, line_dash="dash", line_color="red")
 
     st.plotly_chart(utilization_chart, use_container_width=True)
-
-
-def display_capacity_planning_dashboard(
-    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
-) -> None:
-    """
-    Display the capacity planning dashboard with forecast charts.
-
-    Args:
-        filtered_data: Filtered DataFrame of resource allocation data
-        start_date: Start date for the visualization
-        end_date: End date for the visualization
-    """
-    # Get chart height from display preferences
-    display_prefs = load_display_preferences()
-    chart_height = display_prefs.get("chart_height", 600)
-
-    st.subheader("Capacity Planning Dashboard")
-
-    # Generate capacity data
-    capacity_data = calculate_capacity_data(filtered_data, start_date, end_date)
-
-    if capacity_data.empty:
-        st.info("No capacity data available with current filters.")
-        return
-
-    # Create a heatmap of resource allocations over time
-    # First, pivot the data to have resources as rows and dates as columns
-    pivot_data = capacity_data.pivot_table(
-        index="Resource", columns="Date", values="Allocation", aggfunc="sum"
-    )
-
-    # Create a heatmap using plotly
-    heatmap = px.imshow(
-        pivot_data.values,
-        labels=dict(x="Date", y="Resource", color="Allocation"),
-        x=pivot_data.columns.strftime("%Y-%m-%d"),
-        y=pivot_data.index,
-        color_continuous_scale=px.colors.sequential.Viridis,
-        title="Resource Allocation Heatmap",
-        height=chart_height,  # Add configurable chart height
-    )
-
-    st.plotly_chart(heatmap, use_container_width=True)
 
 
 def display_resource_calendar(
