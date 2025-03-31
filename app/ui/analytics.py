@@ -705,24 +705,22 @@ def display_performance_metrics_dashboard(
             xaxis_title="Performance Score",
             yaxis_title="Resource",
             showlegend=False,
-            margin=dict(l=10, r=120, t=40, b=10),  # INCREASED right margin even more
+            margin=dict(l=10, r=120, t=40, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(
-                range=[
-                    0,
-                    120,
-                ],  # EXTENDED range further for better visibility of annotations
+                range=[0, 120],
                 gridcolor="rgba(128,128,128,0.2)",
-                tickvals=[0, 20, 40, 60, 80, 100],  # Keep ticks at standard values
+                tickvals=[0, 20, 40, 60, 80, 100],
             ),
             yaxis=dict(
                 gridcolor="rgba(128,128,128,0.2)",
             ),
-            # Add annotations for the scores and stars to the right of each bar
+            # Moved stars 50% closer to bars by reducing offset
             annotations=[
                 dict(
-                    x=row["Performance Score"] + 10,  # INCREASED offset for more space
+                    x=row["Performance Score"]
+                    + 5,  # Reduced offset from 10 to 5 (50% closer)
                     y=i,
                     text=f"{row['Rating']} ({row['Utilization %']:.1f}%)",
                     showarrow=False,
@@ -811,7 +809,7 @@ def display_performance_metrics_dashboard(
                 "Overutilized": "#ff7043",  # Orange
             }
 
-            # Create bar chart - IMPROVED for better reference line visibility
+            # Create bar chart - IMPROVED for better reference visualization
             fig3 = px.bar(
                 dept_df,
                 x="Department",
@@ -842,36 +840,23 @@ def display_performance_metrics_dashboard(
                 + "Optimal Resources: %{customdata[1]}<extra></extra>"
             )
 
-            # IMPROVED: Add reference lines with stronger visibility and contrast
-            # Make lines appear on top of bars and use higher contrast colors with patterns
-            fig3.add_shape(
-                type="line",
-                x0=-0.5,
-                x1=len(dept_df) - 0.5,
+            fig3.add_hrect(
                 y0=optimal_min,
-                y1=optimal_min,
-                line=dict(
-                    color="#1B5E20",  # Dark green for better contrast
-                    width=3,
-                    dash="dot",
-                ),
-                layer="above",  # Place above the bars
-            )
-
-            fig3.add_shape(
-                type="line",
-                x0=-0.5,
-                x1=len(dept_df) - 0.5,
-                y0=optimal_max,
                 y1=optimal_max,
-                line=dict(
-                    color="#1B5E20",  # Dark green for better contrast
-                    width=3,
-                    dash="dot",
+                fillcolor="rgba(66, 165, 245, 0.5)",
+                line_width=0,
+                annotation_text="Optimal",
+                annotation_position="right",
+                annotation=dict(
+                    font=dict(color="#1B5E20", size=12),
+                    bgcolor="rgba(255,255,255,0.7)",
+                    bordercolor="#1B5E20",
+                    borderwidth=1,
                 ),
-                layer="above",  # Place above the bars
+                layer="above",  # Position above the bars
             )
 
+            # Add over threshold line - keep this one
             fig3.add_shape(
                 type="line",
                 x0=-0.5,
@@ -886,33 +871,7 @@ def display_performance_metrics_dashboard(
                 layer="above",  # Place above the bars
             )
 
-            # Add line annotations
-            fig3.add_annotation(
-                x=len(dept_df) - 0.5,
-                y=optimal_min,
-                text="Optimal Min",
-                showarrow=False,
-                font=dict(color="#1B5E20", size=12),
-                bgcolor="rgba(255,255,255,0.7)",
-                bordercolor="#1B5E20",
-                borderwidth=1,
-                borderpad=3,
-                xanchor="right",
-            )
-
-            fig3.add_annotation(
-                x=len(dept_df) - 0.5,
-                y=optimal_max,
-                text="Optimal Max",
-                showarrow=False,
-                font=dict(color="#1B5E20", size=12),
-                bgcolor="rgba(255,255,255,0.7)",
-                bordercolor="#1B5E20",
-                borderwidth=1,
-                borderpad=3,
-                xanchor="right",
-            )
-
+            # Add just the overallocated annotation
             fig3.add_annotation(
                 x=len(dept_df) - 0.5,
                 y=over_threshold,
@@ -937,7 +896,11 @@ def display_performance_metrics_dashboard(
                     range=[0, max(150, dept_df["Average Utilization"].max() * 1.1)],
                 ),
                 legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1,
                 ),
             )
 
@@ -990,14 +953,7 @@ def display_performance_metrics_dashboard(
                 # Sort by Balance Score
                 dist_df = dist_df.sort_values("Balance Score", ascending=False)
 
-                # Select top 5 departments for better visibility
-                if len(dist_df) > 5:
-                    display_df = dist_df.head(5)
-                    st.caption(
-                        f"Showing top 5 departments by Balance Score. {len(dist_df) - 5} departments not shown."
-                    )
-                else:
-                    display_df = dist_df
+                display_df = dist_df  # Show all departments, no filtering
 
                 # Create a stacked bar chart to show distribution
                 allocation_cols = [
@@ -1066,11 +1022,11 @@ def display_performance_metrics_dashboard(
                     ),
                     barmode="stack",
                     legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.02,
-                        xanchor="center",
-                        x=0.5,
+                        orientation="h",  # Keep horizontal orientation
+                        yanchor="bottom",  # Keep at bottom
+                        y=1.02,  # Keep y position
+                        xanchor="right",  # Changed from "center" to "right"
+                        x=1,  # Changed from 0.5 to 1 (right aligned)
                     ),
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
@@ -1198,7 +1154,7 @@ def display_performance_metrics_dashboard(
                 line_color="rgba(244, 67, 54, 0.7)",  # Semi-transparent red
             )
 
-            # REVERTED: Go back to standard hover with theme-aware styling
+            # REVERTED: Go back to standard hover with theme-compatible styling
             fig4.update_layout(
                 title="Weekly Performance Trends",
                 xaxis_title="Week",
