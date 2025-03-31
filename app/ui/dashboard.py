@@ -721,17 +721,18 @@ def _display_budget_overview():
     # Get the minimum y-value for placing indicators below axis
     y_min = 0  # Starting at zero since budget values are typically positive
 
-    # Add variance indicator below the x-axis instead of floating above
-    for i, row in budget_df_sorted.iterrows():
+    # Add variance indicator below the x-axis - FIXED VERSION
+    # Use enumerate to get correct position matching the chart's x-axis
+    for idx, (_, row) in enumerate(budget_df_sorted.iterrows()):
         variance_color = (
             "#4CAF50" if row["Variance"] >= 0 else "#F44336"
         )  # Green or red
 
-        # Position the marker below the x-axis
+        # Position the marker below the x-axis - use idx, not DataFrame index
         fig.add_shape(
             type="line",
-            x0=i - 0.2,  # Start slightly to the left of the bar
-            x1=i + 0.2,  # End slightly to the right of the bar
+            x0=idx - 0.2,  # Start slightly to the left of the bar
+            x1=idx + 0.2,  # End slightly to the right of the bar
             y0=y_min - total_budget * 0.02,  # Place slightly below the x-axis
             y1=y_min - total_budget * 0.02,  # Same y position for a horizontal line
             line=dict(color=variance_color, width=4),
