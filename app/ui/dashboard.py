@@ -35,11 +35,9 @@ def display_home_tab():
     with col2:
         st.caption(f"Updated: {datetime.now().strftime('%H:%M')}")
 
-    # Key insights panel
-    _display_key_insights()
-
-    # Summary metrics
-    _display_summary_metrics()
+    # Enhanced insight panels
+    _display_project_insights()
+    _display_resource_insights()
 
     # Project timeline
     st.markdown("### Project Timeline")
@@ -62,49 +60,36 @@ def display_home_tab():
         _display_budget_overview()
 
 
-def _display_key_insights():
-    """Display key insights summary at the top of dashboard."""
-    # Calculate insights
+def _display_project_insights():
+    """Display project insights in a dedicated expander."""
+    # Calculate project insights
+    total_projects = len(st.session_state.data["projects"])
     active_projects_count = 0
+    upcoming_count = 0
+    completed_count = 0
     high_priority_count = 0
-    over_utilized_count = 0
-    under_utilized_count = 0
     over_budget_count = 0
 
     if st.session_state.data["projects"]:
-        # Count active and high priority projects
+        # Count active, upcoming, completed and high priority projects
         today = datetime.now()
         for project in st.session_state.data["projects"]:
             start_date = pd.to_datetime(project["start_date"])
             end_date = pd.to_datetime(project["end_date"])
+
+            # Count by status
             if start_date <= today <= end_date:
                 active_projects_count += 1
+            elif start_date > today:
+                upcoming_count += 1
+            elif end_date < today:
+                completed_count += 1
+
+            # Count high priority
             if project.get("priority") == 1:
                 high_priority_count += 1
 
-        # Get utilization data
-        if st.session_state.data["people"]:
-            gantt_data = create_gantt_data(
-                st.session_state.data["projects"], st.session_state.data
-            )
-            if not gantt_data.empty:
-                utilization_df = calculate_resource_utilization(gantt_data)
-                if not utilization_df.empty:
-                    thresholds = load_utilization_thresholds()
-                    under_threshold = thresholds.get("under", 50)
-                    over_threshold = thresholds.get("over", 100)
-
-                    over_utilized_count = len(
-                        utilization_df[utilization_df["Utilization %"] > over_threshold]
-                    )
-                    under_utilized_count = len(
-                        utilization_df[
-                            utilization_df["Utilization %"] < under_threshold
-                        ]
-                    )
-
-        # Count over budget projects
-        for project in st.session_state.data["projects"]:
+            # Count over budget
             if "allocated_budget" in project:
                 actual_cost = calculate_project_cost(
                     project,
@@ -114,59 +99,49 @@ def _display_key_insights():
                 if actual_cost > project["allocated_budget"]:
                     over_budget_count += 1
 
-    # Display insights in collapsible card
-    with st.expander("🔍 Dashboard Insights", expanded=True):
-        cols = st.columns(5)
+    # Display project insights in collapsible card
+    with st.expander("📊 Project Insights", expanded=True):
+        # First row (3 columns)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Projects", total_projects)
+        with col2:
+            st.metric("Active Projects", active_projects_count)
+        with col3:
+            st.metric("Upcoming Projects", upcoming_count)
 
-        with cols[0]:
-            st.markdown(f"**Active Projects**")
-            st.markdown(
-                f"<h2 style='margin-top:-10px;'>{active_projects_count}</h2>",
-                unsafe_allow_html=True,
+        # Second row (3 columns)
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric("Completed Projects", completed_count)
+        with col5:
+            st.metric(
+                "High Priority Projects",
+                high_priority_count,
+                delta=f"{high_priority_count} priority 1"
+                if high_priority_count > 0
+                else None,
             )
-
-        with cols[1]:
-            st.markdown(f"**High Priority**")
-            st.markdown(
-                f"<h2 style='margin-top:-10px;'>{high_priority_count}</h2>",
-                unsafe_allow_html=True,
-            )
-
-        with cols[2]:
-            st.markdown(f"**Over-utilized**")
-            color = "red" if over_utilized_count > 0 else "inherit"
-            st.markdown(
-                f"<h2 style='margin-top:-10px;color:{color};'>{over_utilized_count}</h2>",
-                unsafe_allow_html=True,
-            )
-
-        with cols[3]:
-            st.markdown(f"**Under-utilized**")
-            color = "orange" if under_utilized_count > 0 else "inherit"
-            st.markdown(
-                f"<h2 style='margin-top:-10px;color:{color};'>{under_utilized_count}</h2>",
-                unsafe_allow_html=True,
-            )
-
-        with cols[4]:
-            st.markdown(f"**Over Budget**")
-            color = "red" if over_budget_count > 0 else "inherit"
-            st.markdown(
-                f"<h2 style='margin-top:-10px;color:{color};'>{over_budget_count}</h2>",
-                unsafe_allow_html=True,
+        with col6:
+            st.metric(
+                "Over Budget Projects",
+                over_budget_count,
+                delta=f"{over_budget_count}" if over_budget_count > 0 else None,
+                delta_color="inverse" if over_budget_count > 0 else "normal",
             )
 
 
-def _display_summary_metrics():
-    """Display the summary metrics section of the dashboard."""
-    # Count metrics
+def _display_resource_insights():
+    """Display resource insights in a dedicated expander."""
+    # Calculate resource insights
     people_count = len(st.session_state.data["people"])
     teams_count = len(st.session_state.data["teams"])
     dept_count = len(st.session_state.data["departments"])
-    project_count = len(st.session_state.data["projects"])
-
-    # Calculate utilization average if data exists
+    over_utilized_count = 0
+    under_utilized_count = 0
     avg_utilization = None
+
+    # Calculate utilization metrics if data exists
     if st.session_state.data["projects"] and st.session_state.data["people"]:
         gantt_data = create_gantt_data(
             st.session_state.data["projects"], st.session_state.data
@@ -174,23 +149,50 @@ def _display_summary_metrics():
         if not gantt_data.empty:
             utilization_df = calculate_resource_utilization(gantt_data)
             if not utilization_df.empty:
+                thresholds = load_utilization_thresholds()
+                under_threshold = thresholds.get("under", 50)
+                over_threshold = thresholds.get("over", 100)
+
+                over_utilized_count = len(
+                    utilization_df[utilization_df["Utilization %"] > over_threshold]
+                )
+                under_utilized_count = len(
+                    utilization_df[utilization_df["Utilization %"] < under_threshold]
+                )
                 avg_utilization = utilization_df["Utilization %"].mean()
 
-    # Display in a 5-column layout
-    col1, col2, col3, col4, col5 = st.columns(5)
-    with col1:
-        st.metric("People", people_count)
-    with col2:
-        st.metric("Teams", teams_count)
-    with col3:
-        st.metric("Departments", dept_count)
-    with col4:
-        st.metric("Projects", project_count)
-    with col5:
-        if avg_utilization is not None:
-            st.metric("Avg Utilization", f"{avg_utilization:.1f}%")
-        else:
-            st.metric("Avg Utilization", "N/A")
+    # Display resource insights in collapsible card
+    with st.expander("👥 Resource Insights", expanded=True):
+        # First row (3 columns)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("People", people_count)
+        with col2:
+            st.metric("Teams", teams_count)
+        with col3:
+            st.metric("Departments", dept_count)
+
+        # Second row (3 columns)
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            st.metric(
+                "Over-utilized Resources",
+                over_utilized_count,
+                delta=f"{over_utilized_count}" if over_utilized_count > 0 else None,
+                delta_color="inverse" if over_utilized_count > 0 else "normal",
+            )
+        with col5:
+            st.metric(
+                "Under-utilized Resources",
+                under_utilized_count,
+                delta=f"{under_utilized_count}" if under_utilized_count > 0 else None,
+                delta_color="inverse" if under_utilized_count > 0 else "normal",
+            )
+        with col6:
+            if avg_utilization is not None:
+                st.metric("Avg Utilization", f"{avg_utilization:.1f}%")
+            else:
+                st.metric("Avg Utilization", "N/A")
 
 
 def _display_project_timeline():
