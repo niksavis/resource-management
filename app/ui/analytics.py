@@ -226,11 +226,251 @@ def display_visualize_data_tab():
     start_date = filters["date_range"][0] if len(filters["date_range"]) > 0 else None
     end_date = filters["date_range"][1] if len(filters["date_range"]) > 1 else None
 
+    # Display workload summary metrics
+    display_workload_summary_metrics(filtered_data)
+
+    # Display workload distribution chart
+    display_workload_distribution_chart(filtered_data)
+
+    # Display project breakdown
+    display_project_workload_breakdown(filtered_data)
+
     # Display the matrix view with filtered data
     display_resource_matrix_view(filtered_data, start_date, end_date)
 
-    # Display resource conflicts section
-    _display_resource_conflicts(filtered_data)
+    # Display resource conflicts section with severity indicators
+    display_resource_conflicts_enhanced(filtered_data)
+
+
+def display_workload_summary_metrics(filtered_data: pd.DataFrame) -> None:
+    """
+    Display summary metrics for workload distribution.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+    """
+    if filtered_data.empty:
+        return
+
+    st.subheader("Workload Summary")
+
+    # Calculate key metrics
+    total_projects = filtered_data["Project"].nunique()
+    total_resources = filtered_data["Resource"].nunique()
+    avg_allocation = filtered_data["Allocation %"].mean()
+
+    # Calculate overallocated resources
+    resource_allocation = filtered_data.groupby("Resource")["Allocation %"].sum()
+    overallocated_count = sum(resource_allocation > 100)
+
+    # Calculate underutilized resources (less than 50% allocated)
+    underutilized_count = sum((resource_allocation > 0) & (resource_allocation < 50))
+
+    # Display metrics in columns
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.metric("Active Projects", total_projects)
+    with col2:
+        st.metric("Allocated Resources", total_resources)
+    with col3:
+        st.metric("Avg Allocation", f"{avg_allocation:.1f}%")
+    with col4:
+        st.metric("Overallocated", overallocated_count, delta_color="inverse")
+    with col5:
+        st.metric("Underutilized", underutilized_count, delta_color="inverse")
+
+
+def display_workload_distribution_chart(filtered_data: pd.DataFrame) -> None:
+    """
+    Display workload distribution across resources.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+    """
+    if filtered_data.empty:
+        return
+
+    st.subheader("Workload Distribution")
+
+    # Calculate allocation by resource
+    resource_allocation = (
+        filtered_data.groupby(["Resource", "Type"])["Allocation %"].sum().reset_index()
+    )
+    resource_allocation = resource_allocation.sort_values(
+        "Allocation %", ascending=False
+    )
+
+    # Load utilization thresholds for color coding
+    utilization_thresholds = load_utilization_thresholds()
+    optimal_min = utilization_thresholds.get("optimal_min", 70)
+    optimal_max = utilization_thresholds.get("optimal_max", 90)
+
+    # Create a chart showing allocation by resource with color bands
+    fig = px.bar(
+        resource_allocation,
+        x="Resource",
+        y="Allocation %",
+        color="Type",
+        title="Resource Allocation Distribution",
+        labels={"Resource": "Resource", "Allocation %": "Allocation %"},
+        height=500,
+    )
+
+    # Add bands for optimal utilization
+    fig.add_hrect(
+        y0=optimal_min,
+        y1=optimal_max,
+        line_width=0,
+        fillcolor="green",
+        opacity=0.1,
+        annotation_text="Optimal Zone",
+        annotation_position="top right",
+    )
+
+    # Add a line for 100% allocation
+    fig.add_hline(y=100, line_width=2, line_dash="dash", line_color="red")
+
+    # Improve layout
+    fig.update_layout(xaxis_tickangle=-45)
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def display_project_workload_breakdown(filtered_data: pd.DataFrame) -> None:
+    """
+    Display project workload breakdown.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+    """
+    if filtered_data.empty:
+        return
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Project Resource Distribution")
+
+        # Calculate resources per project
+        project_resources = (
+            filtered_data.groupby("Project")["Resource"].nunique().reset_index()
+        )
+        project_resources = project_resources.sort_values("Resource", ascending=False)
+
+        # Create chart
+        fig1 = px.bar(
+            project_resources,
+            x="Project",
+            y="Resource",
+            title="Resources Per Project",
+            labels={"Project": "Project", "Resource": "Number of Resources"},
+            height=400,
+        )
+
+        fig1.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col2:
+        st.subheader("Department Workload")
+
+        # Get department for each resource
+        resource_dept = filtered_data[
+            ["Resource", "Department", "Allocation %"]
+        ].drop_duplicates()
+        dept_allocation = (
+            resource_dept.groupby("Department")["Allocation %"].sum().reset_index()
+        )
+
+        # Create pie chart
+        fig2 = px.pie(
+            dept_allocation,
+            values="Allocation %",
+            names="Department",
+            title="Workload by Department",
+            height=400,
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
+
+def display_resource_conflicts_enhanced(filtered_data: pd.DataFrame) -> None:
+    """
+    Display enhanced resource conflicts visualization with severity indicators.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+    """
+    st.subheader("Resource Conflicts")
+    conflicts = find_resource_conflicts(filtered_data)
+
+    if conflicts.empty:
+        st.success("No resource conflicts detected in the selected date range.")
+        return
+
+    # Group conflicts by resource
+    resources = conflicts["Resource"].unique()
+
+    # Create a summary bar chart of conflicts
+    conflict_summary = conflicts.groupby("Resource")["Allocation"].max().reset_index()
+    conflict_summary = conflict_summary.sort_values("Allocation", ascending=False)
+
+    # Define a function to categorize the severity
+    def get_severity(allocation):
+        if allocation > 150:
+            return "Critical"
+        elif allocation > 125:
+            return "High"
+        else:
+            return "Medium"
+
+    conflict_summary["Severity"] = conflict_summary["Allocation"].apply(get_severity)
+
+    # Create a bar chart with color based on severity
+    fig = px.bar(
+        conflict_summary,
+        x="Resource",
+        y="Allocation",
+        color="Severity",
+        title="Resource Conflict Severity",
+        labels={"Resource": "Resource", "Allocation": "Peak Allocation (%)"},
+        color_discrete_map={"Critical": "red", "High": "orange", "Medium": "yellow"},
+        height=400,
+    )
+
+    fig.add_hline(y=100, line_width=2, line_dash="dash", line_color="gray")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # For each resource with conflicts, show the detailed conflicts
+    for resource in resources:
+        resource_conflicts = conflicts[conflicts["Resource"] == resource]
+        max_allocation = resource_conflicts["Allocation"].max()
+        severity = get_severity(max_allocation)
+
+        # Use colored icons based on severity
+        if severity == "Critical":
+            icon = "🔴"
+        elif severity == "High":
+            icon = "🟠"
+        else:
+            icon = "🟡"
+
+        with st.expander(
+            f"{icon} {resource} ({len(resource_conflicts)} overallocations, peak: {max_allocation:.0f}%)"
+        ):
+            dates = resource_conflicts["Date"].dt.strftime("%Y-%m-%d").tolist()
+            allocations = resource_conflicts["Allocation"].tolist()
+            projects = resource_conflicts["Projects"].tolist()
+
+            # Create a simple table with the conflicts
+            conflict_data = pd.DataFrame(
+                {
+                    "Date": dates,
+                    "Allocation %": allocations,
+                    "Conflicting Projects": projects,
+                }
+            )
+
+            st.dataframe(conflict_data, use_container_width=True)
 
 
 def display_resource_utilization_tab():
