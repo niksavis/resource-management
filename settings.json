@@ -2,7 +2,8 @@
     "currency": "EUR",
     "currency_format": {
         "symbol_position": "prefix",
-        "decimal_places": 2
+        "decimal_places": 2,
+        "add_space": true
     },
     "department_colors": {
         "Customer Experience": "#008203",

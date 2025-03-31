@@ -82,12 +82,20 @@ def display_general_settings():
                 value=currency_format["decimal_places"],
             )
 
+        # Add option for space between currency symbol and value
+        add_space = st.checkbox(
+            "Add space between currency symbol and value",
+            value=currency_format.get("add_space", False),
+            help="When checked, adds a space between the currency symbol and the amount (e.g., '$ 1,000' instead of '$1,000')",
+        )
+
         # Added more space before the button for better separation
         st.write("")
         if st.button("Save Currency Settings", use_container_width=True):
             new_currency_format = {
                 "symbol_position": symbol_position,
                 "decimal_places": decimal_places,
+                "add_space": add_space,  # Save the space setting
             }
             save_currency_settings(new_currency, new_currency_format)
             st.success("Currency settings saved!")

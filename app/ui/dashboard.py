@@ -611,8 +611,20 @@ def _display_budget_overview():
         st.info("No project data available.")
         return
 
-    # Get currency symbol
-    currency, _ = load_currency_settings()
+    # Get currency symbol and format
+    currency, currency_format = load_currency_settings()
+
+    # Determine if space should be added between currency and amount
+    add_space = currency_format.get("add_space", False)
+    currency_prefix = f"{currency} " if add_space else currency
+    currency_suffix = f" {currency}" if add_space else currency
+
+    # Formatter function for currency
+    def format_currency(value):
+        if currency_format["symbol_position"] == "prefix":
+            return f"{currency_prefix}{value:,.0f}"
+        else:
+            return f"{value:,.0f}{currency_suffix}"
 
     # Create budget data
     budget_data = []
@@ -664,13 +676,13 @@ def _display_budget_overview():
     # Create metrics row
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Total Budget", f"{currency}{total_budget:,.0f}")
+        st.metric("Total Budget", format_currency(total_budget))
     with col2:
-        st.metric("Total Cost", f"{currency}{total_cost:,.0f}")
+        st.metric("Total Cost", format_currency(total_cost))
     with col3:
         st.metric(
             "Variance",
-            f"{currency}{abs(total_variance):,.0f}",
+            format_currency(abs(total_variance)),
             delta=f"{'Under' if total_variance >= 0 else 'Over'} Budget",
             delta_color="normal" if total_variance >= 0 else "inverse",
         )
@@ -689,7 +701,7 @@ def _display_budget_overview():
             name=f"Allocated Budget ({currency})",
             marker_color="#42A5F5",  # Blue - works in both themes
             text=budget_df_sorted["Allocated Budget"].apply(
-                lambda x: f"{currency}{x:,.0f}"
+                lambda x: format_currency(x)
             ),
             textposition="outside",
         )
@@ -701,9 +713,7 @@ def _display_budget_overview():
             y=budget_df_sorted["Estimated Cost"],
             name=f"Estimated Cost ({currency})",
             marker_color="#EF5350",  # Red - works in both themes
-            text=budget_df_sorted["Estimated Cost"].apply(
-                lambda x: f"{currency}{x:,.0f}"
-            ),
+            text=budget_df_sorted["Estimated Cost"].apply(lambda x: format_currency(x)),
             textposition="outside",
         )
     )
@@ -736,9 +746,18 @@ def _display_budget_overview():
     )
 
     # Format y-axis with currency symbol and thousands separator
+    # Adjust tickprefix with space if needed
+    y_tickprefix = (
+        f"{currency_prefix}" if currency_format["symbol_position"] == "prefix" else ""
+    )
+    y_ticksuffix = (
+        f"{currency_suffix}" if currency_format["symbol_position"] == "suffix" else ""
+    )
+
     fig.update_layout(
         yaxis=dict(
-            tickprefix=f"{currency} ",
+            tickprefix=y_tickprefix,
+            ticksuffix=y_ticksuffix,
             separatethousands=True,
             gridcolor="rgba(128, 128, 128, 0.2)",
             mirror=True,
@@ -762,13 +781,13 @@ def _display_budget_overview():
         # Format columns for display
         display_df = budget_df.copy()
         display_df["Allocated Budget"] = display_df["Allocated Budget"].apply(
-            lambda x: f"{currency}{x:,.0f}"
+            lambda x: format_currency(x)
         )
         display_df["Estimated Cost"] = display_df["Estimated Cost"].apply(
-            lambda x: f"{currency}{x:,.0f}"
+            lambda x: format_currency(x)
         )
         display_df["Variance"] = display_df["Variance"].apply(
-            lambda x: f"{currency}{x:,.0f}"
+            lambda x: format_currency(x)
         )
         display_df["Variance %"] = display_df["Variance %"].apply(lambda x: f"{x:.1f}%")
 
