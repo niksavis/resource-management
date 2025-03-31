@@ -712,29 +712,63 @@ def _display_budget_overview():
             x=budget_df_sorted["Project"],
             y=budget_df_sorted["Estimated Cost"],
             name=f"Estimated Cost ({currency})",
-            marker_color="#EF5350",  # Red - works in both themes
+            marker_color="#FFA726",  # Orange - works in both themes (changed from red #EF5350)
             text=budget_df_sorted["Estimated Cost"].apply(lambda x: format_currency(x)),
             textposition="outside",
         )
     )
 
-    # Add variance indicator
+    # Get the minimum y-value for placing indicators below axis
+    y_min = 0  # Starting at zero since budget values are typically positive
+
+    # Add variance indicator below the x-axis instead of floating above
     for i, row in budget_df_sorted.iterrows():
         variance_color = (
             "#4CAF50" if row["Variance"] >= 0 else "#F44336"
         )  # Green or red
+
+        # Position the marker below the x-axis
         fig.add_shape(
             type="line",
-            x0=i - 0.2,
-            x1=i + 0.2,
-            y0=max(row["Allocated Budget"], row["Estimated Cost"])
-            + total_budget * 0.03,
-            y1=max(row["Allocated Budget"], row["Estimated Cost"])
-            + total_budget * 0.03,
+            x0=i - 0.2,  # Start slightly to the left of the bar
+            x1=i + 0.2,  # End slightly to the right of the bar
+            y0=y_min - total_budget * 0.02,  # Place slightly below the x-axis
+            y1=y_min - total_budget * 0.02,  # Same y position for a horizontal line
             line=dict(color=variance_color, width=4),
         )
 
-    # Update layout
+    # Add legend explanation for the variance indicators
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            mode="lines",
+            line=dict(color="#4CAF50", width=4),
+            name="Under Budget",
+            showlegend=True,
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            mode="lines",
+            line=dict(color="#F44336", width=4),
+            name="Over Budget",
+            showlegend=True,
+        )
+    )
+
+    # Define y-axis tick prefix and suffix for currency formatting
+    y_tickprefix = (
+        f"{currency_prefix}" if currency_format["symbol_position"] == "prefix" else ""
+    )
+    y_ticksuffix = (
+        f"{currency_suffix}" if currency_format["symbol_position"] == "suffix" else ""
+    )
+
+    # Update layout to extend the y-axis range slightly below zero to show the indicators
     fig.update_layout(
         title="Budget vs. Estimated Cost by Project",
         xaxis_title="Project",
@@ -743,18 +777,7 @@ def _display_budget_overview():
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-    )
-
-    # Format y-axis with currency symbol and thousands separator
-    # Adjust tickprefix with space if needed
-    y_tickprefix = (
-        f"{currency_prefix}" if currency_format["symbol_position"] == "prefix" else ""
-    )
-    y_ticksuffix = (
-        f"{currency_suffix}" if currency_format["symbol_position"] == "suffix" else ""
-    )
-
-    fig.update_layout(
+        # Extend y-axis range to show the indicators below the x-axis
         yaxis=dict(
             tickprefix=y_tickprefix,
             ticksuffix=y_ticksuffix,
@@ -763,18 +786,30 @@ def _display_budget_overview():
             mirror=True,
             showline=True,
             linecolor="rgba(128, 128, 128, 0.4)",
+            range=[y_min - total_budget * 0.05, None],  # Extend range below zero
         ),
         xaxis=dict(
             gridcolor="rgba(128, 128, 128, 0.2)",
             mirror=True,
             showline=True,
             linecolor="rgba(128, 128, 128, 0.4)",
-            tickangle=-45 if len(budget_df) > 5 else 0,  # Angle labels if many projects
+            tickangle=-45 if len(budget_df) > 5 else 0,
         ),
     )
 
     # Display chart
     st.plotly_chart(fig, use_container_width=True)
+
+    # Update explanation text to reflect new indicator placement
+    st.caption("""
+    **Chart Legend:**
+    - Blue bars: Allocated Budget
+    - Orange bars: Estimated Cost 
+    - Green markers (below x-axis): Project is under budget (Allocated Budget > Estimated Cost)
+    - Red markers (below x-axis): Project is over budget (Estimated Cost > Allocated Budget)
+    
+    *Note: The colored markers below each project name indicate budget status only.*
+    """)
 
     # Show budget details table
     with st.expander("Budget Details"):
