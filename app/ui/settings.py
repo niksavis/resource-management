@@ -33,6 +33,11 @@ def display_settings_tab():
     display_action_bar()
     st.subheader("Application Settings")
 
+    # Added description to provide context to users
+    st.info(
+        "Configure application settings to customize your experience. Changes will be applied immediately."
+    )
+
     settings_tabs = st.tabs(
         ["General Settings", "Display Preferences", "Cost Settings", "Color Settings"]
     )
@@ -77,7 +82,9 @@ def display_general_settings():
                 value=currency_format["decimal_places"],
             )
 
-        if st.button("Save Currency Settings"):
+        # Added more space before the button for better separation
+        st.write("")
+        if st.button("Save Currency Settings", use_container_width=True):
             new_currency_format = {
                 "symbol_position": symbol_position,
                 "decimal_places": decimal_places,
@@ -86,7 +93,7 @@ def display_general_settings():
             st.success("Currency settings saved!")
             st.rerun()
 
-    # Date range settings
+    # Date range settings - now collapsed by default
     with st.expander("Date Range Settings", expanded=False):
         date_ranges = load_date_range_settings()
 
@@ -202,9 +209,9 @@ def display_display_preferences():
     # Load current preferences
     prefs = load_display_preferences()
 
-    with st.form("display_preferences_form"):
-        # Pagination settings
-        st.markdown("#### Pagination Settings")
+    # Converted form to expanders for consistency
+    # Pagination settings
+    with st.expander("Pagination Settings", expanded=True):
         page_size = st.number_input(
             "Items Per Page",
             min_value=5,
@@ -214,8 +221,16 @@ def display_display_preferences():
             help="Number of items to display per page in tables and lists",
         )
 
-        # Chart settings
-        st.markdown("#### Chart Settings")
+        st.write("")
+        if st.button("Save Pagination Settings", use_container_width=True):
+            new_prefs = prefs.copy()
+            new_prefs["page_size"] = page_size
+            save_display_preferences(new_prefs)
+            st.success("Pagination settings saved!")
+            st.rerun()
+
+    # Chart settings
+    with st.expander("Chart Settings", expanded=False):
         chart_height = st.number_input(
             "Default Chart Height (px)",
             min_value=300,
@@ -225,8 +240,16 @@ def display_display_preferences():
             help="Default height for charts and visualizations",
         )
 
-        # Default view for resources
-        st.markdown("#### Resource View")
+        st.write("")
+        if st.button("Save Chart Settings", use_container_width=True):
+            new_prefs = prefs.copy()
+            new_prefs["chart_height"] = chart_height
+            save_display_preferences(new_prefs)
+            st.success("Chart settings saved!")
+            st.rerun()
+
+    # Default view for resources
+    with st.expander("Resource View", expanded=False):
         default_view = st.radio(
             "Default Resource View",
             options=["Cards", "Visual Map"],
@@ -235,17 +258,12 @@ def display_display_preferences():
             help="Default view for displaying resources",
         )
 
-        # Save button
-        submit = st.form_submit_button("Save Display Preferences")
-
-        if submit:
-            new_prefs = {
-                "page_size": page_size,
-                "chart_height": chart_height,
-                "default_view": default_view,
-            }
+        st.write("")
+        if st.button("Save Resource View Settings", use_container_width=True):
+            new_prefs = prefs.copy()
+            new_prefs["default_view"] = default_view
             save_display_preferences(new_prefs)
-            st.success("Display preferences saved!")
+            st.success("Resource view preferences saved!")
             st.rerun()
 
 
@@ -266,7 +284,13 @@ def display_cost_settings():
             help="Maximum daily cost allowed for a resource",
         )
 
-        if st.button("Save Cost Limit"):
+        # Added description for clarity
+        st.caption(
+            "This setting affects resource cost calculations throughout the application"
+        )
+
+        st.write("")
+        if st.button("Save Cost Limit", use_container_width=True):
             save_daily_cost_settings(new_max_cost)
             st.success("Daily cost limit saved!")
             st.rerun()
@@ -287,16 +311,22 @@ def display_color_settings():
             )
         else:
             st.markdown("**Department Color Configuration**")
+            st.caption(
+                "Choose distinctive colors to easily identify departments in charts and reports"
+            )
             new_colors = {}
 
-            # Create a color picker for each department
-            for dept in departments:
+            # Create a multi-column layout for better space utilization
+            cols = st.columns(3)
+            for i, dept in enumerate(departments):
                 default_color = dept_colors.get(dept, "#4B0082")
-                new_colors[dept] = st.color_picker(
-                    f"{dept}", value=default_color, key=f"color_{dept}"
-                )
+                with cols[i % 3]:
+                    new_colors[dept] = st.color_picker(
+                        f"{dept}", value=default_color, key=f"color_{dept}"
+                    )
 
-            if st.button("Save Department Colors"):
+            st.write("")
+            if st.button("Save Department Colors", use_container_width=True):
                 save_department_colors(new_colors)
                 st.success("Department colors updated!")
                 st.rerun()
@@ -307,6 +337,9 @@ def display_color_settings():
 
         st.markdown("**Resource Allocation Color Scale**")
         st.info("Define colors for different allocation levels (0% to 100%+)")
+        st.caption(
+            "These colors will be used in allocation heatmaps and visualizations"
+        )
 
         # Convert colorscale format if needed
         if isinstance(heatmap_colorscale[0], list):
@@ -339,7 +372,44 @@ def display_color_settings():
                 key="heatmap_high",
             )
 
-        if st.button("Save Allocation Colors"):
+        # Preview of color scale
+        st.write("Preview:")
+        preview_cols = st.columns(5)
+        with preview_cols[0]:
+            st.markdown(
+                f'<div style="background-color:{low_color};height:20px;border-radius:3px;"></div>',
+                unsafe_allow_html=True,
+            )
+            st.caption("0%")
+        with preview_cols[1]:
+            blend1 = f"linear-gradient(90deg, {low_color} 0%, {mid_color} 100%)"
+            st.markdown(
+                f'<div style="background:{blend1};height:20px;border-radius:3px;"></div>',
+                unsafe_allow_html=True,
+            )
+            st.caption("25%")
+        with preview_cols[2]:
+            st.markdown(
+                f'<div style="background-color:{mid_color};height:20px;border-radius:3px;"></div>',
+                unsafe_allow_html=True,
+            )
+            st.caption("50%")
+        with preview_cols[3]:
+            blend2 = f"linear-gradient(90deg, {mid_color} 0%, {high_color} 100%)"
+            st.markdown(
+                f'<div style="background:{blend2};height:20px;border-radius:3px;"></div>',
+                unsafe_allow_html=True,
+            )
+            st.caption("75%")
+        with preview_cols[4]:
+            st.markdown(
+                f'<div style="background-color:{high_color};height:20px;border-radius:3px;"></div>',
+                unsafe_allow_html=True,
+            )
+            st.caption("100%")
+
+        st.write("")
+        if st.button("Save Allocation Colors", use_container_width=True):
             new_colorscale = [[0.0, low_color], [0.5, mid_color], [1.0, high_color]]
             save_heatmap_colorscale(new_colorscale)
             st.success("Allocation colors updated!")
