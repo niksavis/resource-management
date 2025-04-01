@@ -2080,7 +2080,1239 @@ def display_resource_calendar_tab():
     if filtered_data.empty:
         st.warning("No data matches your filter criteria. Try adjusting the filters.")
     else:
-        display_resource_calendar(filtered_data, start_date, end_date)
+        display_enhanced_resource_calendar(filtered_data, start_date, end_date)
+
+
+def display_enhanced_resource_calendar(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display an enhanced calendar view of resource allocations with summary metrics and visualizations.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    # Get chart height from display preferences
+    display_prefs = load_display_preferences()
+    chart_height = display_prefs.get("chart_height", 600)
+
+    if filtered_data.empty:
+        st.info("No data available for the calendar view with current filters.")
+        return
+
+    # Get unique resources and create a multiselect or selectbox depending on number of resources
+    resources = filtered_data["Resource"].unique()
+
+    # Display calendar summary metrics
+    st.subheader("Calendar Summary Metrics")
+    display_calendar_summary_metrics(filtered_data, start_date, end_date)
+
+    # Display allocation pattern analysis
+    st.subheader("Allocation Pattern Analysis")
+    display_allocation_patterns(filtered_data, start_date, end_date, chart_height)
+
+    # Display time-based metrics visualization
+    st.subheader("Weekly Allocation Patterns")
+    display_weekly_allocation_patterns(filtered_data, chart_height)
+
+    # Resource selection for detailed calendar view
+    st.subheader("Resource Calendar View")
+
+    # Enhanced resource selection with indicators
+    if len(resources) > 10:
+        # For many resources, show a multiselect with limit
+        selected_resource = st.selectbox(
+            "Select Resource for Detailed Calendar",
+            options=resources,
+            key="calendar_resource_detailed",
+            format_func=lambda x: f"{x} ({filtered_data[filtered_data['Resource'] == x]['Allocation %'].mean():.0f}% avg)",
+        )
+        selected_resources = [selected_resource]
+    else:
+        # For fewer resources, allow multi-select
+        selected_resources = st.multiselect(
+            "Select Resources for Calendar View (up to 3)",
+            options=resources,
+            default=[resources[0]],
+            max_selections=3,
+            key="calendar_resources_multi",
+            format_func=lambda x: f"{x} ({filtered_data[filtered_data['Resource'] == x]['Allocation %'].mean():.0f}% avg)",
+        )
+
+        if not selected_resources:
+            st.info("Please select at least one resource to view the calendar.")
+            return
+
+    # Calendar view options
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        view_mode = st.radio(
+            "Calendar View Mode",
+            options=["Monthly", "Weekly", "Daily"],
+            horizontal=True,
+            index=0,
+            key="calendar_view_mode",
+        )
+
+    with col2:
+        show_project_colors = st.checkbox(
+            "Show Project Colors", value=True, key="calendar_show_colors"
+        )
+        show_details = st.checkbox(
+            "Show Detailed Allocations", value=True, key="calendar_show_details"
+        )
+
+    # Display the enhanced calendar for selected resources
+    display_enhanced_calendar_view(
+        filtered_data,
+        selected_resources,
+        start_date,
+        end_date,
+        view_mode,
+        show_project_colors,
+        show_details,
+    )
+
+
+def display_calendar_summary_metrics(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display calendar-specific summary metrics.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    if filtered_data.empty:
+        return
+
+    # Calculate metrics specific to calendar analysis
+    total_resources = filtered_data["Resource"].nunique()
+
+    # Calculate the total duration in the selected range
+    date_range = pd.date_range(start=start_date, end=end_date)
+    total_days = len(date_range)
+
+    # Calculate working days (Mon-Fri) in the range
+    working_days = sum(1 for d in date_range if d.weekday() < 5)
+
+    # Create a daily allocation table
+    daily_allocation = {}
+    max_daily_allocation = 0
+    busiest_date = None
+
+    for date in date_range:
+        # Filter assignments for this date
+        date_assignments = filtered_data[
+            (filtered_data["Start"] <= date) & (filtered_data["End"] >= date)
+        ]
+
+        # Count resources allocated on this date
+        resources_allocated = date_assignments["Resource"].nunique()
+        daily_allocation[date] = resources_allocated
+
+        # Track busiest date
+        if resources_allocated > max_daily_allocation:
+            max_daily_allocation = resources_allocated
+            busiest_date = date
+
+    # Calculate metrics
+    total_allocated_days = sum(daily_allocation.values())
+    avg_daily_resources = total_allocated_days / total_days if total_days > 0 else 0
+    allocation_coverage = (
+        len([v for v in daily_allocation.values() if v > 0]) / total_days * 100
+        if total_days > 0
+        else 0
+    )
+
+    # Calculate weekend allocations percentage
+    weekend_dates = [d for d in date_range if d.weekday() >= 5]
+    weekend_allocation_count = sum(daily_allocation.get(d, 0) for d in weekend_dates)
+    weekend_days = len(weekend_dates)
+    weekend_allocation_pct = (
+        weekend_allocation_count / total_allocated_days * 100
+        if total_allocated_days > 0
+        else 0
+    )
+
+    # Display metrics in columns
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "Calendar Coverage",
+            f"{allocation_coverage:.1f}%",
+            help="Percentage of days in the selected range with at least one resource allocated",
+        )
+
+    with col2:
+        busiest_date_str = busiest_date.strftime("%Y-%m-%d") if busiest_date else "N/A"
+        st.metric(
+            "Busiest Date",
+            busiest_date_str,
+            delta=f"{max_daily_allocation} resources" if busiest_date else None,
+            help="Date with the highest number of allocated resources",
+        )
+
+    with col3:
+        st.metric(
+            "Avg Daily Resources",
+            f"{avg_daily_resources:.1f}",
+            help="Average number of resources allocated per day",
+        )
+
+    with col4:
+        st.metric(
+            "Weekend Allocations",
+            f"{weekend_allocation_pct:.1f}%",
+            help="Percentage of total resource allocations occurring on weekends",
+        )
+
+
+def display_allocation_patterns(
+    filtered_data: pd.DataFrame,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    chart_height: int = 600,
+) -> None:
+    """
+    Display calendar-based allocation patterns visualization.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+        chart_height: Height of the chart in pixels
+    """
+    if filtered_data.empty:
+        return
+
+    # Create a date range for analysis
+    date_range = pd.date_range(start=start_date, end=end_date)
+
+    # Create a list to store daily allocation counts
+    allocation_by_day = []
+    weekday_names = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+
+    # Calculate allocations by day of week
+    for date in date_range:
+        date_assignments = filtered_data[
+            (filtered_data["Start"] <= date) & (filtered_data["End"] >= date)
+        ]
+
+        allocation_by_day.append(
+            {
+                "Date": date,
+                "WeekDay": weekday_names[date.weekday()],
+                "WeekNumber": date.isocalendar()[1],  # ISO week number
+                "MonthDay": date.day,
+                "Month": date.strftime("%B"),
+                "ResourceCount": date_assignments["Resource"].nunique(),
+                "ProjectCount": date_assignments["Project"].nunique(),
+                "TotalAllocation": date_assignments["Allocation %"].sum(),
+            }
+        )
+
+    # Convert to DataFrame
+    pattern_df = pd.DataFrame(allocation_by_day)
+
+    if pattern_df.empty:
+        st.info("No allocation data available for pattern analysis.")
+        return
+
+    # Create a compact 2-column layout for visualizations
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Create a heatmap of resource allocation by day of week
+        pivot_df = pattern_df.pivot_table(
+            index="WeekNumber", columns="WeekDay", values="ResourceCount", aggfunc="sum"
+        )
+
+        # Reorder columns to have Monday first
+        pivot_df = pivot_df[weekday_names]
+
+        # Create heatmap
+        fig1 = px.imshow(
+            pivot_df,
+            labels=dict(x="Day of Week", y="Week Number", color="Resource Count"),
+            x=weekday_names,
+            y=pivot_df.index,
+            color_continuous_scale="YlGnBu",
+            aspect="auto",
+            title="Resource Allocation Heatmap by Day of Week",
+        )
+
+        # Adjust layout
+        fig1.update_layout(
+            height=chart_height,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(tickangle=-45),
+            margin=dict(l=10, r=10, t=40, b=80),
+        )
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col2:
+        # Create a bar chart of average allocation by day of week
+        weekday_avg = (
+            pattern_df.groupby("WeekDay")
+            .agg({"ResourceCount": "mean", "ProjectCount": "mean"})
+            .reset_index()
+        )
+
+        # Ensure proper ordering
+        weekday_avg["WeekDay"] = pd.Categorical(
+            weekday_avg["WeekDay"], categories=weekday_names, ordered=True
+        )
+        weekday_avg = weekday_avg.sort_values("WeekDay")
+
+        # Create chart
+        fig2 = go.Figure()
+
+        # Add resource count bars
+        fig2.add_trace(
+            go.Bar(
+                x=weekday_avg["WeekDay"],
+                y=weekday_avg["ResourceCount"],
+                name="Average Resources",
+                marker_color="#42A5F5",  # Blue
+                text=weekday_avg["ResourceCount"].round(1),
+                textposition="outside",
+            )
+        )
+
+        # Add project count as a line
+        fig2.add_trace(
+            go.Scatter(
+                x=weekday_avg["WeekDay"],
+                y=weekday_avg["ProjectCount"],
+                mode="lines+markers",
+                name="Average Projects",
+                line=dict(color="#FF7043", width=3),  # Orange
+                marker=dict(size=8),
+                yaxis="y2",
+            )
+        )
+
+        # Update layout with dual y-axis
+        fig2.update_layout(
+            title="Average Resources vs Projects by Day of Week",
+            xaxis=dict(title="Day of Week"),
+            yaxis=dict(
+                title="Average Resources",
+                gridcolor="rgba(128,128,128,0.2)",
+            ),
+            yaxis2=dict(
+                title="Average Projects",
+                overlaying="y",
+                side="right",
+                gridcolor="rgba(0,0,0,0)",
+            ),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            height=chart_height,
+            margin=dict(l=10, r=10, t=40, b=40),
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
+    # Display pattern insights as an expander
+    with st.expander("ℹ️ Understanding Allocation Patterns", expanded=False):
+        st.markdown(
+            """
+            <div style="background-color:rgba(0,188,212,0.1); border-left:3px solid #00BCD4; padding:10px; border-radius:2px;">
+            <p><strong>Understanding Allocation Patterns:</strong></p>
+            <ul>
+                <li>The <strong>Resource Allocation Heatmap</strong> shows resource allocation intensity across weeks and days.</li>
+                <li>Darker colors indicate more resources allocated on those days.</li>
+                <li>The <strong>Day of Week Analysis</strong> shows how resource and project allocations vary across the week.</li>
+                <li>Look for patterns like higher allocations midweek or lower allocations on Mondays/Fridays.</li>
+            </ul>
+            <p><strong>Note:</strong> These patterns can help you schedule new work during historically less utilized days.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def display_weekly_allocation_patterns(
+    filtered_data: pd.DataFrame, chart_height: int = 600
+) -> None:
+    """
+    Display weekly allocation patterns to see how resource usage changes through the week.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        chart_height: Height of the chart in pixels
+    """
+    if filtered_data.empty:
+        return
+
+    # Create a list to track daily allocations for all resources
+    weekday_allocation_data = []
+
+    # Get unique resources
+    resources = filtered_data["Resource"].unique()
+
+    # For each resource, calculate their average allocation by day of week
+    for resource in resources:
+        resource_data = filtered_data[filtered_data["Resource"] == resource]
+
+        # Expand daily allocations
+        start_dates = pd.to_datetime(resource_data["Start"])
+        end_dates = pd.to_datetime(resource_data["End"])
+        allocation_pcts = resource_data["Allocation %"]
+        projects = resource_data["Project"]
+
+        # For each assignment, add to the daily allocation table
+        for start, end, allocation, project in zip(
+            start_dates, end_dates, allocation_pcts, projects
+        ):
+            # Create a date range for this assignment
+            days = pd.date_range(start=start, end=end)
+
+            # Add each day's allocation
+            for day in days:
+                weekday = day.weekday()  # 0=Monday, 6=Sunday
+                weekday_allocation_data.append(
+                    {
+                        "Resource": resource,
+                        "WeekDay": weekday,
+                        "WeekDayName": [
+                            "Monday",
+                            "Tuesday",
+                            "Wednesday",
+                            "Thursday",
+                            "Friday",
+                            "Saturday",
+                            "Sunday",
+                        ][weekday],
+                        "Date": day,
+                        "Allocation": allocation,
+                        "Project": project,
+                    }
+                )
+
+    # Convert to DataFrame
+    weekly_pattern_df = pd.DataFrame(weekday_allocation_data)
+
+    if weekly_pattern_df.empty:
+        st.info("No data available for weekly allocation patterns.")
+        return
+
+    # Calculate average allocation by day of week for all resources
+    avg_by_day = (
+        weekly_pattern_df.groupby("WeekDayName")["Allocation"].mean().reset_index()
+    )
+
+    # Ensure correct order
+    weekday_order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+    avg_by_day["WeekDayName"] = pd.Categorical(
+        avg_by_day["WeekDayName"], categories=weekday_order, ordered=True
+    )
+    avg_by_day = avg_by_day.sort_values("WeekDayName")
+
+    # Create areas for both weekday and weekend zones
+    fig = go.Figure()
+
+    # Add weekday/weekend zones
+    fig.add_vrect(
+        x0=-0.5,
+        x1=4.5,
+        fillcolor="rgba(220, 220, 220, 0.2)",
+        layer="below",
+        line_width=0,
+        annotation=dict(
+            text="Weekdays",
+            x=2,
+            y=1.05,
+            showarrow=False,
+            yref="paper",
+            font=dict(size=12, color="rgba(100,100,100,0.7)"),
+        ),
+    )
+
+    fig.add_vrect(
+        x0=4.5,
+        x1=6.5,
+        fillcolor="rgba(255, 220, 200, 0.2)",
+        layer="below",
+        line_width=0,
+        annotation=dict(
+            text="Weekend",
+            x=5.5,
+            y=1.05,
+            showarrow=False,
+            yref="paper",
+            font=dict(size=12, color="rgba(100,100,100,0.7)"),
+        ),
+    )
+
+    # Add line chart
+    fig.add_trace(
+        go.Scatter(
+            x=avg_by_day["WeekDayName"],
+            y=avg_by_day["Allocation"],
+            mode="lines+markers",
+            line=dict(color="#2196F3", width=3),
+            marker=dict(size=10),
+            name="Average Allocation",
+        )
+    )
+
+    # Calculate and add standard deviation as error bands
+    std_by_day = (
+        weekly_pattern_df.groupby("WeekDayName")["Allocation"].std().reset_index()
+    )
+    std_by_day["WeekDayName"] = pd.Categorical(
+        std_by_day["WeekDayName"], categories=weekday_order, ordered=True
+    )
+    std_by_day = std_by_day.sort_values("WeekDayName")
+
+    # Add upper band
+    upper_band = avg_by_day["Allocation"] + std_by_day["Allocation"]
+    fig.add_trace(
+        go.Scatter(
+            x=avg_by_day["WeekDayName"],
+            y=upper_band,
+            mode="lines",
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
+
+    # Add lower band
+    lower_band = avg_by_day["Allocation"] - std_by_day["Allocation"]
+    lower_band = [max(0, val) for val in lower_band]  # Ensure no negative values
+
+    fig.add_trace(
+        go.Scatter(
+            x=avg_by_day["WeekDayName"],
+            y=lower_band,
+            mode="lines",
+            line=dict(width=0),
+            fill="tonexty",
+            fillcolor="rgba(33, 150, 243, 0.2)",
+            showlegend=False,
+            hoverinfo="skip",
+        )
+    )
+
+    # Add reference line for 100% allocation
+    fig.add_hline(
+        y=100,
+        line_dash="dash",
+        line_color="rgba(255, 0, 0, 0.5)",
+    )
+
+    # Add annotation for the 100% line separately
+    fig.add_annotation(
+        text="100% Allocation",
+        x=1,
+        y=100,
+        xref="paper",
+        yref="y",
+        showarrow=False,
+        font=dict(color="red"),
+        align="right",
+        xanchor="right",
+    )
+
+    # Update layout
+    fig.update_layout(
+        title="Average Resource Allocation by Day of Week",
+        xaxis_title="Day of Week",
+        yaxis_title="Average Allocation (%)",
+        yaxis=dict(
+            gridcolor="rgba(128,128,128,0.2)",
+            range=[0, max(150, upper_band.max() * 1.1)],
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=chart_height,
+        margin=dict(l=10, r=10, t=40, b=40),
+        hovermode="x unified",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Create two columns for additional metrics
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Calculate highest and lowest allocation days
+        max_idx = avg_by_day["Allocation"].idxmax()
+        min_idx = avg_by_day["Allocation"].idxmin()
+
+        max_day = avg_by_day.iloc[max_idx]["WeekDayName"]
+        min_day = avg_by_day.iloc[min_idx]["WeekDayName"]
+
+        max_alloc = avg_by_day.iloc[max_idx]["Allocation"]
+        min_alloc = avg_by_day.iloc[min_idx]["Allocation"]
+
+        # Create metrics card
+        st.markdown(
+            f"""
+            <div style="border:1px solid rgba(128,128,128,0.2); border-radius:5px; padding:10px; margin-bottom:10px;">
+            <h4 style="margin-top:0;">Weekly Pattern Insights</h4>
+            <p><strong>Highest Allocation Day:</strong> {max_day} ({max_alloc:.1f}%)</p>
+            <p><strong>Lowest Allocation Day:</strong> {min_day} ({min_alloc:.1f}%)</p>
+            <p><strong>Weekday/Weekend Ratio:</strong> {avg_by_day.iloc[:5]["Allocation"].mean():.1f}% / {avg_by_day.iloc[5:]["Allocation"].mean():.1f}%</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        # Calculate resource allocation stability
+        resource_stability = []
+
+        for resource in resources:
+            resource_data = weekly_pattern_df[weekly_pattern_df["Resource"] == resource]
+
+            if len(resource_data) >= 5:  # Only if we have enough data points
+                weekday_avg = resource_data.groupby("WeekDayName")["Allocation"].mean()
+
+                # Calculate coefficient of variation as measure of stability
+                stability = (
+                    weekday_avg.std() / weekday_avg.mean()
+                    if weekday_avg.mean() > 0
+                    else 0
+                )
+
+                # Lower values indicate more stable allocation across weekdays
+                resource_stability.append(
+                    {
+                        "Resource": resource,
+                        "StabilityScore": 100
+                        * (
+                            1 - min(stability, 1)
+                        ),  # Convert to 0-100 score, higher is more stable
+                        "AvgAllocation": resource_data["Allocation"].mean(),
+                    }
+                )
+
+        if resource_stability:
+            stability_df = pd.DataFrame(resource_stability)
+            stability_df = stability_df.sort_values(
+                "StabilityScore", ascending=False
+            ).head(5)
+
+            # Create metrics card
+            st.markdown(
+                f"""
+                <div style="border:1px solid rgba(128,128,128,0.2); border-radius:5px; padding:10px;">
+                <h4 style="margin-top:0;">Most Consistent Resources</h4>
+                <p>Resources with the most stable weekly allocation patterns:</p>
+                <ol style="margin-left:20px; padding-left:0;">
+                {"".join([f"<li><strong>{row['Resource']}</strong> - Stability: {row['StabilityScore']:.1f}%, Avg: {row['AvgAllocation']:.1f}%</li>" for _, row in stability_df.iterrows()])}
+                </ol>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info("Not enough data to calculate resource stability.")
+
+
+def display_enhanced_calendar_view(
+    filtered_data: pd.DataFrame,
+    selected_resources: List[str],
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    view_mode: str = "Monthly",
+    show_project_colors: bool = True,
+    show_details: bool = True,
+) -> None:
+    """
+    Display an enhanced calendar view with better visual design.
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        selected_resources: List of selected resources to display
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+        view_mode: View mode (Monthly, Weekly, Daily)
+        show_project_colors: Whether to show project colors
+        show_details: Whether to show detailed allocations
+    """
+    if not selected_resources:
+        st.info("Please select at least one resource to view the calendar.")
+        return
+
+    # Define date ranges based on view mode
+    if view_mode == "Monthly":
+        # Group by month
+        date_groups = pd.date_range(
+            start=start_date.replace(day=1),
+            end=end_date + pd.DateOffset(months=1),
+            freq="MS",
+        )
+        group_format = "%B %Y"  # Month and year format
+    elif view_mode == "Weekly":
+        # Group by week
+        date_groups = pd.date_range(
+            start=start_date
+            - pd.DateOffset(days=start_date.weekday()),  # Start from Monday
+            end=end_date + pd.DateOffset(days=6),
+            freq="W-MON",  # Weekly starting from Monday
+        )
+        group_format = "Week of %b %d, %Y"  # Week of Month day, Year
+    else:  # Daily view
+        # No grouping, just show current date
+        date_groups = [start_date]  # We'll handle the iteration differently
+        group_format = "%A, %b %d, %Y"  # Day of Week, Month day, Year
+
+    # Get unique projects for color mapping
+    projects = filtered_data["Project"].unique()
+    color_map = {
+        project: f"hsl({hash(project) % 360}, 70%, 50%)" for project in projects
+    }
+
+    # Create data processing for each resource
+    for resource in selected_resources:
+        resource_data = filtered_data[filtered_data["Resource"] == resource]
+
+        # Determine resource type and average allocation
+        resource_type = (
+            resource_data["Type"].iloc[0] if not resource_data.empty else "Unknown"
+        )
+        avg_allocation = (
+            resource_data["Allocation %"].mean() if not resource_data.empty else 0
+        )
+
+        # Display resource header
+        st.markdown(
+            f"""
+            <div style="
+                padding: 10px;
+                border-radius: 5px;
+                margin-bottom: 10px;
+                background-color: rgba(33, 150, 243, 0.1);
+                border-left: 5px solid #2196F3;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <div>
+                    <h4 style="margin:0;">{resource} ({resource_type})</h4>
+                    <p style="margin:5px 0 0 0; font-size:0.9em; opacity:0.8;">
+                        Average Allocation: {avg_allocation:.1f}% | 
+                        Projects: {resource_data["Project"].nunique()} | 
+                        Date Range: {resource_data["Start"].min().strftime("%b %d")} - {resource_data["End"].max().strftime("%b %d")}
+                    </p>
+                </div>
+                <div style="text-align:right; font-size:1.2em; font-weight:bold;">
+                    {_get_allocation_indicator(avg_allocation)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # Process and display each date group
+        if view_mode == "Daily":
+            # For daily view, we show a single week at a time with a date picker
+            selected_date = pd.to_datetime(
+                st.date_input(
+                    "Select date to view",
+                    value=start_date,
+                    min_value=start_date.date(),
+                    max_value=end_date.date(),
+                )
+            )
+
+            # Calculate the start of week (Monday)
+            week_start = selected_date - pd.DateOffset(days=selected_date.weekday())
+            week_end = week_start + pd.DateOffset(days=6)
+
+            # Display single week
+            st.markdown(f"**Week of {week_start.strftime('%b %d, %Y')}**")
+            _display_calendar_week(
+                resource_data,
+                week_start,
+                week_end,
+                color_map,
+                show_project_colors,
+                show_details,
+            )
+        else:
+            # For Monthly or Weekly views
+            for i in range(len(date_groups) - 1):
+                group_start = date_groups[i]
+                group_end = date_groups[i + 1] - pd.DateOffset(
+                    days=1
+                )  # Last day of the period
+
+                # Skip if the group is outside our range
+                if group_end < start_date or group_start > end_date:
+                    continue
+
+                with st.expander(
+                    group_start.strftime(group_format),
+                    expanded=(i == 0),  # Expand only the first group
+                ):
+                    if view_mode == "Monthly":
+                        # Display month calendar (grouped by weeks)
+                        month_start = group_start
+
+                        # Calculate weeks in the month
+                        week_starts = pd.date_range(
+                            start=month_start,
+                            end=group_end + pd.DateOffset(days=1),
+                            freq="W-MON",
+                        )
+
+                        # Add the first day of the month if it's not a Monday
+                        if month_start.weekday() != 0:  # Not Monday
+                            week_starts = (
+                                pd.DatetimeIndex([month_start])
+                                .append(week_starts)
+                                .sort_values()
+                            )
+
+                        # Display each week
+                        for j in range(len(week_starts)):
+                            week_start = week_starts[j]
+
+                            # Calculate end of week (Sunday) or end of month
+                            if j < len(week_starts) - 1:
+                                week_end = week_starts[j + 1] - pd.DateOffset(days=1)
+                            else:
+                                week_end = group_end
+
+                            # Skip if the week is outside our range
+                            if week_end < start_date or week_start > end_date:
+                                continue
+
+                            # Display the week
+                            _display_calendar_week(
+                                resource_data,
+                                week_start,
+                                week_end,
+                                color_map,
+                                show_project_colors,
+                                show_details,
+                            )
+                    else:  # Weekly view
+                        # Display single week
+                        _display_calendar_week(
+                            resource_data,
+                            group_start,
+                            group_end,
+                            color_map,
+                            show_project_colors,
+                            show_details,
+                        )
+
+
+def _display_calendar_week(
+    resource_data: pd.DataFrame,
+    week_start: pd.Timestamp,
+    week_end: pd.Timestamp,
+    color_map: Dict[str, str],
+    show_project_colors: bool = True,
+    show_details: bool = True,
+) -> None:
+    """
+    Display a single week in the calendar.
+
+    Args:
+        resource_data: DataFrame containing resource allocation data
+        week_start: Start date of the week (Monday)
+        week_end: End date of the week (Sunday)
+        color_map: Dictionary mapping projects to colors
+        show_project_colors: Whether to show project colors
+        show_details: Whether to show detailed allocations
+    """
+    # Create a list of days in the week
+    days = pd.date_range(start=week_start, end=week_end)
+    weekday_names = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+
+    # Create a list to store HTML for each day
+    day_cells = []
+
+    # Helper function to escape HTML special characters
+    def escape_html(text):
+        """Escape HTML special characters to prevent HTML injection."""
+        if isinstance(text, str):
+            return (
+                text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&#39;")
+            )
+        return text
+
+    for day in days:
+        day_str = day.strftime("%a, %b %d")
+        is_weekend = day.weekday() >= 5
+
+        # Filter assignments for this day
+        day_assignments = resource_data[
+            (resource_data["Start"] <= day) & (resource_data["End"] >= day)
+        ]
+
+        if day_assignments.empty:
+            # Empty day - improved styling for both themes
+            # Use more neutral colors that work in both themes
+            bgcolor = "rgba(240,240,240,0.3)" if is_weekend else "rgba(255,255,255,0.1)"
+            border_style = "1px solid rgba(200,200,200,0.4)"
+
+            day_cells.append(
+                f'<td style="border:{border_style}; background-color:{bgcolor}; width:14%; vertical-align:top; box-shadow: inset 0 0 2px rgba(0,0,0,0.1);"><div style="padding:8px; min-height:100px;"><div style="margin-bottom:8px; font-weight:bold;">{day_str}</div><div style="color:rgba(150,150,150,0.8); text-align:center; margin-top:30px; font-style:italic;">No allocation</div></div></td>'
+            )
+        else:
+            # Day with assignments
+            total_allocation = day_assignments["Allocation %"].sum()
+            bgcolor = _get_allocation_color(total_allocation / 100)
+
+            if is_weekend:
+                # Apply a subtle blend for weekends
+                bgcolor = _blend_colors(bgcolor, "rgba(220,220,220,0.15)", 0.2)
+
+            # Enhanced border with better visibility
+            border_style = "1px solid rgba(180,180,180,0.5)"
+
+            # Sort assignments by allocation percentage (descending)
+            day_assignments = day_assignments.sort_values(
+                "Allocation %", ascending=False
+            )
+
+            # Create project segments with improved styling
+            project_segments = []
+            for _, row in day_assignments.iterrows():
+                # Escape project name to prevent HTML injection
+                project = escape_html(row["Project"])
+                allocation = row["Allocation %"]
+
+                if show_project_colors:
+                    base_color = color_map.get(project, "#808080")
+                    # Enhance color for better visibility
+                    color = _enhance_color_contrast(base_color)
+                else:
+                    # Use a color based on allocation level with enhanced contrast
+                    color = _get_allocation_color(
+                        allocation / 100, enhance_contrast=True
+                    )
+
+                if show_details:
+                    # Improved text contrast and padding
+                    text_color = _get_contrasting_text_color(color)
+                    project_segments.append(
+                        f'<div style="margin-bottom:6px; border-radius:4px; padding:6px; background-color:{color}; color:{text_color}; box-shadow:0 1px 2px rgba(0,0,0,0.1);"><div style="font-weight:bold; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{project}">{project}</div><div style="font-size:0.8em; margin-top:2px;">{allocation:.0f}%</div></div>'
+                    )
+                else:
+                    # Simplified view with better visibility
+                    height = max(
+                        8, min(35, allocation / 5)
+                    )  # Slightly larger height for better visibility
+                    project_segments.append(
+                        f'<div style="margin-bottom:3px; border-radius:3px; height:{height}px; background-color:{color}; box-shadow:0 1px 2px rgba(0,0,0,0.15);" title="{project}: {allocation:.0f}%"></div>'
+                    )
+
+            # Create day cell with improved header styling
+            alloc_color = _get_allocation_text_color(total_allocation)
+            day_cells.append(
+                f'<td style="border:{border_style}; background-color:{bgcolor}; width:14%; vertical-align:top; box-shadow: inset 0 0 3px rgba(0,0,0,0.1);"><div style="padding:8px; min-height:100px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid rgba(180,180,180,0.2); padding-bottom:4px;"><span style="font-weight:bold;">{day_str}</span><span style="font-weight:bold; color:{alloc_color};">{total_allocation:.0f}%</span></div>{"".join(project_segments)}</div></td>'
+            )
+
+    # Enhanced table styling with better spacing and borders
+    header_row = "".join(
+        [
+            f'<th style="padding:6px; background-color:rgba(100,100,100,0.1); border-bottom:2px solid rgba(150,150,150,0.4);">{day}</th>'
+            for day in weekday_names
+        ]
+    )
+    data_row = "".join(day_cells)
+
+    # Use a more compact HTML format with improved container styling
+    calendar_html = f'<div class="calendar-container" style="border-radius:5px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);"><table style="width:100%; border-collapse:collapse; table-layout:fixed; border:1px solid rgba(180,180,180,0.4);"><thead><tr>{header_row}</tr></thead><tbody><tr>{data_row}</tr></tbody></table></div>'
+
+    # Display the calendar
+    st.markdown(calendar_html, unsafe_allow_html=True)
+
+
+def _get_allocation_indicator(allocation: float) -> str:
+    """
+    Get an emoji indicator based on allocation percentage.
+
+    Args:
+        allocation: Allocation percentage
+
+    Returns:
+        Emoji indicator string
+    """
+    if allocation < 25:
+        return "🟢 Very Low"
+    elif allocation < 50:
+        return "🟢 Low"
+    elif allocation < 70:
+        return "🟡 Moderate"
+    elif allocation < 90:
+        return "🟡 Good"
+    elif allocation <= 100:
+        return "🟠 High"
+    else:
+        return "🔴 Overallocated"
+
+
+def _get_allocation_color(allocation: float, enhance_contrast: bool = False) -> str:
+    """
+    Get a color based on allocation percentage with improved contrast for dark theme.
+
+    Args:
+        allocation: Allocation as a decimal (0.0 to 1.0+)
+        enhance_contrast: Whether to enhance contrast for dark theme
+
+    Returns:
+        Hex color code
+    """
+    # Updated colors for better visibility in both light and dark themes
+    if allocation < 0.25:
+        return (
+            "#1a75ff" if enhance_contrast else "rgba(25, 118, 210, 0.3)"
+        )  # More visible blue
+    elif allocation < 0.5:
+        return (
+            "#33cc33" if enhance_contrast else "rgba(46, 174, 79, 0.3)"
+        )  # More visible green
+    elif allocation < 0.7:
+        return (
+            "#33bbff" if enhance_contrast else "rgba(51, 187, 255, 0.4)"
+        )  # Brighter blue
+    elif allocation < 0.9:
+        return (
+            "#ffcc00" if enhance_contrast else "rgba(255, 204, 0, 0.4)"
+        )  # Brighter yellow
+    elif allocation <= 1.0:
+        return (
+            "#ff6666" if enhance_contrast else "rgba(255, 102, 102, 0.4)"
+        )  # Brighter red
+    else:
+        return (
+            "#ff3300" if enhance_contrast else "rgba(255, 51, 0, 0.6)"
+        )  # Vivid orange-red for overallocation
+
+
+def _get_contrasting_text_color(bg_color: str) -> str:
+    """
+    Get a contrasting text color (black or white) based on background color.
+
+    Args:
+        bg_color: Background color in hex format
+
+    Returns:
+        Text color (black or white) for optimal contrast
+    """
+    # If color is in rgba format, extract the RGB components
+    if bg_color.startswith("rgba"):
+        # Parse rgba format
+        parts = bg_color.strip("rgba()").split(",")
+        r, g, b = int(parts[0]), int(parts[1]), int(parts[2])
+    elif bg_color.startswith("#"):
+        # Parse hex format
+        bg_color = bg_color.lstrip("#")
+        if len(bg_color) == 3:  # Short hex format (e.g., #ABC)
+            bg_color = "".join([c * 2 for c in bg_color])
+        r = int(bg_color[0:2], 16)
+        g = int(bg_color[2:4], 16)
+        b = int(bg_color[4:6], 16)
+    else:
+        # Default to white text for unknown format
+        return "#ffffff"
+
+    # Calculate luminance - standard formula for perceived brightness
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+    # Return black for light backgrounds, white for dark backgrounds
+    return "#000000" if luminance > 0.55 else "#ffffff"
+
+
+def _get_allocation_text_color(allocation: float) -> str:
+    """
+    Get a color for allocation text based on allocation percentage.
+
+    Args:
+        allocation: Allocation percentage
+
+    Returns:
+        Text color for the allocation percentage
+    """
+    if allocation < 50:
+        return "#2196F3"  # Blue for low allocation
+    elif allocation <= 90:
+        return "#4CAF50"  # Green for medium allocation
+    elif allocation <= 100:
+        return "#FF9800"  # Orange for high allocation
+    else:
+        return "#F44336"  # Red for overallocation
+
+
+def _enhance_color_contrast(color: str) -> str:
+    """
+    Enhance color contrast for better visibility in both themes.
+
+    Args:
+        color: Original color in hex format
+
+    Returns:
+        Enhanced color with better contrast
+    """
+    # If color is already in rgba format, return it
+    if color.startswith("rgba"):
+        return color
+
+    # Parse hex format
+    if color.startswith("#"):
+        color = color.lstrip("#")
+        if len(color) == 3:  # Short hex format (e.g., #ABC)
+            color = "".join([c * 2 for c in color])
+        r = int(color[0:2], 16)
+        g = int(color[2:4], 16)
+        b = int(color[4:6], 16)
+    else:
+        # Default color for unknown format
+        return "#4285F4"
+
+    # Calculate luminance
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+    # Enhance saturation and brightness for better visibility
+    # Increase saturation for pale colors
+    import colorsys
+
+    h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+
+    if s < 0.4:  # For less saturated colors
+        s = min(1.0, s * 1.5)  # Increase saturation
+
+    if v < 0.6:  # For darker colors
+        v = min(1.0, v * 1.3)  # Brighten
+    elif v > 0.9 and luminance > 0.7:  # For very light colors
+        v = max(0.5, v * 0.85)  # Darken slightly for better visibility
+        s = min(1.0, s * 1.3)  # Increase saturation
+
+    r, g, b = [int(x * 255) for x in colorsys.hsv_to_rgb(h, s, v)]
+
+    # Return enhanced color
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _blend_colors(color1: str, color2: str, amount: float) -> str:
+    """
+    Blend two colors - updated for rgba support.
+
+    Args:
+        color1: First color (hex or rgba)
+        color2: Second color (hex or rgba)
+        amount: Blend amount (0.0 to 1.0) - how much of color2 to blend into color1
+
+    Returns:
+        Blended color
+    """
+    # Parse the first color
+    if color1.startswith("rgba"):
+        # Parse rgba format
+        parts = color1.strip("rgba()").split(",")
+        r1 = int(parts[0])
+        g1 = int(parts[1])
+        b1 = int(parts[2])
+        a1 = float(parts[3]) if len(parts) > 3 else 1.0
+    else:
+        # Convert hex to RGB
+        rgb1 = _hex_to_rgb(color1)
+        r1, g1, b1 = rgb1
+        a1 = 1.0
+
+    # Parse the second color
+    if color2.startswith("rgba"):
+        # Parse rgba format
+        parts = color2.strip("rgba()").split(",")
+        r2 = int(parts[0])
+        g2 = int(parts[1])
+        b2 = int(parts[2])
+        a2 = float(parts[3]) if len(parts) > 3 else 1.0
+    else:
+        # Convert hex to RGB
+        rgb2 = _hex_to_rgb(color2)
+        r2, g2, b2 = rgb2
+        a2 = 1.0
+
+    # Blend the colors
+    r = int(r1 * (1 - amount) + r2 * amount)
+    g = int(g1 * (1 - amount) + g2 * amount)
+    b = int(b1 * (1 - amount) + b2 * amount)
+    a = a1 * (1 - amount) + a2 * amount
+
+    # Return as rgba for better theme compatibility
+    return f"rgba({r},{g},{b},{a:.2f})"
+
+
+def _hex_to_rgb(hex_color: str) -> tuple:
+    """
+    Convert hex color to RGB tuple.
+
+    Args:
+        hex_color: Hex color string
+
+    Returns:
+        RGB tuple (r, g, b)
+    """
+    hex_color = hex_color.lstrip("#")
+    if len(hex_color) == 3:
+        hex_color = "".join([c * 2 for c in hex_color])
+    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
+
+def display_resource_calendar(
+    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
+) -> None:
+    """
+    Display the legacy calendar view (kept for backward compatibility).
+
+    Args:
+        filtered_data: Filtered DataFrame of resource allocation data
+        start_date: Start date for the visualization
+        end_date: End date for the visualization
+    """
+    # Redirect to the enhanced version
+    display_enhanced_resource_calendar(filtered_data, start_date, end_date)
 
 
 def display_resource_matrix_view(
@@ -2125,213 +3357,3 @@ def display_resource_matrix_view(
         fig.add_annotation(x=today, y=1.0, yref="paper", text="Today", showarrow=False)
 
     st.plotly_chart(fig, use_container_width=True)
-
-
-def _display_resource_conflicts(filtered_data: pd.DataFrame) -> None:
-    """
-    Display resource conflicts (overallocations).
-
-    Args:
-        filtered_data: Filtered DataFrame of resource allocation data
-    """
-    st.subheader("Resource Conflicts")
-    conflicts = find_resource_conflicts(filtered_data)
-
-    if conflicts.empty:
-        st.success("No resource conflicts detected in the selected date range.")
-        return
-
-    # Group conflicts by resource
-    resources = conflicts["Resource"].unique()
-    for resource in resources:
-        resource_conflicts = conflicts[conflicts["Resource"] == resource]
-
-        with st.expander(f"⚠️ {resource} ({len(resource_conflicts)} overallocations)"):
-            dates = resource_conflicts["Date"].dt.strftime("%Y-%m-%d").tolist()
-            allocations = resource_conflicts["Allocation"].tolist()
-            projects = resource_conflicts["Projects"].tolist()
-
-            # Create a simple table with the conflicts
-            conflict_data = pd.DataFrame(
-                {
-                    "Date": dates,
-                    "Allocation %": allocations,
-                    "Conflicting Projects": projects,
-                }
-            )
-
-            st.dataframe(conflict_data, use_container_width=True)
-
-
-def display_utilization_dashboard(
-    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
-) -> None:
-    """
-    Display the utilization dashboard with various charts.
-
-    Args:
-        filtered_data: Filtered DataFrame of resource allocation data
-        start_date: Start date for the visualization
-        end_date: End date for the visualization
-    """
-    # Get chart height from display preferences
-    display_prefs = load_display_preferences()
-    chart_height = display_prefs.get("chart_height", 600)
-
-    st.subheader("Utilization Dashboard")
-
-    # Calculate utilization metrics
-    utilization_df = calculate_resource_utilization(filtered_data)
-
-    if utilization_df.empty:
-        st.info("No utilization data available with current filters.")
-        return
-
-    # Display utilization metrics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        avg_util = utilization_df["Utilization %"].mean()
-        st.metric("Average Utilization", f"{avg_util:.1f}%")
-
-    with col2:
-        over_util = sum(utilization_df["Utilization %"] > 100)
-        st.metric("Overallocated Resources", over_util)
-
-    with col3:
-        under_util = sum(utilization_df["Utilization %"] < 50)
-        st.metric("Underutilized Resources", under_util)
-
-    # Display bar chart of utilization by resource
-    utilization_chart = px.bar(
-        utilization_df.sort_values("Utilization %", ascending=False),
-        x="Resource",
-        y="Utilization %",
-        color="Type",
-        title="Resource Utilization",
-        labels={"Resource": "Resource", "Utilization %": "Utilization %"},
-        height=chart_height,  # Add configurable chart height
-    )
-
-    # Add a 100% line to show full allocation
-    utilization_chart.add_hline(y=100, line_width=2, line_dash="dash", line_color="red")
-
-    st.plotly_chart(utilization_chart, use_container_width=True)
-
-
-def display_resource_calendar(
-    filtered_data: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp
-) -> None:
-    """
-    Display a calendar view of resource allocations.
-
-    Args:
-        filtered_data: Filtered DataFrame of resource allocation data
-        start_date: Start date for the visualization
-        end_date: End date for the visualization
-    """
-    st.subheader("Resource Calendar")
-
-    if filtered_data.empty:
-        st.info("No data available for the calendar view with current filters.")
-        return
-
-    # Select a resource to view
-    resources = filtered_data["Resource"].unique()
-    selected_resource = st.selectbox(
-        "Select Resource", options=resources, key="calendar_resource"
-    )
-
-    # Filter for the selected resource
-    resource_data = filtered_data[filtered_data["Resource"] == selected_resource]
-
-    # Display calendar with allocations
-    months = pd.date_range(start=start_date, end=end_date, freq="MS")
-
-    for month_start in months:
-        month_end = month_start + pd.offsets.MonthEnd(1)
-        month_name = month_start.strftime("%B %Y")
-
-        with st.expander(month_name, expanded=months[0] == month_start):
-            # Get days in the month
-            days_in_month = calendar.monthrange(month_start.year, month_start.month)[1]
-
-            # Create a calendar grid
-            rows = []
-            week = []
-
-            # Add empty cells for days before the 1st of the month
-            first_day_weekday = month_start.weekday()
-            for _ in range(first_day_weekday):
-                week.append("")
-
-            # Add days of the month
-            for day in range(1, days_in_month + 1):
-                date = pd.Timestamp(
-                    year=month_start.year, month=month_start.month, day=day
-                )
-
-                # Check if this date has allocations
-                day_allocations = resource_data[
-                    (resource_data["Start"] <= date) & (resource_data["End"] >= date)
-                ]
-
-                if not day_allocations.empty:
-                    # Calculate total allocation for this day
-                    total_allocation = day_allocations["Allocation %"].sum() / 100
-                    color = _get_allocation_color(total_allocation)
-
-                    projects = day_allocations["Project"].tolist()
-                    week.append(
-                        f"<div style='background-color:{color};padding:10px;'>"
-                        f"<strong>{day}</strong><br>"
-                        f"{total_allocation:.0%}<br>"
-                        f"{', '.join(projects)}"
-                        f"</div>"
-                    )
-                else:
-                    week.append(
-                        f"<div style='padding:10px;'><strong>{day}</strong></div>"
-                    )
-
-                # Start a new week after Saturday
-                if (first_day_weekday + day) % 7 == 0:
-                    rows.append(week)
-                    week = []
-
-            # Add the last week if it's not complete
-            if week:
-                # Pad with empty cells to complete the week
-                while len(week) < 7:
-                    week.append("")
-                rows.append(week)
-
-            # Display the calendar
-            calendar_html = "<table width='100%'><tr><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>"
-            for row in rows:
-                calendar_html += "<tr>"
-                for cell in row:
-                    calendar_html += f"<td style='border:1px solid #ddd;'>{cell}</td>"
-                calendar_html += "</tr>"
-            calendar_html += "</table>"
-
-            st.markdown(calendar_html, unsafe_allow_html=True)
-
-
-def _get_allocation_color(allocation: float) -> str:
-    """
-    Get a color based on allocation percentage.
-
-    Args:
-        allocation: Allocation as a decimal (0.0 to 1.0+)
-
-    Returns:
-        Hex color code
-    """
-    if allocation < 0.5:
-        return "#c6efce"  # Light green
-    elif allocation < 0.8:
-        return "#ffeb9c"  # Light yellow
-    elif allocation <= 1.0:
-        return "#ffc7ce"  # Light red
-    else:
-        return "#ff0000"  # Bright red for overallocation
