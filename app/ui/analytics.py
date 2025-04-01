@@ -1631,16 +1631,23 @@ def display_availability_timeline(
     st.plotly_chart(fig, use_container_width=True)
 
     # Add explanation of the chart
-    with st.expander("Understanding the Availability Timeline"):
-        st.markdown("""
-        - **Blue line**: Average resource availability across all resources for each day
-        - **Light blue area**: Range between minimum and maximum resource availability 
-        - **Orange dotted line**: Number of resources available on each day
-        - **Green dashed line**: High availability threshold (70%)
-        - **Red dashed line**: Low availability threshold (30%)
-        
-        This chart helps you identify days with higher resource availability for planning new work.
-        """)
+    with st.expander("ℹ️ Understanding the Availability Timeline", expanded=False):
+        st.markdown(
+            """
+        <div style="background-color:rgba(0,188,212,0.1); border-left:3px solid #00BCD4; padding:10px; border-radius:2px;">
+        <p><strong>Understanding the Availability Timeline:</strong></p>
+        <ul>
+            <li>The <strong>blue line</strong> indicates average resource availability across all resources for each day</li>
+            <li>The <strong>light blue area</strong> shows the range between minimum and maximum resource availability</li>
+            <li>The <strong>orange dotted line</strong> represents the number of resources available on each day</li>
+            <li>The <strong>green dashed line</strong> marks the high availability threshold (70%)</li>
+            <li>The <strong>red dashed line</strong> marks the low availability threshold (30%)</li>
+        </ul>
+        <p><strong>Note:</strong> This chart helps you identify days with higher resource availability for planning new work.</p>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
 
 def display_availability_by_group(
@@ -2018,19 +2025,22 @@ def display_capacity_forecast(
     st.plotly_chart(fig, use_container_width=True)
 
     # Add explanation for the capacity forecast
-    with st.expander("Understanding the Capacity Forecast"):
-        st.markdown("""
-        This chart shows the forecast of available resource capacity over time:
-        
-        - **Green area**: Available capacity that can be allocated to new work
-        - **Red area**: Already allocated capacity
-        - **Green line**: Percentage of total capacity that is available
-        
-        The capacity is measured in person-percentages. For example, if there are 10 resources and each has 
-        100% capacity, the total daily capacity is 1000 person-%.
-        
-        The chart helps you identify periods with higher available capacity for planning new projects or tasks.
-        """)
+    with st.expander("ℹ️ Understanding the Capacity Forecast", expanded=False):
+        st.markdown(
+            """
+        <div style="background-color:rgba(0,188,212,0.1); border-left:3px solid #00BCD4; padding:10px; border-radius:2px;">
+        <p><strong>Understanding the Capacity Forecast:</strong></p>
+        <ul>
+            <li>The <strong>green area</strong> represents available capacity that can be allocated to new work</li>
+            <li>The <strong>red area</strong> shows already allocated capacity</li>
+            <li>The <strong>green line</strong> indicates the percentage of total capacity that is available</li>
+        </ul>
+        <p><strong>Note:</strong> The capacity is measured in person-percentages. For example, if there are 10 resources and each has 100% capacity, the total daily capacity is 1000 person-%.</p>
+        <p>This chart helps you identify periods with higher available capacity for planning new projects or tasks.</p>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
 
 def display_resource_calendar_tab():
