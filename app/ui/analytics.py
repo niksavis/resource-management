@@ -1056,21 +1056,25 @@ def display_performance_metrics_dashboard(
 
                 st.plotly_chart(fig_dist, use_container_width=True)
 
-                # IMPROVED: More informative explanation with better formatting
-                st.markdown(
-                    """
-                <div style="background-color:rgba(0,188,212,0.1); border-left:3px solid #00BCD4; padding:10px; border-radius:2px;">
-                <p><strong>Understanding the Resource Allocation Distribution:</strong></p>
-                <ul>
-                    <li>The <strong>stacked bars</strong> show how resources are distributed across utilization ranges within each department.</li>
-                    <li>The <strong>cyan line</strong> represents the Balance Score - higher scores indicate more resources in the optimal utilization range (70-90%).</li>
-                    <li>An ideally balanced department would have most resources in the "Optimal" category with minimal overallocation or underutilization.</li>
-                </ul>
-                <p><strong>Note:</strong> If all resources show the same allocation level (e.g., all at 100%), this indicates all resources are allocated at the same percentage in your project data.</p>
-                </div>
-                """,
-                    unsafe_allow_html=True,
-                )
+                # Place explanation in an expander with help icon for better UX
+                with st.expander(
+                    "ℹ️ Understanding the Resource Allocation Distribution",
+                    expanded=False,
+                ):
+                    st.markdown(
+                        """
+                    <div style="background-color:rgba(0,188,212,0.1); border-left:3px solid #00BCD4; padding:10px; border-radius:2px;">
+                    <p><strong>Understanding the Resource Allocation Distribution:</strong></p>
+                    <ul>
+                        <li>The <strong>stacked bars</strong> show how resources are distributed across utilization ranges within each department.</li>
+                        <li>The <strong>cyan line</strong> represents the Balance Score - higher scores indicate more resources in the optimal utilization range (70-90%).</li>
+                        <li>An ideally balanced department would have most resources in the "Optimal" category with minimal overallocation or underutilization.</li>
+                    </ul>
+                    <p><strong>Note:</strong> If all resources show the same allocation level (e.g., all at 100%), this indicates all resources are allocated at the same percentage in your project data.</p>
+                    </div>
+                    """,
+                        unsafe_allow_html=True,
+                    )
 
     # 4. Performance Trends Over Time - FIX: Corrected weekly data filtering logic
     st.subheader("Performance Trends")
