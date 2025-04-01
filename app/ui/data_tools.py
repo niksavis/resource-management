@@ -339,6 +339,7 @@ def display_export_section():
         filename = st.text_input("Filename", value=f"{filename_base}{extension}")
 
     with col2:
+        st.write("Options")
         include_date = st.checkbox(
             "Add date", value=True, help="Include current date in filename"
         )
