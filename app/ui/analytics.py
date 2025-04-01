@@ -993,28 +993,8 @@ def display_performance_metrics_dashboard(
                     "#FF5252",
                 ]
 
-                # FIXED: First, determine if the data is already showing all resources in a specific category
-                all_in_one_category = True
-                primary_category = None
-
-                for col in allocation_cols:
-                    # Check if any department has resources in this category
-                    if (display_df[col] > 0).any():
-                        if primary_category is None:
-                            primary_category = col
-                        elif primary_category != col and (display_df[col] > 0).any():
-                            all_in_one_category = False
-                            break
-
-                # Show warning if all resources are in one category
-                if all_in_one_category and primary_category:
-                    st.warning(
-                        f"All resources are currently in the '{primary_category}' allocation range. "
-                        + "This may be due to all resources being allocated at the same percentage level in the data. "
-                        + "Consider varying resource allocations to get a more meaningful distribution."
-                    )
-
-                for i, col in allocation_cols:
+                # Loop through allocation categories - Fix error in iteration
+                for i, col in enumerate(allocation_cols):
                     fig_dist.add_trace(
                         go.Bar(
                             name=col,
