@@ -1593,16 +1593,21 @@ def display_availability_timeline(
     # Create the timeline chart
     fig = go.Figure()
 
-    # Add range area for availability range
+    # Use a more visible color for the legend marker
+    range_color = "rgba(33, 150, 243, 0.7)"  # More visible blue for legend
+    fill_color = "rgba(33, 150, 243, 0.2)"  # Light blue for actual area fill
+
     fig.add_trace(
         go.Scatter(
             x=daily_metrics["Date"],
             y=daily_metrics["Max Availability"],
             fill=None,
             mode="lines",
-            line_color="rgba(0,176,246,0.2)",
-            name="Max Availability",
-            line=dict(width=0),
+            line=dict(width=1, color=range_color),  # More visible line for legend
+            name="Availability Range",
+            showlegend=True,
+            hoverinfo="skip",
+            legendgroup="availability_range",
         )
     )
 
@@ -1612,9 +1617,13 @@ def display_availability_timeline(
             y=daily_metrics["Min Availability"],
             fill="tonexty",  # Fill to the trace before
             mode="lines",
-            line_color="rgba(0,176,246,0.2)",
-            name="Min Availability",
             line=dict(width=0),
+            fillcolor=fill_color,
+            name="Availability Range",
+            showlegend=False,
+            hovertemplate="Date: %{x}<br>Range: %{y:.1f}% - %{customdata:.1f}%<extra></extra>",
+            customdata=daily_metrics["Max Availability"],
+            legendgroup="availability_range",
         )
     )
 
@@ -1671,9 +1680,7 @@ def display_availability_timeline(
             ticksuffix="%",
         ),
         yaxis2=dict(
-            title=dict(  # Fix: Use title dict with font property instead of titlefont
-                text="Resource Count", font=dict(color="#FF9800")
-            ),
+            title=dict(text="Resource Count", font=dict(color="#FF9800")),
             tickfont=dict(color="#FF9800"),
             anchor="x",
             overlaying="y",
@@ -1694,7 +1701,7 @@ def display_availability_timeline(
     with st.expander("Understanding the Availability Timeline"):
         st.markdown("""
         - **Blue line**: Average resource availability across all resources for each day
-        - **Light blue area**: Range between minimum and maximum resource availability
+        - **Light blue area**: Range between minimum and maximum resource availability 
         - **Orange dotted line**: Number of resources available on each day
         - **Green dashed line**: High availability threshold (70%)
         - **Red dashed line**: Low availability threshold (30%)
