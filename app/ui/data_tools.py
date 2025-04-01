@@ -6,13 +6,11 @@ This module provides the UI components for importing and exporting data.
 
 import streamlit as st
 import pandas as pd
-import json
 import io
 from datetime import datetime
 from typing import Dict, Any, List
-
-from app.utils.ui_components import display_action_bar, confirm_action
-from app.services.data_service import load_json, save_json, save_data
+from app.utils.ui_components import display_action_bar
+from app.services.data_service import load_json, save_json
 
 
 def display_import_export_data_tab():
@@ -191,8 +189,6 @@ def display_import_section():
 
                     # Show mapping UI based on selected resource type
                     if resource_type == "People":
-                        name_col = st.selectbox("Name column", options=df.columns)
-                        role_col = st.selectbox("Role column", options=df.columns)
                         imported_data = {"people": imported_data}
 
             # Validate data structure

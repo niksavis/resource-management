@@ -8,8 +8,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
-
 from app.utils.ui_components import display_action_bar, paginate_dataframe
 from app.services.config_service import load_display_preferences
 from app.services.data_service import parse_resources

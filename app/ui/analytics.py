@@ -9,28 +9,12 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import calendar
-from typing import List, Dict, Any, Optional, Tuple
-
+from typing import List, Dict, Any
 from app.services.config_service import (
-    load_currency_settings,
     load_department_colors,
     load_utilization_thresholds,
-    load_heatmap_colorscale,
     load_date_range_settings,
     load_display_preferences,
-)
-
-from app.ui.visualizations import (
-    display_gantt_chart,
-    display_utilization_chart,
-)
-from app.services.visualization_service import (
-    prepare_gantt_data,
-    prepare_utilization_data,
-    prepare_capacity_data,
-    prepare_budget_data,
 )
 from app.utils.ui_components import display_action_bar
 from app.services.data_service import (
@@ -556,7 +540,6 @@ def display_performance_metrics_dashboard(
     optimal_max = thresholds.get("optimal_max", 90)
     over_threshold = thresholds.get("over", 100)
 
-    # 1. Display Key Performance Indicators (REVISED: Single row with most important metrics)
     st.subheader("Performance Summary")
 
     # Calculate key metrics
@@ -569,7 +552,6 @@ def display_performance_metrics_dashboard(
     # Calculate resource distribution
     total_resources = len(utilization_df)
     over_utilized = sum(utilization_df["Utilization %"] > over_threshold)
-    under_utilized = sum(utilization_df["Utilization %"] < under_threshold)
     optimal_utilized = sum(
         (utilization_df["Utilization %"] >= optimal_min)
         & (utilization_df["Utilization %"] <= optimal_max)
@@ -2190,15 +2172,9 @@ def display_calendar_summary_metrics(
     if filtered_data.empty:
         return
 
-    # Calculate metrics specific to calendar analysis
-    total_resources = filtered_data["Resource"].nunique()
-
     # Calculate the total duration in the selected range
     date_range = pd.date_range(start=start_date, end=end_date)
     total_days = len(date_range)
-
-    # Calculate working days (Mon-Fri) in the range
-    working_days = sum(1 for d in date_range if d.weekday() < 5)
 
     # Create a daily allocation table
     daily_allocation = {}
@@ -2232,7 +2208,6 @@ def display_calendar_summary_metrics(
     # Calculate weekend allocations percentage
     weekend_dates = [d for d in date_range if d.weekday() >= 5]
     weekend_allocation_count = sum(daily_allocation.get(d, 0) for d in weekend_dates)
-    weekend_days = len(weekend_dates)
     weekend_allocation_pct = (
         weekend_allocation_count / total_allocated_days * 100
         if total_allocated_days > 0

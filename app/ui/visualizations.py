@@ -7,18 +7,12 @@ This module provides UI components for data visualization.
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from typing import Dict, Any, List
 from app.services.visualization_service import (
     prepare_gantt_data,
     prepare_utilization_data,
 )
-from app.services.config_service import (
-    load_department_colors,
-    load_currency_settings,
-    load_heatmap_colorscale,
-    load_display_preferences,
-)
+from app.services.config_service import load_department_colors, load_display_preferences
 
 
 def display_gantt_chart(

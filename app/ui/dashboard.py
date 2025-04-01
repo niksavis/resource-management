@@ -6,18 +6,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from typing import Dict, Any, List
-from datetime import datetime, timedelta
-
+from datetime import datetime
 from app.utils.ui_components import display_action_bar
 from app.services.config_service import (
     load_currency_settings,
-    load_display_preferences,
     load_utilization_thresholds,
     load_department_colors,
 )
 from app.services.data_service import (
-    paginate_dataframe,
     create_gantt_data,
     calculate_resource_utilization,
     calculate_project_cost,

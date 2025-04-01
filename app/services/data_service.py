@@ -8,7 +8,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timedelta
 from app.services.config_service import load_display_preferences
 
 
@@ -246,9 +245,6 @@ def calculate_resource_utilization(gantt_data: pd.DataFrame) -> pd.DataFrame:
     min_date = gantt_data["Start"].min()
     max_date = gantt_data["End"].max()
     total_days = (max_date - min_date).days + 1
-
-    # Create a date range for the entire period
-    all_dates = pd.date_range(start=min_date, end=max_date)
 
     # Create a result dataframe
     resources = gantt_data["Resource"].unique()

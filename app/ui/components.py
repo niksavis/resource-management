@@ -7,10 +7,9 @@ This module provides reusable UI components and display functions.
 import streamlit as st
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 from app.services.data_service import paginate_dataframe, _apply_all_filters
-from app.utils.formatting import format_currency
-from app.services.config_service import load_currency_settings, load_display_preferences
+from app.services.config_service import load_currency_settings
 
 
 def display_filtered_resource(
