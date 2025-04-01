@@ -777,9 +777,10 @@ def display_performance_metrics_dashboard(
             )
             efficiency = (optimal_count / len(group) * 100) if len(group) > 0 else 0
 
-            # REVISED status calculation to ensure proper categorization
             status = "Optimal"
-            if avg_util < optimal_min:
+            if avg_util < under_threshold:
+                status = "Very Underutilized"
+            elif avg_util < optimal_min:
                 status = "Underutilized"
             elif avg_util > over_threshold:
                 status = "Overutilized"
@@ -801,10 +802,11 @@ def display_performance_metrics_dashboard(
             # Sort by efficiency score
             dept_df = dept_df.sort_values("Efficiency Score", ascending=False)
 
-            # Create color map for utilization status with more distinct colors
+            # Update the color map to include the new status
             status_colors = {
                 "Optimal": "#66bb6a",  # Green
                 "Underutilized": "#ffca28",  # Amber
+                "Very Underutilized": "#90caf9",  # Light blue
                 "Overutilized": "#ff7043",  # Orange
             }
 
