@@ -118,9 +118,17 @@ def _display_search_box():
                         st.session_state.active_tab = "Resource Management"
                         st.session_state.selected_resource = resource_name
                         st.session_state.resource_view = resource_type + "s"
+
+                        # Set the search_all_resources key - this is what the resource management page uses
+                        st.session_state.search_all_resources = resource_name
+
                     elif resource_type == "Project":
                         st.session_state.active_tab = "Project Management"
                         st.session_state.selected_project = resource_name
+
+                        # Set the search_projects key - this is what the project management page uses
+                        st.session_state.search_projects = resource_name
+
                     st.rerun()
         else:
             st.info("No matching resources found.")
