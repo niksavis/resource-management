@@ -1338,57 +1338,6 @@ def display_capacity_planning_dashboard(
         st.info("No capacity data available with current filters.")
         return
 
-    # Add diagnostic toggle
-    show_diagnostics = st.sidebar.checkbox("Show Data Diagnostics", value=False)
-
-    if show_diagnostics:
-        with st.expander("Allocation Data Diagnostics", expanded=True):
-            st.write("### Allocation Statistics")
-
-            # Calculate key statistics
-            avg_allocation = capacity_data["Allocation"].mean()
-            median_allocation = capacity_data["Allocation"].median()
-            max_allocation = capacity_data["Allocation"].max()
-            min_allocation = capacity_data["Allocation"].min()
-
-            # Calculate resource statistics
-            resource_allocations = capacity_data.groupby("Resource")[
-                "Allocation"
-            ].mean()
-            fully_allocated = sum(resource_allocations >= 100)
-            high_allocated = sum(
-                (resource_allocations >= 70) & (resource_allocations < 100)
-            )
-            low_allocated = sum(resource_allocations < 30)
-
-            # Display statistics
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Average Allocation", f"{avg_allocation:.1f}%")
-                st.metric("Minimum Allocation", f"{min_allocation:.1f}%")
-            with col2:
-                st.metric("Median Allocation", f"{median_allocation:.1f}%")
-                st.metric("Maximum Allocation", f"{max_allocation:.1f}%")
-            with col3:
-                st.metric("Fully Allocated Resources", fully_allocated)
-                st.metric("Low Allocated (<30%)", low_allocated)
-
-            # Show data samples
-            st.write("### Sample Allocations")
-            st.dataframe(capacity_data.head(10))
-
-            # Show allocation distribution
-            st.write("### Allocation Distribution")
-            fig = px.histogram(
-                capacity_data,
-                x="Allocation",
-                nbins=20,
-                title="Distribution of Allocation Values",
-                labels={"Allocation": "Allocation %"},
-            )
-            fig.update_layout(xaxis_range=[0, max(100, max_allocation * 1.1)])
-            st.plotly_chart(fig, use_container_width=True)
-
     # Display availability summary metrics
     display_availability_summary_metrics(capacity_data)
 
@@ -1811,12 +1760,16 @@ def display_availability_by_group(
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
-        # Check if "Team" column exists
+        # Check if "Team" column exists in the data
         if "Team" in capacity_data.columns:
-            # Calculate team availability only for teams with data
-            team_data = capacity_data.dropna(subset=["Team"])
+            # Filter for resources that have team assignments
+            # We'll use fillna with an empty string to avoid dropping rows
+            team_data = capacity_data.copy()
+            team_data["Team"] = team_data["Team"].fillna("")
+            team_data = team_data[team_data["Team"] != ""]
 
-            if not team_data.empty:
+            if not team_data.empty and team_data["Team"].nunique() > 0:
+                # Calculate team availability by grouping
                 team_allocation = (
                     team_data.groupby(["Department", "Team"])["Allocation"]
                     .mean()
@@ -1878,9 +1831,10 @@ def display_availability_by_group(
 
                 st.plotly_chart(fig2, use_container_width=True)
             else:
-                st.info("No team data available for display.")
+                st.info(
+                    "No team data available for display. Resources may not have team assignments."
+                )
         else:
-            # If no team data exists, show resource type availability instead
             if "Type" in capacity_data.columns:
                 type_allocation = (
                     capacity_data.groupby("Type")["Allocation"].mean().reset_index()

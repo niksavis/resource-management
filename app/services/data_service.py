@@ -119,7 +119,9 @@ def create_gantt_data(
         # If no specific resource allocations, assign default 100% allocation to all resources
         if not resource_allocations:
             for resource_name in project.get("assigned_resources", []):
-                resource_type, dept = _determine_resource_type(resource_name, resources)
+                resource_type, dept, team = _determine_resource_type(
+                    resource_name, resources
+                )
 
                 gantt_data.append(
                     {
@@ -127,6 +129,7 @@ def create_gantt_data(
                         "Resource": resource_name,
                         "Type": resource_type,
                         "Department": dept,
+                        "Team": team,  # Add team information here
                         "Start": project_start,
                         "End": project_end,
                         "Priority": project_priority,
@@ -137,7 +140,9 @@ def create_gantt_data(
             # Process specific resource allocations
             for allocation in resource_allocations:
                 resource_name = allocation["resource"]
-                resource_type, dept = _determine_resource_type(resource_name, resources)
+                resource_type, dept, team = _determine_resource_type(
+                    resource_name, resources
+                )
                 alloc_start = pd.to_datetime(allocation["start_date"])
                 alloc_end = pd.to_datetime(allocation["end_date"])
                 alloc_percentage = allocation["allocation_percentage"]
@@ -148,6 +153,7 @@ def create_gantt_data(
                         "Resource": resource_name,
                         "Type": resource_type,
                         "Department": dept,
+                        "Team": team,  # Add team information here
                         "Start": alloc_start,
                         "End": alloc_end,
                         "Priority": project_priority,
@@ -163,6 +169,7 @@ def create_gantt_data(
                 "Resource",
                 "Type",
                 "Department",
+                "Team",
                 "Start",
                 "End",
                 "Priority",
@@ -179,34 +186,38 @@ def create_gantt_data(
 
 def _determine_resource_type(
     resource: str, data: Dict[str, List[Dict[str, Any]]]
-) -> Tuple[str, str]:
+) -> Tuple[str, str, Optional[str]]:
     """
-    Determine the type and department of a resource.
+    Determine the type, department, and team of a resource.
 
     Args:
         resource: Resource name
         data: Dictionary containing people, teams, and departments data
 
     Returns:
-        Tuple of (resource_type, department)
+        Tuple of (resource_type, department, team)
     """
     # Check if the resource is a person
     for person in data["people"]:
         if person["name"] == resource:
-            return "Person", person.get("department", "Unknown")
+            return (
+                "Person",
+                person.get("department", "Unknown"),
+                person.get("team", None),
+            )
 
     # Check if the resource is a team
     for team in data["teams"]:
         if team["name"] == resource:
-            return "Team", team.get("department", "Unknown")
+            return "Team", team.get("department", "Unknown"), None
 
     # Check if the resource is a department
     for department in data["departments"]:
         if department["name"] == resource:
-            return "Department", department["name"]
+            return "Department", department["name"], None
 
     # Default if resource is not found
-    return "Unknown", "Unknown"
+    return "Unknown", "Unknown", None
 
 
 def calculate_resource_utilization(gantt_data: pd.DataFrame) -> pd.DataFrame:
@@ -412,6 +423,55 @@ def calculate_capacity_data(
     # Get unique resources
     resources = filtered_data["Resource"].unique()
 
+    # Create a team lookup dictionary from the source data
+    team_lookup = {}
+    for person in st.session_state.data.get("people", []):
+        if person.get("team"):
+            team_lookup[person["name"]] = person["team"]
+
+    # Create a lookup table for resource attributes
+    resource_attributes = {}
+    for resource in resources:
+        resource_info = filtered_data[filtered_data["Resource"] == resource]
+        if not resource_info.empty:
+            resource_type = (
+                resource_info["Type"].iloc[0]
+                if "Type" in resource_info.columns
+                else None
+            )
+
+            # Determine team value based on resource type and source data
+            if resource_type == "Team":
+                # For Team resources, set Team to their own name
+                team = resource
+            elif resource_type == "Person":
+                # For Person resources, first check the team lookup (source data)
+                team = team_lookup.get(resource)
+
+                # If not found in lookup, fall back to filtered_data
+                if team is None and "Team" in resource_info.columns:
+                    team = resource_info["Team"].iloc[0]
+            else:
+                # For other resource types, use what's in the filtered data
+                team = (
+                    resource_info["Team"].iloc[0]
+                    if "Team" in resource_info.columns
+                    else None
+                )
+
+            department = (
+                resource_info["Department"].iloc[0]
+                if "Department" in resource_info.columns
+                else None
+            )
+
+            # Store all attributes for each resource
+            resource_attributes[resource] = {
+                "Department": department,
+                "Team": team,
+                "Type": resource_type,
+            }
+
     # For each resource and date, calculate allocation
     for date in date_range:
         for resource in resources:
@@ -422,64 +482,29 @@ def calculate_capacity_data(
                 & (filtered_data["End"] >= date)
             ]
 
-            # Fix: Use sum() instead of mean() for allocation
+            # Calculate allocation for this resource on this date
             if not assignments.empty:
                 # Sum all allocations for this resource on this date
                 allocation = assignments["Allocation %"].sum()
-
-                # Get additional resource attributes
-                department = (
-                    assignments["Department"].iloc[0]
-                    if "Department" in assignments.columns
-                    else None
-                )
-                team = (
-                    assignments["Team"].iloc[0]
-                    if "Team" in assignments.columns
-                    else None
-                )
-                resource_type = (
-                    assignments["Type"].iloc[0]
-                    if "Type" in assignments.columns
-                    else None
-                )
             else:
                 # No assignments for this resource on this date
                 allocation = 0
 
-                # Try to get resource attributes from any record for this resource
-                resource_info = filtered_data[filtered_data["Resource"] == resource]
-                department = (
-                    resource_info["Department"].iloc[0]
-                    if not resource_info.empty and "Department" in resource_info.columns
-                    else None
-                )
-                team = (
-                    resource_info["Team"].iloc[0]
-                    if not resource_info.empty and "Team" in resource_info.columns
-                    else None
-                )
-                resource_type = (
-                    resource_info["Type"].iloc[0]
-                    if not resource_info.empty and "Type" in resource_info.columns
-                    else None
-                )
-
-            # Add row to capacity data
+            # Add row to capacity data - use the lookup table to ensure we have all attributes
+            attrs = resource_attributes.get(resource, {})
             capacity_rows.append(
                 {
                     "Date": date,
                     "Resource": resource,
-                    "Allocation": allocation,  # Now using the sum of allocations
-                    "Department": department,
-                    "Team": team,
-                    "Type": resource_type,
+                    "Allocation": allocation,
+                    "Department": attrs.get("Department"),
+                    "Team": attrs.get("Team"),
+                    "Type": attrs.get("Type"),
                 }
             )
 
     # Create DataFrame from rows
     capacity_df = pd.DataFrame(capacity_rows)
-
     return capacity_df
 
 
