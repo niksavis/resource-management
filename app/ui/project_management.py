@@ -292,7 +292,7 @@ def add_project_form():
 
             with col1:
                 allocation_pct = st.slider(
-                    f"Allocation %",
+                    "Allocation %",
                     min_value=10,
                     max_value=100,
                     value=100,
@@ -302,7 +302,7 @@ def add_project_form():
 
             with col2:
                 resource_start = st.date_input(
-                    f"Start Date",
+                    "Start Date",
                     value=start_date,
                     min_value=start_date,
                     max_value=end_date,
@@ -311,7 +311,7 @@ def add_project_form():
 
             with col3:
                 resource_end = st.date_input(
-                    f"End Date",
+                    "End Date",
                     value=end_date,
                     min_value=resource_start,
                     max_value=end_date,
@@ -416,7 +416,9 @@ def edit_project_form():
             try:
                 if "start_date" in project:
                     default_start = pd.to_datetime(project["start_date"])
-            except:
+            except (ValueError, TypeError) as e:
+                # Log or inform about the conversion error
+                st.debug(f"Could not convert start date: {e}")
                 pass
 
             start_date = st.date_input(
@@ -430,7 +432,9 @@ def edit_project_form():
             try:
                 if "end_date" in project:
                     default_end = pd.to_datetime(project["end_date"])
-            except:
+            except (ValueError, TypeError) as e:
+                # Log or inform about the conversion error
+                st.debug(f"Could not convert end date: {e}")
                 pass
 
             end_date = st.date_input(
@@ -538,7 +542,7 @@ def edit_project_form():
 
                 with col1:
                     allocation_pct = st.slider(
-                        f"Allocation %",
+                        "Allocation %",
                         min_value=10,
                         max_value=100,
                         value=existing["allocation_percentage"] if existing else 100,
@@ -548,7 +552,7 @@ def edit_project_form():
 
                 with col2:
                     resource_start = st.date_input(
-                        f"Start Date",
+                        "Start Date",
                         value=pd.to_datetime(existing["start_date"])
                         if existing
                         else start_date,
@@ -559,7 +563,7 @@ def edit_project_form():
 
                 with col3:
                     resource_end = st.date_input(
-                        f"End Date",
+                        "End Date",
                         value=pd.to_datetime(existing["end_date"])
                         if existing
                         else end_date,
