@@ -6,16 +6,12 @@ This module provides form components for creating, reading, updating, and deleti
 
 import streamlit as st
 import pandas as pd
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-from app.services.validation_service import validate_project
-from app.services.data_service import parse_resources
-from app.utils.formatting import format_currency
 from app.utils.form_utils import (
     display_form_header,
     display_form_feedback,
     display_confirm_checkbox,
-    display_form_actions,
     display_form_section,
     display_resource_icon,
 )
@@ -207,7 +203,7 @@ def display_project_form(
 
                 with col1:
                     allocation_pct = st.slider(
-                        f"Allocation %",
+                        "Allocation %",
                         min_value=10,
                         max_value=100,
                         value=existing["allocation_percentage"] if existing else 100,
@@ -218,7 +214,7 @@ def display_project_form(
                 # Set date range boundaries based on project dates
                 with col2:
                     resource_start = st.date_input(
-                        f"Start Date",
+                        "Start Date",
                         value=pd.to_datetime(existing["start_date"])
                         if existing
                         else start_date,
@@ -229,7 +225,7 @@ def display_project_form(
 
                 with col3:
                     resource_end = st.date_input(
-                        f"End Date",
+                        "End Date",
                         value=pd.to_datetime(existing["end_date"])
                         if existing
                         else end_date,

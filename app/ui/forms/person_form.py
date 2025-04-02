@@ -7,7 +7,6 @@ This module provides form components for creating, reading, updating, and deleti
 import streamlit as st
 from typing import Dict, Any, Optional, List
 from app.services.validation_service import validate_person
-from app.utils.formatting import format_currency
 from app.services.config_service import load_work_schedule_settings
 from app.utils.form_utils import (
     display_form_header,
@@ -94,8 +93,8 @@ def display_person_form(
         options=[d["name"] for d in st.session_state.data["departments"]],
         index=0
         if not person_data
-        or not person_data.get("department")
-        in [d["name"] for d in st.session_state.data["departments"]]
+        or person_data.get("department")
+        not in [d["name"] for d in st.session_state.data["departments"]]
         else [d["name"] for d in st.session_state.data["departments"]].index(
             person_data.get("department", "")
         ),

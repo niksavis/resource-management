@@ -5,14 +5,13 @@ This module provides form components for creating, reading, updating, and deleti
 """
 
 import streamlit as st
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from app.services.validation_service import validate_team
 from app.utils.form_utils import (
     display_form_header,
     display_form_feedback,
     display_confirm_checkbox,
     display_form_actions,
-    display_form_section,
 )
 
 
