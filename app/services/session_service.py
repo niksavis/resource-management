@@ -7,7 +7,6 @@ import json
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from typing import Dict, Any, List
 
 from app.services.data_service import load_demo_data, check_data_integrity
 

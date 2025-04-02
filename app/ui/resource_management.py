@@ -6,21 +6,13 @@ This module provides the UI components for managing resources (people, teams, de
 
 import streamlit as st
 import pandas as pd
-import numpy as np
-from typing import List, Dict, Any, Optional
-
+from typing import List, Dict, Any
 from app.utils.ui_components import display_action_bar, paginate_dataframe
 from app.services.config_service import load_currency_settings, load_display_preferences
 from app.utils.resource_utils import calculate_team_cost, calculate_department_cost
-
-# Fix imports to use full path
 from app.ui.forms.person_form import display_person_form as person_crud_form
 from app.ui.forms.team_form import display_team_form as team_crud_form
 from app.ui.forms.department_form import display_department_form as department_crud_form
-from app.utils.validation import validate_team_integrity
-
-# Import app.ui.components instead of utils module
-from app.ui.components import display_filtered_resource
 from app.utils.formatting import format_circular_dependency_message
 from app.services.data_service import check_circular_dependencies
 

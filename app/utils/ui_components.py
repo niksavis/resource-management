@@ -3,7 +3,6 @@ UI component utilities for the resource management application.
 """
 
 import streamlit as st
-from typing import Optional, List, Dict, Any
 
 
 def display_action_bar():

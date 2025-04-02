@@ -6,7 +6,7 @@ This module provides validation functions used throughout the application.
 
 import streamlit as st
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Union
 import pandas as pd
 
 

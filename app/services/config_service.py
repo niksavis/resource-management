@@ -6,7 +6,7 @@ This module handles loading, saving, and accessing application configuration.
 
 import os
 import json
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any, Tuple
 import streamlit as st
 import plotly.express as px
 

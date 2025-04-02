@@ -5,9 +5,7 @@ This module provides data transformation and preparation for visualizations.
 """
 
 import pandas as pd
-import numpy as np
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
 
 
 def prepare_gantt_data(
