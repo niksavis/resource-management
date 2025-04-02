@@ -268,6 +268,9 @@ def _create_projects_dataframe() -> pd.DataFrame:
     Returns:
         DataFrame with project information
     """
+    # Load currency settings
+    currency, _ = load_currency_settings()
+
     return pd.DataFrame(
         [
             {
@@ -279,7 +282,7 @@ def _create_projects_dataframe() -> pd.DataFrame:
                     pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
                 ).days
                 + 1,
-                "Budget": p.get("allocated_budget", 0),
+                "Budget": f"{currency} {p.get('allocated_budget', 0):,.2f}",
                 "Assigned People": parse_resources(p["assigned_resources"])[0],
                 "Assigned Teams": parse_resources(p["assigned_resources"])[1],
                 "Assigned Departments": parse_resources(p["assigned_resources"])[2],
