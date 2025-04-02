@@ -15,7 +15,7 @@ A comprehensive resource management application built with Streamlit. This app a
 - **Workload Distribution**: Visualize resource allocation across projects using Gantt charts and matrix views.
 - **Performance Metrics**: Track resource utilization, overallocation, and underutilization with detailed visualizations.
 - **Availability Forecast**: Plan resource capacity and availability with advanced filtering options.
-- **Resource Calendar**: View resource schedules and assignments in a calendar format.
+- **Resource Calendar**: View resource schedules and assignments in a calendar format with daily, weekly, and monthly views.
 - **Data Tools**: Import and export data in JSON format for easy data management.
 - **Configuration**: Customize settings such as colors, currency, and daily cost limits.
 
@@ -45,24 +45,39 @@ A comprehensive resource management application built with Streamlit. This app a
 
 ---
 
-## Running the App
+## Running the Application
 
-1. Start the Streamlit app:
+Start the application with:
 
-   ```bash
-   streamlit run resource_management_app.py
-   ```
+```bash
+streamlit run main.py
+```
 
-2. Open your browser and navigate to:
+The application will open in your default web browser at `http://localhost:8501`.
 
-   ```text
-   http://localhost:8501
-   ```
+---
+
+## Data Structure
+
+The application stores data in a JSON format with the following structure:
+
+- People (resources with skills, costs, and work schedules)
+- Teams (groups of people)
+- Departments (organizational units containing teams and people)
+- Projects (with timelines, allocated resources, and priority)
+
+---
+
+## Usage Guide
+
+1. **Initial Setup**: Configure your currency and display settings in the Configuration tab.
+2. **Add Resources**: Create people, teams, and departments in the Resource Management tab.
+3. **Create Projects**: Set up projects and allocate resources in the Project Management tab.
+4. **Analyze Workload**: Use the analytics tabs to visualize workload distribution and resource utilization.
+5. **Plan Capacity**: Use the Availability Forecast to identify resource availability for future planning.
 
 ---
 
 ## License
 
-This repository is licensed under the [MIT License](LICENSE)
-
-**[⬆ Back to Top](#resource-management-app)**
+This project is licensed under the MIT License - see the LICENSE file for details.
