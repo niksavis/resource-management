@@ -635,7 +635,10 @@ def _update_department(department, old_name=None):
 
 def _delete_department(name):
     from app.utils.resource_utils import delete_resource
+    from app.services.config_service import remove_department_color
 
+    # Remove color from settings first, then delete the resource
+    remove_department_color(name)
     delete_resource(st.session_state.data["departments"], name, "department")
 
 

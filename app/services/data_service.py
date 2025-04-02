@@ -7,6 +7,7 @@ import base64
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 from typing import Dict, List, Any, Optional, Tuple
 from app.services.config_service import load_display_preferences
 
@@ -860,3 +861,48 @@ def find_resource_conflicts(
                 )
 
     return pd.DataFrame(conflicts)
+
+
+def load_data() -> Dict[str, List[Dict[str, Any]]]:
+    """Load data from the resource data file."""
+    try:
+        if os.path.exists("resource_data.json"):
+            with open("resource_data.json", "r") as file:
+                data = json.load(file)
+
+            # Ensure all departments have colors assigned
+            from app.services.config_service import ensure_department_colors
+
+            ensure_department_colors(data.get("departments", []))
+
+            return data
+        else:
+            # File doesn't exist, create with demo data
+            data = load_demo_data()
+            save_data(data)
+
+            # Ensure all departments have colors assigned
+            from app.services.config_service import ensure_department_colors
+
+            ensure_department_colors(data.get("departments", []))
+
+            return data
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return {"people": [], "teams": [], "departments": [], "projects": []}
+
+
+def import_data(data: Dict[str, List[Dict[str, Any]]]) -> None:
+    """
+    Import data from an external source.
+
+    Args:
+        data: The data to import
+    """
+    save_data(data)
+    st.session_state.data = data
+
+    # Ensure all departments have colors assigned
+    from app.services.config_service import ensure_department_colors
+
+    ensure_department_colors(data.get("departments", []))

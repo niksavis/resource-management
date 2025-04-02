@@ -5,10 +5,15 @@ This module provides form components for creating, reading, updating, and deleti
 """
 
 import streamlit as st
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Callable
 import plotly.express as px
 
-from app.services.config_service import add_department_color, load_department_colors
+from app.services.config_service import (
+    add_department_color,
+    load_department_colors,
+    save_department_colors,
+    remove_department_color,
+)
 from app.utils.formatting import format_currency
 from app.utils.resource_utils import (
     calculate_department_cost,
@@ -25,10 +30,61 @@ from app.utils.form_utils import (
 )
 
 
+def get_unused_color():
+    """
+    Get a pleasing color not already used in department_colors settings.
+
+    Returns:
+        A hex color code not currently assigned to any department
+    """
+    # Visually pleasing color palette that works in both light and dark themes
+    pleasing_colors = [
+        "#3498db",  # Blue
+        "#2ecc71",  # Green
+        "#e74c3c",  # Red
+        "#9b59b6",  # Purple
+        "#f1c40f",  # Yellow
+        "#1abc9c",  # Teal
+        "#d35400",  # Orange
+        "#34495e",  # Dark Blue
+        "#16a085",  # Green Sea
+        "#27ae60",  # Nephritis
+        "#8e44ad",  # Wisteria
+        "#f39c12",  # Orange
+        "#c0392b",  # Pomegranate
+        "#7f8c8d",  # Asbestos
+        "#2980b9",  # Belize Hole
+    ]
+
+    # Get current colors
+    current_colors = list(load_department_colors().values())
+
+    # Find first color not already in use
+    for color in pleasing_colors:
+        if color not in current_colors:
+            return color
+
+    # If all colors are used, generate a new one by slightly modifying an existing color
+    import random
+
+    base_color = random.choice(pleasing_colors)
+
+    # Adjust hue slightly to create a new color
+    hex_color = base_color.lstrip("#")
+    r, g, b = tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
+    # Adjust RGB values slightly
+    r = (r + random.randint(-20, 20)) % 256
+    g = (g + random.randint(-20, 20)) % 256
+    b = (b + random.randint(-20, 20)) % 256
+
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 def display_department_form(
     department_data: Optional[Dict[str, Any]] = None,
-    on_submit: Optional[callable] = None,
-    on_cancel: Optional[callable] = None,
+    on_submit: Optional[Callable[[Dict[str, Any]], None]] = None,
+    on_cancel: Optional[Callable[[], None]] = None,
     form_type: str = "add",  # Can be "add", "edit", or "delete"
 ) -> None:
     """
@@ -97,6 +153,9 @@ def display_department_form(
     # Department color selection
     department_colors = load_department_colors()
     current_color = department_colors.get(name, "#1f77b4")
+
+    if form_type == "add" and name not in department_colors:
+        current_color = get_unused_color()
 
     color = st.color_picker(
         "Department Color",
@@ -187,7 +246,14 @@ def display_department_form(
             }
 
             # Save the department color
-            if form_type != "delete":
+            if form_type == "delete":
+                # Remove the department color when the department is deleted
+                remove_department_color(name)
+            elif form_type == "add":
+                department_colors[name] = color
+                save_department_colors(department_colors)
+            else:
+                # For edit operations
                 add_department_color(name, color)
 
             # Submit the form

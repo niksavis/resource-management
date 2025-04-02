@@ -6,13 +6,18 @@
         "add_space": true
     },
     "department_colors": {
-        "Customer Experience": "#008203",
-        "Information Technology": "#002e82",
-        "Network Engineering": "#82007c",
-        "Operations": "#005082",
-        "Product Management": "#820013",
+        "Network Engineering": "#7b7bda",
+        "Software Development": "#5fd023",
+        "Information Technology": "#3272e0",
+        "Product Management": "#d22f46",
+        "Customer Experience": "#d87291",
+        "Operations": "#4f98c7",
         "Research and Development": "#008250",
-        "Software Development": "#700082"
+        "Engineering": "#e08149",
+        "Design": "#cb3d85",
+        "Marketing": "#e6e554",
+        "HR Department": "#ec5cd7",
+        "Sales Department": "#1ab7ae"
     },
     "heatmap_colorscale": [
         [

@@ -131,6 +131,55 @@ def add_department_color(department: str, color: str) -> None:
     save_settings(settings)
 
 
+def remove_department_color(department_name: str) -> None:
+    """
+    Remove a department color from settings.
+
+    Args:
+        department_name: Name of the department to remove color for
+    """
+    department_colors = load_department_colors()
+
+    if department_name in department_colors:
+        del department_colors[department_name]
+        save_department_colors(department_colors)
+
+
+def ensure_department_colors(departments: List[Dict[str, Any]]) -> None:
+    """
+    Ensure all departments have a color assigned in settings.
+
+    Args:
+        departments: List of department dictionaries
+    """
+    department_colors = load_department_colors()
+    modified = False
+
+    # Get department names
+    department_names = [dept["name"] for dept in departments]
+
+    # Remove colors for departments that no longer exist
+    colors_to_remove = [
+        name for name in department_colors if name not in department_names
+    ]
+    for name in colors_to_remove:
+        del department_colors[name]
+        modified = True
+
+    # Add colors for departments that don't have one
+    from app.ui.forms.department_form import get_unused_color
+
+    for dept in departments:
+        dept_name = dept["name"]
+        if dept_name not in department_colors:
+            department_colors[dept_name] = get_unused_color()
+            modified = True
+
+    # Save if changes were made
+    if modified:
+        save_department_colors(department_colors)
+
+
 def load_display_preferences() -> Dict[str, Any]:
     """Load display preferences from the settings file."""
     settings = load_settings()
