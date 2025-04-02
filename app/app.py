@@ -122,8 +122,11 @@ def _display_search_box():
                         st.session_state.active_tab = "Project Management"
                         st.session_state.selected_project = resource_name
 
-                        # Set the search_projects key - this is what the project management page uses
-                        st.session_state.search_projects = resource_name
+                        # Set the search field for the All Projects tab, not Manage Projects tab
+                        st.session_state.search_projects_cards = resource_name
+                        # Clear the search for Manage Projects tab to avoid confusion
+                        if "search_projects" in st.session_state:
+                            del st.session_state.search_projects
 
                     st.rerun()
         else:
