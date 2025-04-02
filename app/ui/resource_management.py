@@ -8,7 +8,11 @@ import streamlit as st
 import pandas as pd
 from typing import List, Dict, Any
 from app.utils.ui_components import display_action_bar, paginate_dataframe
-from app.services.config_service import load_currency_settings, load_display_preferences
+from app.services.config_service import (
+    load_currency_settings,
+    load_display_preferences,
+    load_daily_cost_settings,
+)
 from app.utils.resource_utils import calculate_team_cost, calculate_department_cost
 from app.ui.forms.person_form import display_person_form as person_crud_form
 from app.ui.forms.team_form import display_team_form as team_crud_form
@@ -536,6 +540,15 @@ def _display_resource_visual_map(
 def _update_person(person, old_name=None):
     from app.utils.resource_utils import update_resource_references, update_resource
 
+    # Check against maximum daily cost limit
+    max_daily_cost = load_daily_cost_settings()
+    if person.get("daily_cost", 0) > max_daily_cost:
+        currency, _ = load_currency_settings()
+        st.error(
+            f"Daily cost exceeds maximum limit of {currency} {max_daily_cost:,.2f}! Please adjust the cost."
+        )
+        return False
+
     if old_name is None:
         old_name = person["name"]
 
@@ -543,15 +556,27 @@ def _update_person(person, old_name=None):
         update_resource_references(old_name, person["name"], "person")
     update_resource(st.session_state.data["people"], old_name, person)
     st.success(f"Person {person['name']} updated successfully!")
+    return True
 
 
 def _add_person(person):
     from app.utils.resource_utils import add_resource
 
+    # Check against maximum daily cost limit
+    max_daily_cost = load_daily_cost_settings()
+    if person.get("daily_cost", 0) > max_daily_cost:
+        currency, _ = load_currency_settings()
+        st.error(
+            f"Daily cost exceeds maximum limit of {currency} {max_daily_cost:,.2f}! Please adjust the cost."
+        )
+        return False
+
     if add_resource(st.session_state.data["people"], person):
         st.success(f"Person {person['name']} added successfully!")
+        return True
     else:
         st.error(f"Person {person['name']} already exists!")
+        return False
 
 
 def _delete_person(name):
