@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from app.utils.ui_components import display_action_bar, paginate_dataframe
-from app.services.config_service import load_display_preferences
+from app.services.config_service import load_display_preferences, load_currency_settings
 from app.services.data_service import parse_resources
 
 
@@ -17,6 +17,229 @@ def display_manage_projects_tab():
     """Display the project management tab with project list and CRUD forms."""
     display_action_bar()
     st.subheader("Project Management")
+
+    # Create tabs similar to resource management
+    project_tabs = st.tabs(["All Projects", "Manage Projects"])
+
+    with project_tabs[0]:
+        display_projects_overview()
+
+    with project_tabs[1]:
+        display_projects_management()
+
+
+def display_projects_overview():
+    """Display the projects overview with cards."""
+    st.write("### Projects Overview")
+
+    # Only proceed if there are projects
+    if not st.session_state.data["projects"]:
+        st.info("No projects found. Please add a project first.")
+        return
+
+    # Create projects dataframe
+    projects_df = _create_projects_dataframe()
+    projects = st.session_state.data["projects"]
+
+    # Search, Sort, and Filter UI
+    with st.expander("🔍 Search, Sort, and Filter Projects", expanded=False):
+        # First row: Search, Date Range, and Sort options
+        col1, col2, col3 = st.columns([1, 1, 1])
+
+        with col1:
+            search_term = st.text_input("Search Projects", key="search_projects_cards")
+
+        with col2:
+            date_range = st.date_input(
+                "Filter by Date Range",
+                value=(
+                    pd.to_datetime(projects_df["Start Date"]).min().date(),
+                    pd.to_datetime(projects_df["End Date"]).max().date(),
+                ),
+                min_value=pd.to_datetime(projects_df["Start Date"]).min().date(),
+                max_value=pd.to_datetime(projects_df["End Date"]).max().date(),
+                key="date_range_cards",
+            )
+
+        with col3:
+            sort_by = st.selectbox(
+                "Sort by",
+                options=[
+                    "Name",
+                    "Start Date",
+                    "End Date",
+                    "Priority",
+                    "Duration (Days)",
+                    "Budget",
+                ],
+                index=3,  # Default to Priority
+                key="sort_by_projects_cards",
+            )
+            sort_ascending = st.checkbox(
+                "Ascending", value=True, key="sort_ascending_projects_cards"
+            )
+
+        # Second row: Resource filters
+        col5, col6, col7 = st.columns(3)
+
+        with col5:
+            people_filter = st.multiselect(
+                "Filter by Assigned People",
+                options=[p["name"] for p in st.session_state.data["people"]],
+                default=[],
+                key="filter_people_projects_cards",
+            )
+
+        with col6:
+            teams_filter = st.multiselect(
+                "Filter by Assigned Team",
+                options=[t["name"] for t in st.session_state.data["teams"]],
+                default=[],
+                key="filter_teams_projects_cards",
+            )
+
+        with col7:
+            departments_filter = st.multiselect(
+                "Filter by Assigned Department",
+                options=[d["name"] for d in st.session_state.data["departments"]],
+                default=[],
+                key="filter_departments_projects_cards",
+            )
+
+    # Filter projects based on search and filters
+    filtered_projects = projects.copy()
+
+    # Apply search filter
+    if search_term:
+        filtered_projects = [
+            p for p in filtered_projects if search_term.lower() in str(p).lower()
+        ]
+
+    # Apply date filter
+    if len(date_range) == 2:
+        start_date, end_date = (
+            pd.to_datetime(date_range[0]),
+            pd.to_datetime(date_range[1]),
+        )
+        filtered_projects = [
+            p
+            for p in filtered_projects
+            if (
+                pd.to_datetime(p["start_date"]) >= start_date
+                and pd.to_datetime(p["end_date"]) <= end_date
+            )
+        ]
+
+    # Apply resource filters
+    if people_filter:
+        filtered_projects = [
+            p
+            for p in filtered_projects
+            if any(
+                person in p.get("assigned_resources", []) for person in people_filter
+            )
+        ]
+
+    if teams_filter:
+        filtered_projects = [
+            p
+            for p in filtered_projects
+            if any(team in p.get("assigned_resources", []) for team in teams_filter)
+        ]
+
+    if departments_filter:
+        filtered_projects = [
+            p
+            for p in filtered_projects
+            if any(
+                dept in p.get("assigned_resources", []) for dept in departments_filter
+            )
+        ]
+
+    # Apply sorting
+    if sort_by == "Name":
+        filtered_projects.sort(key=lambda p: p["name"], reverse=not sort_ascending)
+    elif sort_by == "Start Date":
+        filtered_projects.sort(
+            key=lambda p: p["start_date"], reverse=not sort_ascending
+        )
+    elif sort_by == "End Date":
+        filtered_projects.sort(key=lambda p: p["end_date"], reverse=not sort_ascending)
+    elif sort_by == "Priority":
+        filtered_projects.sort(key=lambda p: p["priority"], reverse=not sort_ascending)
+    elif sort_by == "Duration (Days)":
+        filtered_projects.sort(
+            key=lambda p: (
+                pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
+            ).days
+            + 1,
+            reverse=not sort_ascending,
+        )
+    elif sort_by == "Budget":
+        filtered_projects.sort(
+            key=lambda p: p.get("allocated_budget", 0), reverse=not sort_ascending
+        )
+
+    # Display projects as cards
+    _display_project_cards(filtered_projects)
+
+
+def _display_project_cards(projects):
+    """Display project cards in a consistent grid."""
+    currency, _ = load_currency_settings()
+
+    # Display projects summary
+    total_projects = len(projects)
+    if total_projects > 0:
+        avg_budget = (
+            sum(p.get("allocated_budget", 0) for p in projects) / total_projects
+        )
+        st.write(f"**Total Projects:** {total_projects}")
+        st.write(f"**Average Budget:** {currency} {avg_budget:,.2f}")
+
+    # Create grid of cards
+    cols = st.columns(3)
+    for idx, project in enumerate(projects):
+        with cols[idx % 3]:
+            with st.container():
+                # Calculate duration
+                start_date = pd.to_datetime(project["start_date"])
+                end_date = pd.to_datetime(project["end_date"])
+                duration = (end_date - start_date).days + 1
+
+                # Parse resources
+                people, teams, departments = parse_resources(
+                    project["assigned_resources"]
+                )
+
+                # Create priority background color based on priority
+                # Higher priority (lower number) gets more saturated color
+                priority_color = (
+                    f"rgba(255,99,71,{min(1.0, 1.0 / project['priority'])})"
+                )
+
+                # Display card with project info
+                st.markdown(
+                    f"""
+                    <div class="card project-card">
+                        <h3>📋 {project["name"]}</h3>
+                        <div style="background-color: {priority_color}; padding: 5px; border-radius: 4px; margin-bottom: 10px;">
+                            <span style="font-weight: bold;">Priority: {project["priority"]}</span>
+                        </div>
+                        <p><strong>Duration:</strong> {start_date.strftime("%Y-%m-%d")} to {end_date.strftime("%Y-%m-%d")}</p>
+                        <p><strong>Days:</strong> {duration}</p>
+                        <p><strong>Budget:</strong> {currency} {project.get("allocated_budget", 0):,.2f}</p>
+                        <p><strong>Resources:</strong> {len(people)} people, {len(teams)} teams, {len(departments)} departments</p>
+                        <p><strong>Description:</strong> {project.get("description", "")[:50]}{"..." if len(project.get("description", "")) > 50 else ""}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+
+def display_projects_management():
+    """Display the project management functionality with CRUD forms."""
+    st.write("### Manage Projects")
 
     # Create and filter projects dataframe
     if st.session_state.data["projects"]:
@@ -108,7 +331,6 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
                 index=3,  # Default to Priority
                 key="sort_by_projects",
             )
-            # Moved checkbox here, below the dropdown and in the same column
             sort_ascending = st.checkbox(
                 "Ascending", value=True, key="sort_ascending_projects"
             )
