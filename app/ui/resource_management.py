@@ -18,7 +18,7 @@ from app.ui.forms.person_form import display_person_form as person_crud_form
 from app.ui.forms.team_form import display_team_form as team_crud_form
 from app.ui.forms.department_form import display_department_form as department_crud_form
 from app.utils.formatting import format_circular_dependency_message
-from app.services.data_service import check_circular_dependencies
+from app.services.data_service import check_circular_dependencies, parse_resources
 
 
 def display_manage_resources_tab():
@@ -780,7 +780,9 @@ def _create_teams_dataframe() -> pd.DataFrame:
                 "Name": t["name"],
                 "Department": t.get("department", ""),
                 "Members": len(t.get("members", [])),
-                "Member Names": ", ".join(t.get("members", [])),
+                "Member Names": parse_resources(t.get("members", []))[
+                    0
+                ],  # Use parse_resources to format member names as labels
                 "Daily Cost": f"{currency} {calculate_team_cost(t, people):,.2f}",
             }
             for t in st.session_state.data["teams"]
@@ -803,7 +805,9 @@ def _create_departments_dataframe() -> pd.DataFrame:
             {
                 "Name": d["name"],
                 "Teams": len(d.get("teams", [])),
-                "Team Names": ", ".join(d.get("teams", [])),
+                "Team Names": parse_resources(d.get("teams", []))[
+                    1
+                ],  # Use parse_resources to format team names as labels
                 "Direct Members": len(
                     [
                         p
