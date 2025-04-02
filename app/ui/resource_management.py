@@ -487,7 +487,9 @@ def _display_team_cards(
                     f"""
                     <div class="card team-card">
                         <h3>👥 {team["name"]}</h3>
-                        <p><strong>Department:</strong> {team["department"] or "None"}</p>
+                        <div style="background-color: rgba(100,100,100,0.1); padding: 5px; border-radius: 4px; margin-bottom: 10px;">
+                            <span style="font-weight: bold;">Department: {team["department"] or "None"}</span>
+                        </div>
                         <p><strong>Members:</strong> {len(team["members"])}</p>
                         <p><strong>Daily Cost:</strong> {currency} {team_cost:,.2f}</p>
                     </div>
@@ -504,14 +506,35 @@ def _display_department_cards(
     teams = st.session_state.data["teams"]
     for idx, dept in enumerate(departments):
         with cols[idx % 3]:
-            dept_cost = calculate_department_cost(dept, teams, people)
+            # Calculate department cost
+            cost = calculate_department_cost(dept, teams, people)
+
+            # Count individual contributors (people in dept but not in teams)
+            individual_contributors = len(
+                [
+                    p
+                    for p in people
+                    if p.get("department") == dept["name"] and not p.get("team")
+                ]
+            )
+
+            # Count total people in department
+            total_people = len(
+                [p for p in people if p.get("department") == dept["name"]]
+            )
+
+            # Restore the card styling to match person and team cards
             st.markdown(
                 f"""
                 <div class="card department-card">
                     <h3>🏢 {dept["name"]}</h3>
+                    <div style="background-color: rgba(100,100,100,0.1); padding: 5px; border-radius: 4px; margin-bottom: 10px;">
+                        <span style="font-weight: bold;">Organization Unit</span>
+                    </div>
                     <p><strong>Teams:</strong> {len(dept.get("teams", []))}</p>
-                    <p><strong>Members:</strong> {len([p for p in people if p["department"] == dept["name"]])}</p>
-                    <p><strong>Daily Cost:</strong> {currency} {dept_cost:,.2f}</p>
+                    <p><strong>Individual Contributors:</strong> {individual_contributors}</p>
+                    <p><strong>Total People:</strong> {total_people}</p>
+                    <p><strong>Daily Cost:</strong> {currency} {cost:,.2f}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,

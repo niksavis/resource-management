@@ -12,7 +12,7 @@ from app.services.visualization_service import (
     prepare_gantt_data,
     prepare_utilization_data,
 )
-from app.services.config_service import load_department_colors, load_display_preferences
+from app.services.config_service import load_display_preferences, get_department_color
 
 
 def display_gantt_chart(
@@ -89,9 +89,6 @@ def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None
     Args:
         data: Dictionary containing people, teams, and departments data
     """
-    # Get department colors from settings
-    dept_colors = load_department_colors()
-
     # Get chart height from display preferences
     display_prefs = load_display_preferences()
     chart_height = display_prefs.get("chart_height", 600)
@@ -102,7 +99,7 @@ def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None
     # Add department level
     for dept in data["departments"]:
         dept_name = dept["name"]
-        dept_color = dept_colors.get(dept_name, "#1f77b4")
+        dept_color = get_department_color(dept_name)
 
         rows.append(
             {
@@ -146,7 +143,7 @@ def display_sunburst_organization(data: Dict[str, List[Dict[str, Any]]]) -> None
                 "parent": parent,
                 "name": person_name,
                 "value": person.get("daily_cost", 1),
-                "color": dept_colors.get(dept_name, "#1f77b4"),
+                "color": get_department_color(dept_name),
                 "type": "Person",
             }
         )
@@ -204,7 +201,9 @@ def display_department_distribution(
 
     # Get department colors if not provided
     if department_colors is None:
-        department_colors = load_department_colors()
+        department_colors = {
+            dept["name"]: get_department_color(dept["name"]) for dept in departments
+        }
 
     # Calculate department stats
     dept_stats = []

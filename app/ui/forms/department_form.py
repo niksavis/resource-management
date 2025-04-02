@@ -5,21 +5,17 @@ This module provides form components for creating, reading, updating, and deleti
 """
 
 import streamlit as st
-from typing import Dict, Any, Optional, List, Tuple, Callable
-import plotly.express as px
-
+import random
+from typing import Dict, Any, Optional, Callable
 from app.services.config_service import (
     add_department_color,
     load_department_colors,
     save_department_colors,
     remove_department_color,
+    get_department_color,
 )
 from app.utils.formatting import format_currency
-from app.utils.resource_utils import (
-    calculate_department_cost,
-    find_resource_by_name,
-    update_resource,
-)
+from app.utils.resource_utils import calculate_department_cost
 from app.services.validation_service import validate_department
 from app.utils.form_utils import (
     display_form_header,
@@ -65,8 +61,6 @@ def get_unused_color():
             return color
 
     # If all colors are used, generate a new one by slightly modifying an existing color
-    import random
-
     base_color = random.choice(pleasing_colors)
 
     # Adjust hue slightly to create a new color
@@ -150,11 +144,10 @@ def display_department_form(
         disabled=form_type == "delete",
     )
 
-    # Department color selection
-    department_colors = load_department_colors()
-    current_color = department_colors.get(name, "#1f77b4")
+    # Department color selection using get_department_color
+    current_color = get_department_color(name, "#1f77b4")
 
-    if form_type == "add" and name not in department_colors:
+    if form_type == "add" and name not in load_department_colors():
         current_color = get_unused_color()
 
     color = st.color_picker(
@@ -250,6 +243,7 @@ def display_department_form(
                 # Remove the department color when the department is deleted
                 remove_department_color(name)
             elif form_type == "add":
+                department_colors = load_department_colors()
                 department_colors[name] = color
                 save_department_colors(department_colors)
             else:

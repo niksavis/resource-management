@@ -11,10 +11,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 from typing import List, Dict, Any
 from app.services.config_service import (
-    load_department_colors,
     load_utilization_thresholds,
     load_date_range_settings,
     load_display_preferences,
+    get_department_color,
 )
 from app.utils.ui_components import display_action_bar
 from app.services.data_service import (
@@ -1656,14 +1656,10 @@ def display_availability_by_group(
     dept_allocation["Availability"] = 100 - dept_allocation["Allocation"]
     dept_allocation = dept_allocation.sort_values("Availability", ascending=False)
 
-    # Get department colors
-    dept_colors = load_department_colors()
-
-    # Create color map for departments
+    # Create color map for departments using get_department_color
     color_map = {
-        dept: color
-        for dept, color in dept_colors.items()
-        if dept in dept_allocation["Department"].values
+        dept: get_department_color(dept)
+        for dept in dept_allocation["Department"].unique()
     }
 
     # Create two-column layout
@@ -2946,6 +2942,7 @@ def _display_calendar_week(
     # Helper function to escape HTML special characters
     def escape_html(text):
         """Escape HTML special characters to prevent HTML injection."""
+
         if isinstance(text, str):
             return (
                 text.replace("&", "&amp;")

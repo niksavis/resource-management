@@ -180,6 +180,21 @@ def ensure_department_colors(departments: List[Dict[str, Any]]) -> None:
         save_department_colors(department_colors)
 
 
+def get_department_color(department_name: str, default_color: str = "#cccccc") -> str:
+    """
+    Get the color for a department from settings.
+
+    Args:
+        department_name: Name of the department
+        default_color: Default color to return if department color is not found
+
+    Returns:
+        Hex color code for the department
+    """
+    department_colors = load_department_colors()
+    return department_colors.get(department_name, default_color)
+
+
 def load_display_preferences() -> Dict[str, Any]:
     """Load display preferences from the settings file."""
     settings = load_settings()
