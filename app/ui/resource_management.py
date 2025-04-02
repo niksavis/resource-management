@@ -61,6 +61,18 @@ def display_people_tab():
         page_size = display_prefs.get("page_size", 10)
         people_df = paginate_dataframe(people_df, "people", items_per_page=page_size)
 
+        # Enable horizontal scrolling for the dataframe
+        st.markdown(
+            """
+            <style>
+            .stDataFrame {
+                width: 100%;
+                overflow-x: auto;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         st.dataframe(people_df, use_container_width=True)
     else:
         st.warning("No people found. Please add a person first.")
@@ -128,6 +140,18 @@ def display_teams_tab():
         page_size = display_prefs.get("page_size", 10)
         teams_df = paginate_dataframe(teams_df, "teams", items_per_page=page_size)
 
+        # Enable horizontal scrolling for the dataframe
+        st.markdown(
+            """
+            <style>
+            .stDataFrame {
+                width: 100%;
+                overflow-x: auto;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         st.dataframe(teams_df, use_container_width=True)
     else:
         st.warning("No teams found. Please add a team first.")
@@ -200,6 +224,18 @@ def display_departments_tab():
             departments_df, "departments", items_per_page=page_size
         )
 
+        # Enable horizontal scrolling for the dataframe
+        st.markdown(
+            """
+            <style>
+            .stDataFrame {
+                width: 100%;
+                overflow-x: auto;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         st.dataframe(departments_df, use_container_width=True)
     else:
         st.warning("No departments found. Please add a department first.")

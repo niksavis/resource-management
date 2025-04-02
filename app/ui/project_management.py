@@ -245,6 +245,19 @@ def display_projects_management():
     if st.session_state.data["projects"]:
         projects_df = _create_projects_dataframe()
         projects_df = _filter_projects_dataframe(projects_df)
+
+        # Ensure horizontal scrolling is available if needed
+        st.markdown(
+            """
+            <style>
+            .stDataFrame {
+                width: 100%;
+                overflow-x: auto;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         st.dataframe(projects_df, use_container_width=True)
     else:
         st.warning("No projects found. Please add a project first.")
