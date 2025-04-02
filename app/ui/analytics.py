@@ -374,13 +374,20 @@ def display_project_workload_breakdown(filtered_data: pd.DataFrame) -> None:
             resource_dept.groupby("Department")["Allocation %"].sum().reset_index()
         )
 
-        # Create pie chart
+        # Get department colors from configuration
+        color_map = {
+            dept: get_department_color(dept) for dept in dept_allocation["Department"]
+        }
+
+        # Create pie chart with custom colors
         fig2 = px.pie(
             dept_allocation,
             values="Allocation %",
             names="Department",
             title="Workload by Department",
             height=chart_height,  # Use configurable chart height
+            color="Department",
+            color_discrete_map=color_map,  # Use department colors from configuration
         )
 
         st.plotly_chart(fig2, use_container_width=True)
