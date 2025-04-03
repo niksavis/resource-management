@@ -2288,6 +2288,7 @@ def display_allocation_patterns(
 
     # Calculate allocations by day of week
     for date in date_range:
+        # Filter assignments for this date
         date_assignments = filtered_data[
             (filtered_data["Start"] <= date) & (filtered_data["End"] >= date)
         ]
@@ -2316,7 +2317,10 @@ def display_allocation_patterns(
     col1, col2 = st.columns(2)
 
     with col1:
-        # Create a heatmap of resource allocation by day of week
+        # First chart - keep the title and layout consistent
+        heatmap_title = "Resource Allocation Heatmap by Day of Week"
+
+        # Create the heatmap visualization
         pivot_df = pattern_df.pivot_table(
             index="WeekNumber", columns="WeekDay", values="ResourceCount", aggfunc="sum"
         )
@@ -2324,30 +2328,38 @@ def display_allocation_patterns(
         # Reorder columns to have Monday first
         pivot_df = pivot_df[weekday_names]
 
-        # Create heatmap
-        fig1 = px.imshow(
+        heatmap_fig = px.imshow(
             pivot_df,
             labels=dict(x="Day of Week", y="Week Number", color="Resource Count"),
             x=weekday_names,
             y=pivot_df.index,
             color_continuous_scale="YlGnBu",
             aspect="auto",
-            title="Resource Allocation Heatmap by Day of Week",
+            title=heatmap_title,
         )
 
-        # Adjust layout
-        fig1.update_layout(
-            height=chart_height,
+        # Ensure consistent padding/margin and explicitly set height
+        heatmap_fig.update_layout(
+            title=heatmap_title,
+            margin=dict(t=50, b=50, l=50, r=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(tickangle=-45),
-            margin=dict(l=10, r=10, t=40, b=80),
+            height=chart_height,  # Explicitly set same height as second chart
+            autosize=True,  # Ensure chart fills container
         )
 
-        st.plotly_chart(fig1, use_container_width=True)
+        # Fix the aspect ratio to fill available space
+        heatmap_fig.update_yaxes(automargin=True, constrain="domain")
+        heatmap_fig.update_xaxes(automargin=True, constrain="domain")
+
+        st.plotly_chart(heatmap_fig, use_container_width=True)
 
     with col2:
-        # Create a bar chart of average allocation by day of week
+        # Second chart - ensure title and layout consistency with first chart
+        avg_alloc_title = "Average Resource vs Project by Day of Week"
+
+        # Create the line chart visualization
         weekday_avg = (
             pattern_df.groupby("WeekDay")
             .agg({"ResourceCount": "mean", "ProjectCount": "mean"})
@@ -2360,11 +2372,10 @@ def display_allocation_patterns(
         )
         weekday_avg = weekday_avg.sort_values("WeekDay")
 
-        # Create chart
-        fig2 = go.Figure()
+        line_fig = go.Figure()
 
         # Add resource count bars
-        fig2.add_trace(
+        line_fig.add_trace(
             go.Bar(
                 x=weekday_avg["WeekDay"],
                 y=weekday_avg["ResourceCount"],
@@ -2376,7 +2387,7 @@ def display_allocation_patterns(
         )
 
         # Add project count as a line
-        fig2.add_trace(
+        line_fig.add_trace(
             go.Scatter(
                 x=weekday_avg["WeekDay"],
                 y=weekday_avg["ProjectCount"],
@@ -2388,30 +2399,17 @@ def display_allocation_patterns(
             )
         )
 
-        # Update layout with dual y-axis
-        fig2.update_layout(
-            title="Average Resources vs Projects by Day of Week",
-            xaxis=dict(title="Day of Week"),
-            yaxis=dict(
-                title="Average Resources",
-                gridcolor="rgba(128,128,128,0.2)",
-            ),
-            yaxis2=dict(
-                title="Average Projects",
-                overlaying="y",
-                side="right",
-                gridcolor="rgba(0,0,0,0)",
-            ),
-            legend=dict(
-                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-            ),
+        # Ensure consistent padding/margin to match the first chart
+        line_fig.update_layout(
+            title=avg_alloc_title,
+            margin=dict(t=50, b=50, l=50, r=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             height=chart_height,
-            margin=dict(l=10, r=10, t=40, b=40),
+            autosize=True,  # Ensure chart fills container
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(line_fig, use_container_width=True)
 
     # Display pattern insights as an expander
     with st.expander("ℹ️ Understanding Allocation Patterns", expanded=False):
