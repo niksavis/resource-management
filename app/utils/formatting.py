@@ -4,54 +4,59 @@ Formatting utility functions for the resource management application.
 This module provides functions for formatting data in various ways.
 """
 
-from typing import List, Dict, Union
+from typing import List, Tuple, Union
 
 
 def format_circular_dependency_message(
-    cycles: List[str],
-    multi_team_members: Dict[str, List[str]],
-    multi_department_members: Dict[str, List[str]],
-    multi_department_teams: Dict[str, List[str]],
+    cycles: List[List[str]],
+    multi_team_members: List[Tuple[str, List[str]]],
+    multi_department_members: List[Tuple[str, List[str]]],
+    multi_department_teams: List[Tuple[str, List[str]]],
 ) -> str:
     """
-    Format a warning message about circular dependencies.
+    Format circular dependency message for display.
 
     Args:
-        cycles: List of circular dependency paths
-        multi_team_members: Dict of people in multiple teams
-        multi_department_members: Dict of people in multiple departments
-        multi_department_teams: Dict of teams in multiple departments
+        cycles: List of dependency cycles
+        multi_team_members: List of tuples (person, team_list) for people in multiple teams
+        multi_department_members: List of tuples (person, dept_list) for people in multiple departments
+        multi_department_teams: List of tuples (team, dept_list) for teams in multiple departments
 
     Returns:
-        Formatted warning message
+        Formatted message for display
     """
     message_parts = []
 
     if cycles:
-        message_parts.append("⚠️ **Circular Dependencies Detected**\n")
-        message_parts.append("The following circular dependencies were found:\n")
+        message_parts.append("### Circular Dependencies Detected")
         for cycle in cycles:
-            message_parts.append(f"- {cycle}\n")
+            message_parts.append(f"- {' → '.join(cycle)}")
 
     if multi_team_members:
-        message_parts.append("\n⚠️ **People in Multiple Teams**\n")
-        for person, teams in multi_team_members.items():
-            message_parts.append(f"- {person}: {', '.join(teams)}\n")
+        message_parts.append("### People in Multiple Teams")
+        for person, teams in multi_team_members:
+            message_parts.append(f"- **{person}** is in teams: {', '.join(teams)}")
 
     if multi_department_members:
-        message_parts.append("\n⚠️ **People in Multiple Departments**\n")
-        for person, departments in multi_department_members.items():
-            message_parts.append(f"- {person}: {', '.join(departments)}\n")
+        message_parts.append("### People in Multiple Departments")
+        for person, departments in multi_department_members:
+            message_parts.append(
+                f"- **{person}** is in departments: {', '.join(departments)}"
+            )
 
     if multi_department_teams:
-        message_parts.append("\n⚠️ **Teams in Multiple Departments**\n")
-        for team, departments in multi_department_teams.items():
-            message_parts.append(f"- {team}: {', '.join(departments)}\n")
+        message_parts.append("### Teams in Multiple Departments")
+        for team, departments in multi_department_teams:
+            message_parts.append(
+                f"- **{team}** is in departments: {', '.join(departments)}"
+            )
 
-    if not message_parts:
-        message_parts.append("No circular dependencies or conflicts detected.")
+    if not any(
+        [cycles, multi_team_members, multi_department_members, multi_department_teams]
+    ):
+        return "No circular dependencies detected."
 
-    return "".join(message_parts)
+    return "\n\n".join(message_parts)
 
 
 def format_currency(

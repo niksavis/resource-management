@@ -37,7 +37,7 @@ def create_resource_analytics_filters(page_key: str) -> Dict[str, Any]:
     Returns:
         Dictionary of filter settings
     """
-    with st.expander("Search and Filter", expanded=False):
+    with st.expander("🔍 Search and Filter", expanded=False):
         # First row: Search and Date Range
         col1, col3 = st.columns([1, 1])
 

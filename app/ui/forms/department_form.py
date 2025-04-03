@@ -93,6 +93,10 @@ def display_department_form(
     # Generate a unique form key based on the department data to avoid duplicate element IDs
     form_key = f"dept_form_{id(department_data)}_{form_type}"
 
+    # When editing, use the department name as part of the key for stable state
+    dept_name_key = department_data.get("name", "new") if department_data else "new"
+    stable_key = f"dept_form_{dept_name_key}_{form_type}"
+
     # Display appropriate form header
     display_form_header("Department", form_type)
 
@@ -100,7 +104,7 @@ def display_department_form(
     name = st.text_input(
         "Department Name",
         value=department_data.get("name", "") if department_data else "",
-        key=f"{form_key}_name",
+        key=f"{stable_key}_name",
         disabled=form_type == "delete",
     )
 
@@ -115,13 +119,36 @@ def display_department_form(
             if department_data:
                 department_data["teams"] = existing_teams
 
+    # Initialize the teams state if not already done
+    teams_key = f"{stable_key}_teams"
+    if teams_key not in st.session_state:
+        st.session_state[teams_key] = existing_teams
+
+    # Store previous state to track changes
+    prev_key = f"{stable_key}_prev_teams"
+    if prev_key not in st.session_state:
+        st.session_state[prev_key] = existing_teams.copy() if existing_teams else []
+
+    # Use the teams multiselect with explicit session state
     teams = st.multiselect(
         "Teams",
         options=available_teams,
-        default=existing_teams,
-        key=f"{form_key}_teams",
+        default=st.session_state[teams_key],
+        key=teams_key,
         disabled=form_type == "delete",
     )
+
+    # Check if teams were added or removed and provide feedback
+    added_teams = [t for t in teams if t not in st.session_state[prev_key]]
+    removed_teams = [t for t in st.session_state[prev_key] if t not in teams]
+
+    if added_teams:
+        st.success(f"Teams added: {', '.join(added_teams)}")
+    if removed_teams:
+        st.warning(f"Teams removed: {', '.join(removed_teams)}")
+
+    # Update previous state for next render
+    st.session_state[prev_key] = teams.copy()
 
     # Members selection (direct department members, not through teams)
     available_people = [p["name"] for p in st.session_state.data["people"]]

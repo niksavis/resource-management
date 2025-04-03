@@ -240,7 +240,7 @@ def display_filtered_resource(
             display_df = display_df.rename(columns={col: friendly})
 
     # Create search and filter expander
-    with st.expander(f"Search and Filter {label.title()}", expanded=False):
+    with st.expander(f"🔍 Search and Filter {label.title()}", expanded=False):
         # Search box
         search_term = st.text_input(f"Search {label.title()}", key=f"search_{label}")
 

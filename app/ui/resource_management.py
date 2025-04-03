@@ -6,6 +6,7 @@ This module provides the UI components for managing resources (people, teams, de
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 from typing import List, Dict, Any
 from app.utils.ui_components import display_action_bar, paginate_dataframe
 from app.services.config_service import (
@@ -325,7 +326,7 @@ def display_consolidated_resources():
 
     st.write("### Resources Overview")
 
-    with st.expander("Search, Sort, and Filter Resources", expanded=False):
+    with st.expander("🔍 Search, Sort, and Filter Resources", expanded=False):
         search_term = st.text_input("Search Resources", key="search_all_resources")
 
         col1, col2, col3 = st.columns([1, 1, 1])
@@ -614,7 +615,26 @@ def _update_person(person, old_name=None):
     if old_name and old_name != person["name"]:
         update_resource_references(old_name, person["name"], "person")
     update_resource(st.session_state.data["people"], old_name, person)
+
+    # Clear the people dataframe cache
+    if "people_df_cache" in st.session_state:
+        del st.session_state["people_df_cache"]
+    # Also clear team and department caches as they might include person data
+    if "teams_df_cache" in st.session_state:
+        del st.session_state["teams_df_cache"]
+    if "departments_df_cache" in st.session_state:
+        del st.session_state["departments_df_cache"]
+
+    # Clear form state to reset the form
+    for key in list(st.session_state.keys()):
+        if key.startswith("person_form_") or key.startswith("edit_person_"):
+            del st.session_state[key]
+
     st.success(f"Person {person['name']} updated successfully!")
+
+    # Force an immediate rerun to refresh the UI
+    st.rerun()
+
     return True
 
 
@@ -631,7 +651,24 @@ def _add_person(person):
         return False
 
     if add_resource(st.session_state.data["people"], person):
+        # Clear all caches that might include person data
+        if "people_df_cache" in st.session_state:
+            del st.session_state["people_df_cache"]
+        if "teams_df_cache" in st.session_state:
+            del st.session_state["teams_df_cache"]
+        if "departments_df_cache" in st.session_state:
+            del st.session_state["departments_df_cache"]
+
+        # Clear form state to reset the form
+        for key in list(st.session_state.keys()):
+            if key.startswith("person_form_") or key.startswith("add_person_"):
+                del st.session_state[key]
+
         st.success(f"Person {person['name']} added successfully!")
+
+        # Force an immediate rerun to refresh the UI
+        st.rerun()
+
         return True
     else:
         st.error(f"Person {person['name']} already exists!")
@@ -643,11 +680,34 @@ def _delete_person(name):
 
     delete_resource(st.session_state.data["people"], name, "person")
 
+    # Clear all caches that might include person data
+    if "people_df_cache" in st.session_state:
+        del st.session_state["people_df_cache"]
+    if "teams_df_cache" in st.session_state:
+        del st.session_state["teams_df_cache"]
+    if "departments_df_cache" in st.session_state:
+        del st.session_state["departments_df_cache"]
+
+    # Clear form state
+    for key in list(st.session_state.keys()):
+        if key.startswith("person_") or key.startswith("delete_person_"):
+            del st.session_state[key]
+
+    # The rerun is already called by the button click handler
+
 
 def _add_team(team):
     from app.utils.resource_utils import add_resource
 
     if add_resource(st.session_state.data["teams"], team):
+        # Clear all caches that might include team data
+        if "teams_df_cache" in st.session_state:
+            del st.session_state["teams_df_cache"]
+        if "departments_df_cache" in st.session_state:
+            del st.session_state["departments_df_cache"]
+        if "people_df_cache" in st.session_state:
+            del st.session_state["people_df_cache"]
+
         st.success(f"Team {team['name']} added successfully!")
     else:
         st.error(f"Team {team['name']} already exists!")
@@ -656,13 +716,85 @@ def _add_team(team):
 def _update_team(team, old_name=None):
     from app.utils.resource_utils import update_resource_references, update_resource
 
-    if old_name is None:
-        old_name = team["name"]
+    # Find the team to update
+    team_name = old_name if old_name else team["name"]
+    team_index = next(
+        (
+            i
+            for i, t in enumerate(st.session_state.data["teams"])
+            if t["name"] == team_name
+        ),
+        None,
+    )
 
+    if team_index is None:
+        st.error(f"Team '{team_name}' not found")
+        return
+
+    # Get the existing team to track changes
+    existing_team = st.session_state.data["teams"][team_index]
+
+    # Create a deep copy of the team to avoid reference issues
+    team = {
+        "name": team["name"],
+        "department": team["department"],
+        "members": team.get("members", []).copy(),
+    }
+
+    # Handle name changes and references
     if old_name and old_name != team["name"]:
         update_resource_references(old_name, team["name"], "team")
-    update_resource(st.session_state.data["teams"], old_name, team)
-    st.success(f"Team {team['name']} updated successfully!")
+
+    # Handle department changes
+    if team.get("department") != existing_team.get("department"):
+        # Update people's department if needed
+        for person in st.session_state.data["people"]:
+            if person.get("team") == team_name:
+                person["department"] = team["department"]
+
+    # Update team in the data
+    st.session_state.data["teams"][team_index] = team
+
+    # Handle member changes - update people's team and department associations
+
+    # 1. For added members, update their team and department
+    added_members = [
+        m for m in team.get("members", []) if m not in existing_team.get("members", [])
+    ]
+    for member_name in added_members:
+        person = next(
+            (p for p in st.session_state.data["people"] if p["name"] == member_name),
+            None,
+        )
+        if person:
+            person["team"] = team["name"]
+            if team.get("department"):
+                person["department"] = team["department"]
+
+    # 2. For removed members, clear their team association
+    removed_members = [
+        m for m in existing_team.get("members", []) if m not in team.get("members", [])
+    ]
+    for member_name in removed_members:
+        person = next(
+            (p for p in st.session_state.data["people"] if p["name"] == member_name),
+            None,
+        )
+        if person and person.get("team") == team_name:
+            person["team"] = None
+
+    # After updating the team, clear all relevant caches
+    if "teams_df_cache" in st.session_state:
+        del st.session_state["teams_df_cache"]
+    if "departments_df_cache" in st.session_state:
+        del st.session_state["departments_df_cache"]
+    if "people_df_cache" in st.session_state:
+        del st.session_state["people_df_cache"]
+
+    st.success(f"Team '{team['name']}' updated successfully!")
+
+    # Force a rerun to refresh the UI immediately
+    st.rerun()
 
 
 def _delete_team(name):
@@ -670,11 +802,27 @@ def _delete_team(name):
 
     delete_resource(st.session_state.data["teams"], name, "team")
 
+    # Clear all caches that might include team data
+    if "teams_df_cache" in st.session_state:
+        del st.session_state["teams_df_cache"]
+    if "departments_df_cache" in st.session_state:
+        del st.session_state["departments_df_cache"]
+    if "people_df_cache" in st.session_state:
+        del st.session_state["people_df_cache"]
+
 
 def _add_department(department):
     from app.utils.resource_utils import add_resource
 
     if add_resource(st.session_state.data["departments"], department):
+        # Clear all caches that might include department data
+        if "departments_df_cache" in st.session_state:
+            del st.session_state["departments_df_cache"]
+        if "teams_df_cache" in st.session_state:
+            del st.session_state["teams_df_cache"]
+        if "people_df_cache" in st.session_state:
+            del st.session_state["people_df_cache"]
+
         st.success(f"Department {department['name']} added successfully!")
     else:
         st.error(f"Department {department['name']} already exists!")
@@ -683,13 +831,73 @@ def _add_department(department):
 def _update_department(department, old_name=None):
     from app.utils.resource_utils import update_resource_references, update_resource
 
-    if old_name is None:
-        old_name = department["name"]
+    # Find the department to update
+    dept_name = old_name if old_name else department["name"]
+    dept_index = next(
+        (
+            i
+            for i, d in enumerate(st.session_state.data["departments"])
+            if d["name"] == dept_name
+        ),
+        None,
+    )
 
+    if dept_index is None:
+        st.error(f"Department '{dept_name}' not found")
+        return
+
+    # Get the existing department to track changes
+    existing_dept = st.session_state.data["departments"][dept_index]
+
+    # Create a deep copy of the department to avoid reference issues
+    department = {
+        "name": department["name"],
+        "teams": department.get("teams", []).copy(),
+        "members": department.get("members", []).copy(),
+    }
+
+    # Handle name changes and references
     if old_name and old_name != department["name"]:
         update_resource_references(old_name, department["name"], "department")
-    update_resource(st.session_state.data["departments"], old_name, department)
-    st.success(f"Department {department['name']} updated successfully!")
+
+    # Update department in the data
+    st.session_state.data["departments"][dept_index] = department
+
+    # Update team associations when department changes
+    for team_name in department.get("teams", []):
+        team = next(
+            (t for t in st.session_state.data["teams"] if t["name"] == team_name), None
+        )
+        if team:
+            team["department"] = department["name"]
+
+    # For removed teams, clear their department association if it still points to this department
+    if existing_dept:
+        removed_teams = [
+            t
+            for t in existing_dept.get("teams", [])
+            if t not in department.get("teams", [])
+        ]
+        for team_name in removed_teams:
+            team = next(
+                (t for t in st.session_state.data["teams"] if t["name"] == team_name),
+                None,
+            )
+            if team and team.get("department") == dept_name:
+                team["department"] = None
+
+    # After updating the department, clear all relevant caches
+    if "departments_df_cache" in st.session_state:
+        del st.session_state["departments_df_cache"]
+    if "teams_df_cache" in st.session_state:
+        del st.session_state["teams_df_cache"]
+    if "people_df_cache" in st.session_state:
+        del st.session_state["people_df_cache"]
+
+    st.success(f"Department '{department['name']}' updated successfully!")
+
+    # Force a rerun to refresh the UI immediately
+    st.rerun()
 
 
 def _delete_department(name):
@@ -700,44 +908,167 @@ def _delete_department(name):
     remove_department_color(name)
     delete_resource(st.session_state.data["departments"], name, "department")
 
+    # Clear all caches that might include department data
+    if "departments_df_cache" in st.session_state:
+        del st.session_state["departments_df_cache"]
+    if "teams_df_cache" in st.session_state:
+        del st.session_state["teams_df_cache"]
+    if "people_df_cache" in st.session_state:
+        del st.session_state["people_df_cache"]
+
 
 def _filter_people_dataframe(people_df: pd.DataFrame) -> pd.DataFrame:
-    """Filter people DataFrame based on user-selected filters.
+    """Filter people DataFrame based on user-selected filters."""
+    # Clear the cached dataframe when filters are changed
+    filter_key = "people_filter_changed"
 
-    Args:
-        people_df: DataFrame containing people data
+    with st.expander("🔍 Search, Sort, and Filter People", expanded=False):
+        # Add filtering UI here
+        search_term = st.text_input("Search People", key="search_people")
 
-    Returns:
-        Filtered DataFrame (but NOT paginated - pagination will be handled separately)
-    """
-    # Apply filtering logic here
+        # Apply filters (any filter change should update the UI)
+        if _any_people_filter_changed():
+            if "people_df_cache" in st.session_state:
+                del st.session_state["people_df_cache"]
+            if filter_key not in st.session_state:
+                st.session_state[filter_key] = True
+                st.rerun()
+
+        # Apply search filter
+        if search_term:
+            mask = np.column_stack(
+                [
+                    people_df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in people_df.columns
+                ]
+            )
+            people_df = people_df[mask.any(axis=1)]
+
     return people_df
 
 
 def _filter_teams_dataframe(teams_df: pd.DataFrame) -> pd.DataFrame:
-    """Filter teams DataFrame based on user-selected filters.
+    """Filter teams DataFrame based on user-selected filters."""
+    # Clear the cached dataframe when filters are changed
+    filter_key = "teams_filter_changed"
 
-    Args:
-        teams_df: DataFrame containing teams data
+    with st.expander("🔍 Search, Sort, and Filter Teams", expanded=False):
+        # Add filtering UI here
+        search_term = st.text_input("Search Teams", key="search_teams")
 
-    Returns:
-        Filtered DataFrame (but NOT paginated - pagination will be handled separately)
-    """
-    # Apply filtering logic here
+        # Apply filters (any filter change should update the UI)
+        if _any_teams_filter_changed():
+            if "teams_df_cache" in st.session_state:
+                del st.session_state["teams_df_cache"]
+            if filter_key not in st.session_state:
+                st.session_state[filter_key] = True
+                st.rerun()
+
+        # Apply search filter
+        if search_term:
+            mask = np.column_stack(
+                [
+                    teams_df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in teams_df.columns
+                ]
+            )
+            teams_df = teams_df[mask.any(axis=1)]
+
     return teams_df
 
 
 def _filter_departments_dataframe(departments_df: pd.DataFrame) -> pd.DataFrame:
-    """Filter departments DataFrame based on user-selected filters.
+    """Filter departments DataFrame based on user-selected filters."""
+    # Clear the cached dataframe when filters are changed
+    filter_key = "departments_filter_changed"
 
-    Args:
-        departments_df: DataFrame containing departments data
+    with st.expander("🔍 Search, Sort, and Filter Departments", expanded=False):
+        # Add filtering UI here
+        search_term = st.text_input("Search Departments", key="search_departments")
 
-    Returns:
-        Filtered DataFrame (but NOT paginated - pagination will be handled separately)
-    """
-    # Apply filtering logic here
+        # Apply filters (any filter change should update the UI)
+        if _any_departments_filter_changed():
+            if "departments_df_cache" in st.session_state:
+                del st.session_state["departments_df_cache"]
+            if filter_key not in st.session_state:
+                st.session_state[filter_key] = True
+                st.rerun()
+
+        # Apply search filter
+        if search_term:
+            mask = np.column_stack(
+                [
+                    departments_df[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.contains(search_term, case=False, na=False)
+                    for col in departments_df.columns
+                ]
+            )
+            departments_df = departments_df[mask.any(axis=1)]
+
     return departments_df
+
+
+# Helper functions to detect filter changes
+def _any_people_filter_changed() -> bool:
+    """Check if any people filter has changed since last render."""
+    filter_keys = ["search_people"]
+
+    current_values = {
+        key: st.session_state.get(key) for key in filter_keys if key in st.session_state
+    }
+
+    if "prev_people_filter_values" not in st.session_state:
+        st.session_state["prev_people_filter_values"] = current_values
+        return False
+
+    changed = current_values != st.session_state["prev_people_filter_values"]
+    st.session_state["prev_people_filter_values"] = current_values
+
+    return changed
+
+
+def _any_teams_filter_changed() -> bool:
+    """Check if any teams filter has changed since last render."""
+    filter_keys = ["search_teams"]
+
+    current_values = {
+        key: st.session_state.get(key) for key in filter_keys if key in st.session_state
+    }
+
+    if "prev_teams_filter_values" not in st.session_state:
+        st.session_state["prev_teams_filter_values"] = current_values
+        return False
+
+    changed = current_values != st.session_state["prev_teams_filter_values"]
+    st.session_state["prev_teams_filter_values"] = current_values
+
+    return changed
+
+
+def _any_departments_filter_changed() -> bool:
+    """Check if any departments filter has changed since last render."""
+    filter_keys = ["search_departments"]
+
+    current_values = {
+        key: st.session_state.get(key) for key in filter_keys if key in st.session_state
+    }
+
+    if "prev_departments_filter_values" not in st.session_state:
+        st.session_state["prev_departments_filter_values"] = current_values
+        return False
+
+    changed = current_values != st.session_state["prev_departments_filter_values"]
+    st.session_state["prev_departments_filter_values"] = current_values
+
+    return changed
 
 
 def _create_people_dataframe() -> pd.DataFrame:
@@ -747,22 +1078,26 @@ def _create_people_dataframe() -> pd.DataFrame:
     Returns:
         DataFrame with people information
     """
-    currency, _ = load_currency_settings()
-    return pd.DataFrame(
-        [
-            {
-                "Name": p["name"],
-                "Role": p.get("role", ""),
-                "Team": p.get("team", ""),
-                "Department": p.get("department", ""),
-                "Daily Cost": f"{currency} {p.get('daily_cost', 0):,.2f}",
-                "Work Days": ", ".join(p.get("work_days", [])),
-                "Daily Hours": p.get("daily_work_hours", 8),
-                "Skills": ", ".join(p.get("skills", [])),
-            }
-            for p in st.session_state.data["people"]
-        ]
-    )
+    # Use a cache key to store the dataframe
+    if "people_df_cache" not in st.session_state:
+        currency, _ = load_currency_settings()
+        st.session_state["people_df_cache"] = pd.DataFrame(
+            [
+                {
+                    "Name": p["name"],
+                    "Role": p.get("role", ""),
+                    "Team": p.get("team", ""),
+                    "Department": p.get("department", ""),
+                    "Daily Cost": f"{currency} {p.get('daily_cost', 0):,.2f}",
+                    "Work Days": ", ".join(p.get("work_days", [])),
+                    "Daily Hours": p.get("daily_work_hours", 8),
+                    "Skills": ", ".join(p.get("skills", [])),
+                }
+                for p in st.session_state.data["people"]
+            ]
+        )
+
+    return st.session_state["people_df_cache"]
 
 
 def _create_teams_dataframe() -> pd.DataFrame:
@@ -772,22 +1107,24 @@ def _create_teams_dataframe() -> pd.DataFrame:
     Returns:
         DataFrame with teams information
     """
-    people = st.session_state.data["people"]
-    currency, _ = load_currency_settings()
-    return pd.DataFrame(
-        [
-            {
-                "Name": t["name"],
-                "Department": t.get("department", ""),
-                "Members": len(t.get("members", [])),
-                "Member Names": parse_resources(t.get("members", []))[
-                    0
-                ],  # Use parse_resources to format member names as labels
-                "Daily Cost": f"{currency} {calculate_team_cost(t, people):,.2f}",
-            }
-            for t in st.session_state.data["teams"]
-        ]
-    )
+    # Use a cache key to store the dataframe
+    if "teams_df_cache" not in st.session_state:
+        people = st.session_state.data["people"]
+        currency, _ = load_currency_settings()
+        st.session_state["teams_df_cache"] = pd.DataFrame(
+            [
+                {
+                    "Name": t["name"],
+                    "Department": t.get("department", ""),
+                    "Members": len(t.get("members", [])),
+                    "Member Names": parse_resources(t.get("members", []))[0],
+                    "Daily Cost": f"{currency} {calculate_team_cost(t, people):,.2f}",
+                }
+                for t in st.session_state.data["teams"]
+            ]
+        )
+
+    return st.session_state["teams_df_cache"]
 
 
 def _create_departments_dataframe() -> pd.DataFrame:
@@ -797,29 +1134,31 @@ def _create_departments_dataframe() -> pd.DataFrame:
     Returns:
         DataFrame with departments information
     """
-    people = st.session_state.data["people"]
-    teams = st.session_state.data["teams"]
-    currency, _ = load_currency_settings()
-    return pd.DataFrame(
-        [
-            {
-                "Name": d["name"],
-                "Teams": len(d.get("teams", [])),
-                "Team Names": parse_resources(d.get("teams", []))[
-                    1
-                ],  # Use parse_resources to format team names as labels
-                "Direct Members": len(
-                    [
-                        p
-                        for p in people
-                        if p.get("department") == d["name"] and not p.get("team")
-                    ]
-                ),
-                "Total Members": len(
-                    [p for p in people if p.get("department") == d["name"]]
-                ),
-                "Daily Cost": f"{currency} {calculate_department_cost(d, teams, people):,.2f}",
-            }
-            for d in st.session_state.data["departments"]
-        ]
-    )
+    # Use a cache key to store the dataframe
+    if "departments_df_cache" not in st.session_state:
+        people = st.session_state.data["people"]
+        teams = st.session_state.data["teams"]
+        currency, _ = load_currency_settings()
+        st.session_state["departments_df_cache"] = pd.DataFrame(
+            [
+                {
+                    "Name": d["name"],
+                    "Teams": len(d.get("teams", [])),
+                    "Team Names": parse_resources(d.get("teams", []))[1],
+                    "Direct Members": len(
+                        [
+                            p
+                            for p in people
+                            if p.get("department") == d["name"] and not p.get("team")
+                        ]
+                    ),
+                    "Total Members": len(
+                        [p for p in people if p.get("department") == d["name"]]
+                    ),
+                    "Daily Cost": f"{currency} {calculate_department_cost(d, teams, people):,.2f}",
+                }
+                for d in st.session_state.data["departments"]
+            ]
+        )
+
+    return st.session_state["departments_df_cache"]

@@ -640,93 +640,202 @@ def paginate_dataframe(
     return df.iloc[start_idx:end_idx].reset_index(drop=True)
 
 
-def check_circular_dependencies() -> Tuple[
-    List[str], Dict[str, List[str]], Dict[str, List[str]], Dict[str, List[str]]
-]:
+def check_circular_dependencies():
     """
-    Check for circular dependencies between teams and report individuals in multiple teams,
-    multiple departments, and teams in multiple departments.
+    Check for circular dependencies and other relationship issues in the data.
 
     Returns:
-        Tuple containing:
-        - List of circular dependency paths
-        - Dict of people in multiple teams
-        - Dict of people in multiple departments
-        - Dict of teams in multiple departments
+        Tuple of (cycles, multi_team_members, multi_department_members, multi_department_teams)
     """
-    dependency_graph = {}
-    multi_team_members = {}
-    multi_department_members = {}
-    multi_department_teams = {}
+    # Get data
+    people = st.session_state.data["people"]
+    teams = st.session_state.data["teams"]
+    departments = st.session_state.data["departments"]
 
-    # Build dependency graph and check for multi-team or multi-department members
-    team_membership = {}
-    department_membership = {}
+    # Check for people in multiple teams
+    team_memberships = {}
+    for team in teams:
+        for member in team.get("members", []):
+            if member not in team_memberships:
+                team_memberships[member] = []
+            team_memberships[member].append(team["name"])
+
+    multi_team_members = [
+        (person, teams_list)
+        for person, teams_list in team_memberships.items()
+        if len(teams_list) > 1
+    ]
+
+    # Check for people in multiple departments
+    department_memberships = {}
+    for person in people:
+        dept = person.get("department")
+        if dept:
+            if person["name"] not in department_memberships:
+                department_memberships[person["name"]] = []
+            department_memberships[person["name"]].append(dept)
+
+    multi_department_members = [
+        (person, depts_list)
+        for person, depts_list in department_memberships.items()
+        if len(depts_list) > 1
+    ]
+
+    # Check for teams in multiple departments
     team_departments = {}
+    for team in teams:
+        dept = team.get("department")
+        # Only track teams that have a department assigned
+        if dept and dept.strip():
+            if team["name"] not in team_departments:
+                team_departments[team["name"]] = []
+            team_departments[team["name"]].append(dept)
 
-    for team in st.session_state.data["teams"]:
-        dependency_graph[team["name"]] = set()
-        team_departments[team["name"]] = team["department"]
-        for member in team["members"]:
-            if member in team_membership:
-                if member not in multi_team_members:
-                    multi_team_members[member] = [team_membership[member]]
-                multi_team_members[member].append(team["name"])
-            team_membership[member] = team["name"]
-        for other_team in st.session_state.data["teams"]:
-            if team != other_team and any(
-                member in other_team["members"] for member in team["members"]
-            ):
-                dependency_graph[team["name"]].add(other_team["name"])
+    multi_department_teams = [
+        (team, depts_list)
+        for team, depts_list in team_departments.items()
+        if len(depts_list) > 1
+    ]
 
-    for department in st.session_state.data["departments"]:
-        for member in department["members"]:
-            if member in department_membership:
-                if member not in multi_department_members:
-                    multi_department_members[member] = [department_membership[member]]
-                multi_department_members[member].append(department["name"])
-            department_membership[member] = department["name"]
-        for team in department["teams"]:
-            if team in team_departments:
-                if team_departments[team] != department["name"]:
-                    if team not in multi_department_teams:
-                        multi_department_teams[team] = [team_departments[team]]
-                    multi_department_teams[team].append(department["name"])
+    # Build dependency graph and check for cycles
+    graph = _build_dependency_graph()
+    cycles = _find_cycles(graph)
 
-    # Check for cycles
-    visited = set()
-    path = set()
-    cycle_paths = []
+    return cycles, multi_team_members, multi_department_members, multi_department_teams
 
-    def dfs(node, current_path=None):
-        if current_path is None:
-            current_path = []
-        if node in path:
-            # Cycle detected - capture the full path
-            cycle_path = current_path + [node]
-            cycle_paths.append(" → ".join(cycle_path))
-            return True
+
+def _build_dependency_graph():
+    """
+    Build a dependency graph from the current data.
+
+    Returns:
+        Dictionary representing the graph
+    """
+    graph = {}
+
+    # Get data
+    people = st.session_state.data["people"]
+    teams = st.session_state.data["teams"]
+    departments = st.session_state.data["departments"]
+
+    # Add person → team edges
+    for person in people:
+        person_name = person["name"]
+        team_name = person.get("team")
+
+        if person_name not in graph:
+            graph[person_name] = []
+
+        if team_name:
+            graph[person_name].append(team_name)
+
+    # Add person → department edges
+    for person in people:
+        person_name = person["name"]
+        dept_name = person.get("department")
+
+        if person_name not in graph:
+            graph[person_name] = []
+
+        if dept_name:
+            graph[person_name].append(dept_name)
+
+    # Add team → department edges
+    for team in teams:
+        team_name = team["name"]
+        dept_name = team.get("department")
+
+        if team_name not in graph:
+            graph[team_name] = []
+
+        # Only add the edge if the department exists
+        if dept_name and dept_name.strip():
+            # Make sure the department exists in the departments list
+            if any(d["name"] == dept_name for d in departments):
+                graph[team_name].append(dept_name)
+
+    # Add department → team edges (for teams in departments)
+    for dept in departments:
+        dept_name = dept["name"]
+        teams_list = dept.get("teams", [])
+
+        if dept_name not in graph:
+            graph[dept_name] = []
+
+        for team_name in teams_list:
+            graph[dept_name].append(team_name)
+
+    return graph
+
+
+def _find_cycles(graph):
+    """
+    Find cycles in a directed graph using depth-first search.
+
+    Args:
+        graph: Dictionary representing the graph as an adjacency list
+
+    Returns:
+        List of cycles found in the graph
+    """
+    visited = set()  # Nodes visited in current traversal
+    rec_stack = set()  # Nodes in current recursion stack
+    all_cycles = []  # List to store all cycles found
+    path = []  # Current path being explored
+
+    def dfs(node, parent=None):
+        # If we've already fully explored this node, no need to revisit
         if node in visited:
-            return False
+            return
+
+        # If we encounter a node already in our recursion stack, we found a cycle
+        if node in rec_stack:
+            # Extract the cycle from the current path
+            cycle_start_idx = path.index(node)
+            cycle = path[cycle_start_idx:]
+            # Add the starting node again to complete the cycle representation
+            cycle.append(node)
+            all_cycles.append(cycle)
+            return
+
+        # Mark node as visited in current recursion
         visited.add(node)
-        path.add(node)
-        current_path.append(node)
-        for neighbor in dependency_graph.get(node, []):
-            if dfs(neighbor, current_path):
-                return True
-        path.remove(node)
-        current_path.pop()
-        return False
+        rec_stack.add(node)
+        path.append(node)
 
-    for node in dependency_graph:
-        dfs(node, [])
+        # Visit all adjacent nodes
+        for neighbor in graph.get(node, []):
+            # Skip the parent to avoid simple back-and-forth cycles
+            if neighbor != parent:
+                dfs(neighbor, node)
 
-    return (
-        cycle_paths,
-        multi_team_members,
-        multi_department_members,
-        multi_department_teams,
-    )
+        # Remove node from recursion stack when done
+        rec_stack.remove(node)
+        path.pop()
+
+    # Start DFS from each node to find all cycles
+    for node in graph:
+        # Clear the tracking sets for each new starting node
+        visited = set()
+        rec_stack = set()
+        path = []
+        dfs(node)
+
+    # De-duplicate cycles (same cycle may be found from different starting points)
+    unique_cycles = []
+    cycle_sets = set()
+
+    for cycle in all_cycles:
+        # Create a canonical representation of the cycle for deduplication
+        # Sort the cycle to start with the smallest node
+        min_node_idx = cycle.index(min(cycle))
+        canonical = tuple(cycle[min_node_idx:-1] + cycle[:min_node_idx])
+
+        if canonical not in cycle_sets:
+            cycle_sets.add(canonical)
+            unique_cycles.append(cycle)
+
+    return unique_cycles
 
 
 def get_resource_type(resource_name: str) -> str:

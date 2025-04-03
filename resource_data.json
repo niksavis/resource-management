@@ -1,68 +1,10 @@
 {
   "people": [
     {
-      "name": "Thomas Wilson",
-      "role": "Head of Department",
-      "department": "Network Engineering",
-      "team": null,
-      "daily_cost": 600,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2,
-      "skills": [
-        "Leadership",
-        "Network Architecture",
-        "Strategy",
-        "Budget Management",
-        "Enterprise Planning",
-        "Risk Management"
-      ],
-      "description": "Department leader with 15+ years experience in network infrastructure planning"
-    },
-    {
-      "name": "Sarah Johnson",
-      "role": "Network Architect",
-      "department": "Network Engineering",
-      "team": "Network Planning Team",
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 32,
-      "capacity_hours_per_month": 138.6,
-      "skills": [
-        "Network Design",
-        "Infrastructure Planning",
-        "Telecommunications",
-        "Routing Protocols",
-        "Load Balancing",
-        "Network Security"
-      ]
-    },
-    {
-      "name": "Michael Chen",
-      "role": "Network Engineer",
-      "department": "Network Engineering",
-      "team": "Network Planning Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2,
-      "skills": [
-        "Network Configuration",
-        "Troubleshooting",
-        "Cisco Systems",
-        "Firewalls",
-        "VPN",
-        "WAN/LAN"
-      ]
-    },
-    {
-      "name": "Emma Rodriguez",
-      "role": "Network Engineer",
-      "department": "Network Engineering",
-      "team": "Network Planning Team",
+      "name": "Abigail Allen",
+      "role": "Database Administrator",
+      "department": "Software Development",
+      "team": "Backend Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -70,76 +12,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "David Thompson",
-      "role": "Team Leader",
-      "department": "Network Engineering",
-      "team": "Network Planning Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "James Williams",
-      "role": "Network Engineer",
-      "department": "Network Engineering",
-      "team": "Network Implementation Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Olivia Garcia",
-      "role": "Field Technician",
-      "department": "Network Engineering",
-      "team": "Network Implementation Team",
-      "daily_cost": 300,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Ethan Martinez",
-      "role": "Field Technician",
-      "department": "Network Engineering",
-      "team": "Network Implementation Team",
-      "daily_cost": 300,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Sophia Anderson",
-      "role": "Team Leader",
-      "department": "Network Engineering",
-      "team": "Network Implementation Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Benjamin Taylor",
-      "role": "Network Operations Specialist",
-      "department": "Network Engineering",
-      "team": "Network Operations Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Isabella Thomas",
-      "role": "Network Operations Specialist",
-      "department": "Network Engineering",
-      "team": "Network Operations Team",
+      "name": "Adrian Long",
+      "role": "Business Analyst",
+      "department": "Product Management",
+      "team": "Enterprise Products Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -158,165 +34,11 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Mia Jackson",
-      "role": "Project Manager",
-      "department": "Network Engineering",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "William Davis",
-      "role": "Head of Department",
-      "department": "Software Development",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Charlotte White",
-      "role": "Software Developer",
-      "department": "Software Development",
-      "team": "Frontend Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Jacob Harris",
-      "role": "Software Developer",
-      "department": "Software Development",
-      "team": "Frontend Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
       "name": "Amelia Clark",
       "role": "UX/UI Designer",
       "department": "Software Development",
       "team": "Frontend Team",
       "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Daniel Lewis",
-      "role": "Team Leader",
-      "department": "Software Development",
-      "team": "Frontend Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Harper Young",
-      "role": "Software Developer",
-      "department": "Software Development",
-      "team": "Backend Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Matthew Walker",
-      "role": "Software Developer",
-      "department": "Software Development",
-      "team": "Backend Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Abigail Allen",
-      "role": "Database Administrator",
-      "department": "Software Development",
-      "team": "Backend Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Joseph King",
-      "role": "Team Leader",
-      "department": "Software Development",
-      "team": "Backend Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Elizabeth Wright",
-      "role": "Software Developer",
-      "department": "Software Development",
-      "team": "Mobile App Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Samuel Lopez",
-      "role": "Software Developer",
-      "department": "Software Development",
-      "team": "Mobile App Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Grace Hill",
-      "role": "UX/UI Designer",
-      "department": "Software Development",
-      "team": "Mobile App Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Christopher Scott",
-      "role": "Team Leader",
-      "department": "Software Development",
-      "team": "Mobile App Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Victoria Green",
-      "role": "Tester",
-      "department": "Software Development",
-      "team": "QA Team",
-      "daily_cost": 300,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
@@ -334,64 +56,9 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Scarlett Baker",
-      "role": "Tester",
-      "department": "Software Development",
-      "team": "QA Team",
-      "daily_cost": 300,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Joshua Nelson",
-      "role": "Team Leader",
-      "department": "Software Development",
-      "team": "QA Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Ella Carter",
-      "role": "Project Manager",
-      "department": "Software Development",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "John Mitchell",
-      "role": "Agile Coach",
-      "department": "Software Development",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Oliver Brown",
-      "role": "Software Architect",
-      "department": "Software Development",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Ryan Phillips",
+      "name": "Audrey Ward",
       "role": "Head of Department",
-      "department": "Information Technology",
+      "department": "Product Management",
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
@@ -400,33 +67,22 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Chloe Evans",
-      "role": "System Administrator",
-      "department": "Information Technology",
-      "team": "Infrastructure Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Nathan Turner",
-      "role": "System Administrator",
-      "department": "Information Technology",
-      "team": "Infrastructure Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Lily Torres",
-      "role": "DevOps Engineer",
-      "department": "Information Technology",
-      "team": "Infrastructure Team",
+      "name": "Autumn Bryant",
+      "role": "Team Leader",
+      "department": "Operations",
+      "team": "Field Operations Team",
       "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Benjamin Taylor",
+      "role": "Network Operations Specialist",
+      "department": "Network Engineering",
+      "team": "Network Operations Team",
+      "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
@@ -444,10 +100,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Nora Cooper",
-      "role": "Security Specialist",
-      "department": "Information Technology",
-      "team": "Security Team",
+      "name": "Charlotte White",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Frontend Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -455,10 +111,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Isaac Rivera",
-      "role": "Security Specialist",
+      "name": "Chloe Evans",
+      "role": "System Administrator",
       "department": "Information Technology",
-      "team": "Security Team",
+      "team": "Infrastructure Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -466,87 +122,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Leah Reed",
-      "role": "Security Analyst",
-      "department": "Information Technology",
-      "team": "Security Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Owen Bailey",
+      "name": "Christopher Scott",
       "role": "Team Leader",
-      "department": "Information Technology",
-      "team": "Security Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Hannah Peterson",
-      "role": "Enterprise Systems Specialist",
-      "department": "Information Technology",
-      "team": "Enterprise Systems Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Luke Kelly",
-      "role": "Enterprise Systems Specialist",
-      "department": "Information Technology",
-      "team": "Enterprise Systems Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Zoe Howard",
-      "role": "Database Administrator",
-      "department": "Information Technology",
-      "team": "Enterprise Systems Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Gabriel Cox",
-      "role": "Team Leader",
-      "department": "Information Technology",
-      "team": "Enterprise Systems Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Audrey Ward",
-      "role": "Head of Department",
-      "department": "Product Management",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Theodore Brooks",
-      "role": "Product Owner",
-      "department": "Product Management",
-      "team": "Consumer Products Team",
+      "department": "Software Development",
+      "team": "Mobile App Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -565,10 +144,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Julian Watson",
-      "role": "Business Analyst",
-      "department": "Product Management",
-      "team": "Consumer Products Team",
+      "name": "Dahlia Reed",
+      "role": "Research Engineer",
+      "department": "Research and Development",
+      "team": "Technology Research Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -576,11 +155,33 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Skylar Price",
+      "name": "Daniel Lewis",
       "role": "Team Leader",
-      "department": "Product Management",
-      "team": "Consumer Products Team",
+      "department": "Software Development",
+      "team": "Frontend Team",
       "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "David Thompson",
+      "role": "Team Leader",
+      "department": "Network Engineering",
+      "team": "Network Planning Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Eden Campbell",
+      "role": "Technical Support Specialist",
+      "department": "Operations",
+      "team": "Technical Support Team",
+      "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
@@ -598,10 +199,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Naomi Powell",
-      "role": "Business Analyst",
-      "department": "Product Management",
-      "team": "Enterprise Products Team",
+      "name": "Elizabeth Wright",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Mobile App Team",
       "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -609,31 +210,9 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Adrian Long",
-      "role": "Business Analyst",
-      "department": "Product Management",
-      "team": "Enterprise Products Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Madeline Russell",
-      "role": "Team Leader",
-      "department": "Product Management",
-      "team": "Enterprise Products Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Ian Barnes",
+      "name": "Ella Carter",
       "role": "Project Manager",
-      "department": "Product Management",
+      "department": "Software Development",
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
@@ -642,65 +221,10 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Willow Simmons",
-      "role": "Scrum Master",
-      "department": "Product Management",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Jason Ross",
-      "role": "Head of Department",
-      "department": "Customer Experience",
-      "team": null,
-      "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Jade Foster",
-      "role": "UX/UI Designer",
-      "department": "Customer Experience",
-      "team": "User Experience Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Wyatt Butler",
-      "role": "UX/UI Designer",
-      "department": "Customer Experience",
-      "team": "User Experience Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Isabelle Simmons",
-      "role": "UX Researcher",
-      "department": "Customer Experience",
-      "team": "User Experience Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Levi Griffin",
-      "role": "Team Leader",
-      "department": "Customer Experience",
-      "team": "User Experience Team",
+      "name": "Emery Ross",
+      "role": "AI Specialist",
+      "department": "Research and Development",
+      "team": "Innovation Team",
       "daily_cost": 450,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -708,10 +232,65 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Violet Hayes",
-      "role": "Service Designer",
-      "department": "Customer Experience",
-      "team": "Service Design Team",
+      "name": "Emma Rodriguez",
+      "role": "Network Engineer",
+      "department": "Network Engineering",
+      "team": "Network Planning Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Ethan Martinez",
+      "role": "Field Technician",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Ezra Perry",
+      "role": "Field Technician",
+      "department": "Operations",
+      "team": "Field Operations Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Felix Hughes",
+      "role": "Technical Support Specialist",
+      "department": "Operations",
+      "team": "Technical Support Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Gabriel Cox",
+      "role": "Team Leader",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Grace Hill",
+      "role": "UX/UI Designer",
+      "department": "Software Development",
+      "team": "Mobile App Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -730,20 +309,31 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Lincoln Wood",
-      "role": "Team Leader",
-      "department": "Customer Experience",
-      "team": "Service Design Team",
-      "daily_cost": 450,
+      "name": "Hannah Peterson",
+      "role": "Enterprise Systems Specialist",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team",
+      "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Stella Rogers",
+      "name": "Harper Young",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Backend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Harvey Butler",
       "role": "Head of Department",
-      "department": "Operations",
+      "department": "Research and Development",
       "team": null,
       "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
@@ -763,44 +353,11 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Nova Coleman",
-      "role": "Field Technician",
-      "department": "Operations",
-      "team": "Field Operations Team",
-      "daily_cost": 300,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Ezra Perry",
-      "role": "Field Technician",
-      "department": "Operations",
-      "team": "Field Operations Team",
-      "daily_cost": 300,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Autumn Bryant",
-      "role": "Team Leader",
-      "department": "Operations",
-      "team": "Field Operations Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Kai Russell",
-      "role": "Customer Support Specialist",
-      "department": "Operations",
-      "team": "Customer Support Team",
-      "daily_cost": 300,
+      "name": "Ian Barnes",
+      "role": "Project Manager",
+      "department": "Product Management",
+      "team": null,
+      "daily_cost": 500,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
@@ -818,54 +375,32 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Oscar Sullivan",
-      "role": "Customer Support Specialist",
-      "department": "Operations",
-      "team": "Customer Support Team",
-      "daily_cost": 300,
+      "name": "Isaac Rivera",
+      "role": "Security Specialist",
+      "department": "Information Technology",
+      "team": "Security Team",
+      "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Ruby Price",
-      "role": "Team Leader",
-      "department": "Operations",
-      "team": "Customer Support Team",
-      "daily_cost": 450,
+      "name": "Isabella Thomas",
+      "role": "Network Operations Specialist",
+      "department": "Network Engineering",
+      "team": "Network Operations Team",
+      "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Miles Patterson",
-      "role": "Technical Support Specialist",
-      "department": "Operations",
-      "team": "Technical Support Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Eden Campbell",
-      "role": "Technical Support Specialist",
-      "department": "Operations",
-      "team": "Technical Support Team",
-      "daily_cost": 350,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Felix Hughes",
-      "role": "Technical Support Specialist",
-      "department": "Operations",
-      "team": "Technical Support Team",
+      "name": "Isabelle Simmons",
+      "role": "UX Researcher",
+      "department": "Customer Experience",
+      "team": "User Experience Team",
       "daily_cost": 350,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
@@ -884,77 +419,75 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Harvey Butler",
+      "name": "Jacob Harris",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Frontend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Jade Foster",
+      "role": "UX/UI Designer",
+      "department": "Customer Experience",
+      "team": "User Experience Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "James Ortega",
+      "role": "Office Administrator",
+      "department": "HR Department",
+      "team": "",
+      "daily_cost": 200.0,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8.0,
+      "skills": [],
+      "capacity_hours_per_week": 40.0,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "James Williams",
+      "role": "Network Engineer",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Jane Smith",
+      "role": "Project Manager",
+      "department": "Engineering",
+      "team": null,
+      "daily_cost": 600,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2,
+      "skills": [
+        "Project Management",
+        "Agile",
+        "Budgeting",
+        "Resource Planning",
+        "Risk Management"
+      ],
+      "description": "Certified PMP with experience leading cross-functional technical teams"
+    },
+    {
+      "name": "Jason Ross",
       "role": "Head of Department",
-      "department": "Research and Development",
+      "department": "Customer Experience",
       "team": null,
       "daily_cost": 500,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Lydia Simmons",
-      "role": "Data Scientist",
-      "department": "Research and Development",
-      "team": "Innovation Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Rowan Foster",
-      "role": "Research Engineer",
-      "department": "Research and Development",
-      "team": "Innovation Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Emery Ross",
-      "role": "AI Specialist",
-      "department": "Research and Development",
-      "team": "Innovation Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Rosalie Sanders",
-      "role": "Team Leader",
-      "department": "Research and Development",
-      "team": "Innovation Team",
-      "daily_cost": 450,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Sawyer Barnes",
-      "role": "Research Engineer",
-      "department": "Research and Development",
-      "team": "Technology Research Team",
-      "daily_cost": 400,
-      "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
-      "capacity_hours_per_month": 173.2
-    },
-    {
-      "name": "Dahlia Reed",
-      "role": "Research Engineer",
-      "department": "Research and Development",
-      "team": "Technology Research Team",
-      "daily_cost": 400,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
       "daily_work_hours": 8,
       "capacity_hours_per_week": 40,
@@ -972,14 +505,15 @@
       "capacity_hours_per_month": 173.2
     },
     {
-      "name": "Ophelia Gray",
-      "role": "Team Leader",
-      "department": "Research and Development",
-      "team": "Technology Research Team",
-      "daily_cost": 450,
+      "name": "Jenny Ortega",
+      "role": "Office Administrator",
+      "department": "HR Department",
+      "team": "",
+      "daily_cost": 200.0,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
-      "daily_work_hours": 8,
-      "capacity_hours_per_week": 40,
+      "daily_work_hours": 8.0,
+      "skills": [],
+      "capacity_hours_per_week": 40.0,
       "capacity_hours_per_month": 173.2
     },
     {
@@ -1003,9 +537,432 @@
       "description": "Full-stack developer specializing in web applications"
     },
     {
-      "name": "Jane Smith",
+      "name": "John Mitchell",
+      "role": "Agile Coach",
+      "department": "Software Development",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Joseph King",
+      "role": "Team Leader",
+      "department": "Software Development",
+      "team": "Backend Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Joshua Nelson",
+      "role": "Team Leader",
+      "department": "Software Development",
+      "team": "QA Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Julian Watson",
+      "role": "Business Analyst",
+      "department": "Product Management",
+      "team": "Consumer Products Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Kai Russell",
+      "role": "Customer Support Specialist",
+      "department": "Operations",
+      "team": "Customer Support Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Leah Reed",
+      "role": "Security Analyst",
+      "department": "Information Technology",
+      "team": "Security Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Levi Griffin",
+      "role": "Team Leader",
+      "department": "Customer Experience",
+      "team": "User Experience Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Lily Torres",
+      "role": "DevOps Engineer",
+      "department": "Information Technology",
+      "team": "Infrastructure Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Lincoln Wood",
+      "role": "Team Leader",
+      "department": "Customer Experience",
+      "team": "Service Design Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Luke Kelly",
+      "role": "Enterprise Systems Specialist",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Lydia Simmons",
+      "role": "Data Scientist",
+      "department": "Research and Development",
+      "team": "Innovation Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Madeline Russell",
+      "role": "Team Leader",
+      "department": "Product Management",
+      "team": "Enterprise Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Matthew Walker",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Backend Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Mia Jackson",
       "role": "Project Manager",
-      "department": "Engineering",
+      "department": "Network Engineering",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Michael Chen",
+      "role": "Network Engineer",
+      "department": "Network Engineering",
+      "team": "Network Planning Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2,
+      "skills": [
+        "Network Configuration",
+        "Troubleshooting",
+        "Cisco Systems",
+        "Firewalls",
+        "VPN",
+        "WAN/LAN"
+      ]
+    },
+    {
+      "name": "Miles Patterson",
+      "role": "Technical Support Specialist",
+      "department": "Operations",
+      "team": "Technical Support Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Naomi Powell",
+      "role": "Business Analyst",
+      "department": "Product Management",
+      "team": "Enterprise Products Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Nathan Turner",
+      "role": "System Administrator",
+      "department": "Information Technology",
+      "team": "Infrastructure Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Nora Cooper",
+      "role": "Security Specialist",
+      "department": "Information Technology",
+      "team": "Security Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Nova Coleman",
+      "role": "Field Technician",
+      "department": "Operations",
+      "team": "Field Operations Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Oliver Brown",
+      "role": "Software Architect",
+      "department": "Software Development",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Olivia Garcia",
+      "role": "Field Technician",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Ophelia Gray",
+      "role": "Team Leader",
+      "department": "Research and Development",
+      "team": "Technology Research Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Oscar Sullivan",
+      "role": "Customer Support Specialist",
+      "department": "Operations",
+      "team": "Customer Support Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Owen Bailey",
+      "role": "Team Leader",
+      "department": "Information Technology",
+      "team": "Security Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Rosalie Sanders",
+      "role": "Team Leader",
+      "department": "Research and Development",
+      "team": "Innovation Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Rowan Foster",
+      "role": "Research Engineer",
+      "department": "Research and Development",
+      "team": "Innovation Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Ruby Price",
+      "role": "Team Leader",
+      "department": "Operations",
+      "team": "Customer Support Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Ryan Phillips",
+      "role": "Head of Department",
+      "department": "Information Technology",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Samuel Lopez",
+      "role": "Software Developer",
+      "department": "Software Development",
+      "team": "Mobile App Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Sarah Johnson",
+      "role": "Network Architect",
+      "department": "Network Engineering",
+      "team": "Network Planning Team",
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 32,
+      "capacity_hours_per_month": 138.6,
+      "skills": [
+        "Network Design",
+        "Infrastructure Planning",
+        "Telecommunications",
+        "Routing Protocols",
+        "Load Balancing",
+        "Network Security"
+      ]
+    },
+    {
+      "name": "Sawyer Barnes",
+      "role": "Research Engineer",
+      "department": "Research and Development",
+      "team": "Technology Research Team",
+      "daily_cost": 400,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Scarlett Baker",
+      "role": "Tester",
+      "department": "Software Development",
+      "team": "QA Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Skylar Price",
+      "role": "Team Leader",
+      "department": "Product Management",
+      "team": "Consumer Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Sophia Anderson",
+      "role": "Team Leader",
+      "department": "Network Engineering",
+      "team": "Network Implementation Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Stella Rogers",
+      "role": "Head of Department",
+      "department": "Operations",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Theodore Brooks",
+      "role": "Product Owner",
+      "department": "Product Management",
+      "team": "Consumer Products Team",
+      "daily_cost": 450,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Thomas Wilson",
+      "role": "Head of Department",
+      "department": "Network Engineering",
       "team": null,
       "daily_cost": 600,
       "work_days": ["MO", "TU", "WE", "TH", "FR"],
@@ -1013,24 +970,174 @@
       "capacity_hours_per_week": 40,
       "capacity_hours_per_month": 173.2,
       "skills": [
-        "Project Management",
-        "Agile",
-        "Budgeting",
-        "Resource Planning",
+        "Leadership",
+        "Network Architecture",
+        "Strategy",
+        "Budget Management",
+        "Enterprise Planning",
         "Risk Management"
       ],
-      "description": "Certified PMP with experience leading cross-functional technical teams"
+      "description": "Department leader with 15+ years experience in network infrastructure planning"
+    },
+    {
+      "name": "Victoria Green",
+      "role": "Tester",
+      "department": "Software Development",
+      "team": "QA Team",
+      "daily_cost": 300,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Violet Hayes",
+      "role": "Service Designer",
+      "department": "Customer Experience",
+      "team": "Service Design Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "William Davis",
+      "role": "Head of Department",
+      "department": "Software Development",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Willow Simmons",
+      "role": "Scrum Master",
+      "department": "Product Management",
+      "team": null,
+      "daily_cost": 500,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Wyatt Butler",
+      "role": "UX/UI Designer",
+      "department": "Customer Experience",
+      "team": "User Experience Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
+    },
+    {
+      "name": "Zoe Howard",
+      "role": "Database Administrator",
+      "department": "Information Technology",
+      "team": "Enterprise Systems Team",
+      "daily_cost": 350,
+      "work_days": ["MO", "TU", "WE", "TH", "FR"],
+      "daily_work_hours": 8,
+      "capacity_hours_per_week": 40,
+      "capacity_hours_per_month": 173.2
     }
   ],
   "teams": [
     {
-      "name": "Network Planning Team",
-      "department": "Network Engineering",
+      "name": "Backend Team",
+      "department": "Software Development",
       "members": [
-        "Sarah Johnson",
-        "Michael Chen",
-        "Emma Rodriguez",
-        "David Thompson"
+        "Harper Young",
+        "Matthew Walker",
+        "Abigail Allen",
+        "Joseph King"
+      ]
+    },
+    {
+      "name": "Company Admins",
+      "department": "HR Department",
+      "description": "",
+      "members": ["Jenny Ortega", "James Ortega"]
+    },
+    {
+      "name": "Consumer Products Team",
+      "department": "Product Management",
+      "members": [
+        "Theodore Brooks",
+        "Claire Richardson",
+        "Julian Watson",
+        "Skylar Price"
+      ]
+    },
+    {
+      "name": "Customer Support Team",
+      "department": "Operations",
+      "members": ["Kai Russell", "Iris Gray", "Oscar Sullivan", "Ruby Price"]
+    },
+    {
+      "name": "Data Science Team",
+      "department": "Research and Development",
+      "members": ["Oliver Brown", "Lydia Simmons"]
+    },
+    {
+      "name": "Design Team",
+      "department": "Design",
+      "members": ["Michael Brown", "Emily Wilson"],
+      "description": "Handles UI/UX design for products."
+    },
+    {
+      "name": "Enterprise Products Team",
+      "department": "Product Management",
+      "members": [
+        "Elias Jenkins",
+        "Naomi Powell",
+        "Adrian Long",
+        "Madeline Russell"
+      ]
+    },
+    {
+      "name": "Enterprise Systems Team",
+      "department": "Information Technology",
+      "members": ["Hannah Peterson", "Luke Kelly", "Zoe Howard", "Gabriel Cox"]
+    },
+    {
+      "name": "Field Operations Team",
+      "department": "Operations",
+      "members": ["Hudson Reed", "Nova Coleman", "Ezra Perry", "Autumn Bryant"]
+    },
+    {
+      "name": "Frontend Team",
+      "department": "Software Development",
+      "members": [
+        "Charlotte White",
+        "Jacob Harris",
+        "Amelia Clark",
+        "Daniel Lewis"
+      ]
+    },
+    {
+      "name": "Infrastructure Team",
+      "department": "Information Technology",
+      "members": ["Chloe Evans", "Nathan Turner", "Lily Torres", "Caleb Morgan"]
+    },
+    {
+      "name": "Innovation Team",
+      "department": "Research and Development",
+      "description": "",
+      "members": ["Rowan Foster", "Emery Ross", "Rosalie Sanders"]
+    },
+    {
+      "name": "Mobile App Team",
+      "department": "Software Development",
+      "members": [
+        "Elizabeth Wright",
+        "Samuel Lopez",
+        "Grace Hill",
+        "Christopher Scott"
       ]
     },
     {
@@ -1049,33 +1156,13 @@
       "members": ["Benjamin Taylor", "Isabella Thomas", "Alexander Hernandez"]
     },
     {
-      "name": "Frontend Team",
-      "department": "Software Development",
+      "name": "Network Planning Team",
+      "department": "Network Engineering",
       "members": [
-        "Charlotte White",
-        "Jacob Harris",
-        "Amelia Clark",
-        "Daniel Lewis"
-      ]
-    },
-    {
-      "name": "Backend Team",
-      "department": "Software Development",
-      "members": [
-        "Harper Young",
-        "Matthew Walker",
-        "Abigail Allen",
-        "Joseph King"
-      ]
-    },
-    {
-      "name": "Mobile App Team",
-      "department": "Software Development",
-      "members": [
-        "Elizabeth Wright",
-        "Samuel Lopez",
-        "Grace Hill",
-        "Christopher Scott"
+        "Sarah Johnson",
+        "Michael Chen",
+        "Emma Rodriguez",
+        "David Thompson"
       ]
     },
     {
@@ -1089,64 +1176,14 @@
       ]
     },
     {
-      "name": "Infrastructure Team",
-      "department": "Information Technology",
-      "members": ["Chloe Evans", "Nathan Turner", "Lily Torres", "Caleb Morgan"]
-    },
-    {
       "name": "Security Team",
       "department": "Information Technology",
       "members": ["Nora Cooper", "Isaac Rivera", "Leah Reed", "Owen Bailey"]
     },
     {
-      "name": "Enterprise Systems Team",
-      "department": "Information Technology",
-      "members": ["Hannah Peterson", "Luke Kelly", "Zoe Howard", "Gabriel Cox"]
-    },
-    {
-      "name": "Consumer Products Team",
-      "department": "Product Management",
-      "members": [
-        "Theodore Brooks",
-        "Claire Richardson",
-        "Julian Watson",
-        "Skylar Price"
-      ]
-    },
-    {
-      "name": "Enterprise Products Team",
-      "department": "Product Management",
-      "members": [
-        "Elias Jenkins",
-        "Naomi Powell",
-        "Adrian Long",
-        "Madeline Russell"
-      ]
-    },
-    {
-      "name": "User Experience Team",
-      "department": "Customer Experience",
-      "members": [
-        "Jade Foster",
-        "Wyatt Butler",
-        "Isabelle Simmons",
-        "Levi Griffin"
-      ]
-    },
-    {
       "name": "Service Design Team",
       "department": "Customer Experience",
       "members": ["Violet Hayes", "Grayson Fisher", "Lincoln Wood"]
-    },
-    {
-      "name": "Field Operations Team",
-      "department": "Operations",
-      "members": ["Hudson Reed", "Nova Coleman", "Ezra Perry", "Autumn Bryant"]
-    },
-    {
-      "name": "Customer Support Team",
-      "department": "Operations",
-      "members": ["Kai Russell", "Iris Gray", "Oscar Sullivan", "Ruby Price"]
     },
     {
       "name": "Technical Support Team",
@@ -1156,16 +1193,6 @@
         "Eden Campbell",
         "Felix Hughes",
         "Ivy Washington"
-      ]
-    },
-    {
-      "name": "Innovation Team",
-      "department": "Research and Development",
-      "members": [
-        "Lydia Simmons",
-        "Rowan Foster",
-        "Emery Ross",
-        "Rosalie Sanders"
       ]
     },
     {
@@ -1179,72 +1206,42 @@
       ]
     },
     {
-      "name": "Data Science Team",
-      "department": "Research and Development",
-      "members": ["Oliver Brown", "Lydia Simmons"]
+      "name": "User Experience Team",
+      "department": "Customer Experience",
+      "members": [
+        "Jade Foster",
+        "Wyatt Butler",
+        "Isabelle Simmons",
+        "Levi Griffin"
+      ]
     },
     {
       "name": "Web Team",
       "department": "Engineering",
       "members": ["John Doe", "Sarah Williams"],
       "description": "Focuses on web application development."
-    },
-    {
-      "name": "Design Team",
-      "department": "Design",
-      "members": ["Michael Brown", "Emily Wilson"],
-      "description": "Handles UI/UX design for products."
     }
   ],
   "departments": [
     {
-      "name": "Network Engineering",
-      "teams": [
-        "Network Planning Team",
-        "Network Implementation Team",
-        "Network Operations Team"
-      ],
-      "members": [
-        "Thomas Wilson",
-        "Sarah Johnson",
-        "Michael Chen",
-        "Emma Rodriguez",
-        "David Thompson",
-        "James Williams",
-        "Olivia Garcia",
-        "Ethan Martinez",
-        "Sophia Anderson",
-        "Benjamin Taylor",
-        "Isabella Thomas",
-        "Alexander Hernandez",
-        "Mia Jackson"
-      ]
+      "name": "Customer Experience",
+      "teams": ["User Experience Team", "Service Design Team"],
+      "members": ["Jason Ross"]
     },
     {
-      "name": "Software Development",
-      "teams": ["Frontend Team", "Backend Team", "Mobile App Team", "QA Team"],
-      "members": [
-        "William Davis",
-        "Charlotte White",
-        "Jacob Harris",
-        "Amelia Clark",
-        "Daniel Lewis",
-        "Harper Young",
-        "Matthew Walker",
-        "Abigail Allen",
-        "Joseph King",
-        "Elizabeth Wright",
-        "Samuel Lopez",
-        "Grace Hill",
-        "Christopher Scott",
-        "Victoria Green",
-        "Andrew Adams",
-        "Scarlett Baker",
-        "Joshua Nelson",
-        "Ella Carter",
-        "John Mitchell",
-        "Oliver Brown"
-      ]
+      "name": "Design",
+      "teams": ["Design Team"],
+      "members": []
+    },
+    {
+      "name": "Engineering",
+      "teams": ["Web Team"],
+      "members": ["Jane Smith"]
+    },
+    {
+      "name": "HR Department",
+      "teams": [],
+      "members": []
     },
     {
       "name": "Information Technology",
@@ -1253,53 +1250,21 @@
         "Security Team",
         "Enterprise Systems Team"
       ],
-      "members": [
-        "Ryan Phillips",
-        "Chloe Evans",
-        "Nathan Turner",
-        "Lily Torres",
-        "Caleb Morgan",
-        "Nora Cooper",
-        "Isaac Rivera",
-        "Leah Reed",
-        "Owen Bailey",
-        "Hannah Peterson",
-        "Luke Kelly",
-        "Zoe Howard",
-        "Gabriel Cox"
-      ]
+      "members": ["Ryan Phillips"]
     },
     {
-      "name": "Product Management",
-      "teams": ["Consumer Products Team", "Enterprise Products Team"],
-      "members": [
-        "Audrey Ward",
-        "Theodore Brooks",
-        "Claire Richardson",
-        "Julian Watson",
-        "Skylar Price",
-        "Elias Jenkins",
-        "Naomi Powell",
-        "Adrian Long",
-        "Madeline Russell",
-        "Ian Barnes",
-        "Willow Simmons"
-      ]
+      "name": "Marketing",
+      "teams": [],
+      "members": []
     },
     {
-      "name": "Customer Experience",
-      "teams": ["User Experience Team", "Service Design Team"],
-      "members": [
-        "Jason Ross",
-        "Jade Foster",
-        "Wyatt Butler",
-        "Isabelle Simmons",
-        "Levi Griffin",
-        "Violet Hayes",
-        "Grayson Fisher",
-        "Aurora Diaz",
-        "Lincoln Wood"
-      ]
+      "name": "Network Engineering",
+      "teams": [
+        "Network Planning Team",
+        "Network Implementation Team",
+        "Network Operations Team"
+      ],
+      "members": ["Thomas Wilson", "Mia Jackson"]
     },
     {
       "name": "Operations",
@@ -1308,21 +1273,12 @@
         "Customer Support Team",
         "Technical Support Team"
       ],
-      "members": [
-        "Stella Rogers",
-        "Hudson Reed",
-        "Nova Coleman",
-        "Ezra Perry",
-        "Autumn Bryant",
-        "Kai Russell",
-        "Iris Gray",
-        "Oscar Sullivan",
-        "Ruby Price",
-        "Miles Patterson",
-        "Eden Campbell",
-        "Felix Hughes",
-        "Ivy Washington"
-      ]
+      "members": ["Stella Rogers"]
+    },
+    {
+      "name": "Product Management",
+      "teams": ["Consumer Products Team", "Enterprise Products Team"],
+      "members": ["Audrey Ward", "Ian Barnes", "Willow Simmons"]
     },
     {
       "name": "Research and Development",
@@ -1331,76 +1287,51 @@
         "Technology Research Team",
         "Data Science Team"
       ],
-      "members": [
-        "Harvey Butler",
-        "Lydia Simmons",
-        "Rowan Foster",
-        "Emery Ross",
-        "Rosalie Sanders",
-        "Sawyer Barnes",
-        "Dahlia Reed",
-        "Jasper Coleman",
-        "Ophelia Gray",
-        "Oliver Brown"
-      ]
-    },
-    {
-      "name": "Engineering",
-      "teams": ["Web Team"],
-      "members": ["John Doe", "Jane Smith", "Sarah Williams"]
-    },
-    {
-      "name": "Design",
-      "teams": ["Design Team"],
-      "members": ["Michael Brown", "Emily Wilson"]
-    },
-    {
-      "name": "Marketing",
-      "teams": [],
-      "members": []
-    },
-    {
-      "name": "HR Department",
-      "teams": [],
-      "members": []
+      "members": ["Harvey Butler"]
     },
     {
       "name": "Sales Department",
       "teams": [],
       "members": []
+    },
+    {
+      "name": "Software Development",
+      "teams": ["Frontend Team", "Backend Team", "Mobile App Team", "QA Team"],
+      "members": ["William Davis", "Ella Carter", "John Mitchell"]
     }
   ],
   "projects": [
     {
       "name": "5G Network Expansion",
+      "description": "Expand 5G network infrastructure across metropolitan areas to increase coverage and capacity",
       "start_date": "2025-04-01",
       "end_date": "2025-07-01",
       "priority": 1,
-      "assigned_resources": [
-        "Network Planning Team",
-        "Mia Jackson",
-        "Thomas Wilson"
-      ],
       "allocated_budget": 950000.0,
-      "actual_cost": 1050000.0,
-      "description": "Expand 5G network infrastructure across metropolitan areas to increase coverage and capacity",
-      "status": "At Risk",
+      "assigned_resources": [
+        "Mia Jackson",
+        "Thomas Wilson",
+        "Network Planning Team"
+      ],
       "resource_allocations": [
         {
-          "resource": "Network Planning Team",
-          "allocation_percentage": 85,
-          "start_date": "2025-04-01",
-          "end_date": "2025-07-01"
-        },
-        {
           "resource": "Mia Jackson",
+          "resource_type": "person",
           "allocation_percentage": 100,
           "start_date": "2025-04-01",
           "end_date": "2025-07-01"
         },
         {
           "resource": "Thomas Wilson",
+          "resource_type": "person",
           "allocation_percentage": 50,
+          "start_date": "2025-04-01",
+          "end_date": "2025-07-01"
+        },
+        {
+          "resource": "Network Planning Team",
+          "resource_type": "team",
+          "allocation_percentage": 85,
           "start_date": "2025-04-01",
           "end_date": "2025-07-01"
         }
@@ -1408,35 +1339,36 @@
     },
     {
       "name": "Customer Self-Service Portal",
+      "description": "Develop a customer-facing portal for self-service account management and support",
       "start_date": "2025-03-15",
       "end_date": "2025-06-15",
-      "priority": 2,
-      "assigned_resources": [
-        "User Experience Team",
-        "Frontend Team",
-        "John Mitchell"
-      ],
+      "priority": 18,
       "allocated_budget": 270000.0,
-      "actual_cost": 252000.0,
-      "description": "Develop a customer-facing portal for self-service account management and support",
-      "status": "On Track",
+      "assigned_resources": [
+        "John Mitchell",
+        "User Experience Team",
+        "Frontend Team"
+      ],
       "resource_allocations": [
         {
+          "resource": "John Mitchell",
+          "resource_type": "person",
+          "allocation_percentage": 60,
+          "start_date": "2025-03-15",
+          "end_date": "2025-06-15"
+        },
+        {
           "resource": "User Experience Team",
+          "resource_type": "team",
           "allocation_percentage": 90,
           "start_date": "2025-03-15",
           "end_date": "2025-06-15"
         },
         {
           "resource": "Frontend Team",
+          "resource_type": "team",
           "allocation_percentage": 75,
           "start_date": "2025-04-01",
-          "end_date": "2025-06-15"
-        },
-        {
-          "resource": "John Mitchell",
-          "allocation_percentage": 60,
-          "start_date": "2025-03-15",
           "end_date": "2025-06-15"
         }
       ]
@@ -1845,29 +1777,30 @@
     },
     {
       "name": "Annual Marketing Campaign",
+      "description": "Comprehensive marketing campaign to increase brand awareness and market share",
       "start_date": "2025-03-01",
       "end_date": "2025-05-31",
-      "priority": 1,
-      "assigned_resources": ["Marketing", "Design Team", "Customer Experience"],
-      "description": "Comprehensive marketing campaign to increase brand awareness and market share",
-      "allocated_budget": 215000,
-      "actual_cost": 230000,
-      "status": "Over Budget",
+      "priority": 16,
+      "allocated_budget": 215000.0,
+      "assigned_resources": ["Design Team", "Marketing", "Customer Experience"],
       "resource_allocations": [
         {
-          "resource": "Marketing",
-          "allocation_percentage": 100,
-          "start_date": "2025-03-01",
-          "end_date": "2025-05-31"
-        },
-        {
           "resource": "Design Team",
+          "resource_type": "team",
           "allocation_percentage": 50,
           "start_date": "2025-03-01",
           "end_date": "2025-04-15"
         },
         {
+          "resource": "Marketing",
+          "resource_type": "department",
+          "allocation_percentage": 100,
+          "start_date": "2025-03-01",
+          "end_date": "2025-05-31"
+        },
+        {
           "resource": "Customer Experience",
+          "resource_type": "department",
           "allocation_percentage": 25,
           "start_date": "2025-04-01",
           "end_date": "2025-05-31"
@@ -1942,71 +1875,145 @@
     },
     {
       "name": "Sales Team Enablement",
+      "description": "Provide sales team with tools, training and resources to increase efficiency",
       "start_date": "2025-03-15",
       "end_date": "2025-06-15",
-      "priority": 8,
+      "priority": 19,
+      "allocated_budget": 125000.0,
       "assigned_resources": [
+        "Technical Support Team",
         "Sales Department",
-        "Product Management",
-        "Technical Support Team"
+        "Product Management"
       ],
-      "description": "Provide sales team with tools, training and resources to increase efficiency",
-      "allocated_budget": 125000,
-      "actual_cost": 127000,
-      "status": "On Track",
       "resource_allocations": [
         {
+          "resource": "Technical Support Team",
+          "resource_type": "team",
+          "allocation_percentage": 20,
+          "start_date": "2025-04-01",
+          "end_date": "2025-05-30"
+        },
+        {
           "resource": "Sales Department",
+          "resource_type": "department",
           "allocation_percentage": 65,
           "start_date": "2025-03-15",
           "end_date": "2025-06-15"
         },
         {
           "resource": "Product Management",
+          "resource_type": "department",
           "allocation_percentage": 25,
           "start_date": "2025-03-15",
           "end_date": "2025-06-15"
-        },
-        {
-          "resource": "Technical Support Team",
-          "allocation_percentage": 20,
-          "start_date": "2025-04-01",
-          "end_date": "2025-05-30"
         }
       ]
     },
     {
       "name": "Network Capacity Expansion",
+      "description": "Increase network capacity in high-demand regions",
       "start_date": "2025-05-01",
       "end_date": "2025-09-30",
-      "priority": 3,
+      "priority": 17,
+      "allocated_budget": 430000.0,
       "assigned_resources": [
         "Network Planning Team",
         "Network Implementation Team",
         "Field Operations Team"
       ],
-      "description": "Increase network capacity in high-demand regions",
-      "allocated_budget": 430000,
-      "actual_cost": 410000,
-      "status": "Under Budget",
       "resource_allocations": [
         {
           "resource": "Network Planning Team",
+          "resource_type": "team",
           "allocation_percentage": 45,
           "start_date": "2025-05-01",
           "end_date": "2025-06-30"
         },
         {
           "resource": "Network Implementation Team",
+          "resource_type": "team",
           "allocation_percentage": 70,
           "start_date": "2025-06-01",
           "end_date": "2025-09-30"
         },
         {
           "resource": "Field Operations Team",
+          "resource_type": "team",
           "allocation_percentage": 60,
           "start_date": "2025-06-15",
           "end_date": "2025-09-30"
+        }
+      ]
+    },
+    {
+      "name": "Codename Zero Dawn",
+      "description": "Confidential Project",
+      "start_date": "2025-05-01",
+      "end_date": "2025-10-31",
+      "priority": 20,
+      "allocated_budget": 20000.0,
+      "assigned_resources": [
+        "Infrastructure Team",
+        "Innovation Team",
+        "Mobile App Team"
+      ],
+      "resource_allocations": [
+        {
+          "resource": "Infrastructure Team",
+          "resource_type": "team",
+          "allocation_percentage": 70,
+          "start_date": "2025-05-01",
+          "end_date": "2025-07-31"
+        },
+        {
+          "resource": "Innovation Team",
+          "resource_type": "team",
+          "allocation_percentage": 60,
+          "start_date": "2025-05-01",
+          "end_date": "2025-07-31"
+        },
+        {
+          "resource": "Mobile App Team",
+          "resource_type": "team",
+          "allocation_percentage": 100,
+          "start_date": "2025-05-01",
+          "end_date": "2025-10-31"
+        }
+      ]
+    },
+    {
+      "name": "Codename Zero Ground",
+      "description": "Confidential",
+      "start_date": "2025-05-01",
+      "end_date": "2025-10-31",
+      "priority": 21,
+      "allocated_budget": 20000.0,
+      "assigned_resources": [
+        "Innovation Team",
+        "Frontend Team",
+        "Infrastructure Team"
+      ],
+      "resource_allocations": [
+        {
+          "resource": "Innovation Team",
+          "resource_type": "team",
+          "allocation_percentage": 60,
+          "start_date": "2025-05-01",
+          "end_date": "2025-07-31"
+        },
+        {
+          "resource": "Frontend Team",
+          "resource_type": "team",
+          "allocation_percentage": 100,
+          "start_date": "2025-05-01",
+          "end_date": "2025-10-31"
+        },
+        {
+          "resource": "Infrastructure Team",
+          "resource_type": "team",
+          "allocation_percentage": 70,
+          "start_date": "2025-05-01",
+          "end_date": "2025-06-30"
         }
       ]
     }

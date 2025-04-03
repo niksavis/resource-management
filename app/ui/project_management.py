@@ -281,28 +281,32 @@ def _create_projects_dataframe() -> pd.DataFrame:
     Returns:
         DataFrame with project information
     """
-    # Load currency settings
-    currency, _ = load_currency_settings()
+    # Use a cache key to store the dataframe
+    if "projects_df_cache" not in st.session_state:
+        # Load currency settings
+        currency, _ = load_currency_settings()
 
-    return pd.DataFrame(
-        [
-            {
-                "Name": p["name"],
-                "Start Date": pd.to_datetime(p["start_date"]).strftime("%Y-%m-%d"),
-                "End Date": pd.to_datetime(p["end_date"]).strftime("%Y-%m-%d"),
-                "Priority": p["priority"],
-                "Duration (Days)": (
-                    pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
-                ).days
-                + 1,
-                "Budget": f"{currency} {p.get('allocated_budget', 0):,.2f}",
-                "Assigned People": parse_resources(p["assigned_resources"])[0],
-                "Assigned Teams": parse_resources(p["assigned_resources"])[1],
-                "Assigned Departments": parse_resources(p["assigned_resources"])[2],
-            }
-            for p in st.session_state.data["projects"]
-        ]
-    )
+        st.session_state["projects_df_cache"] = pd.DataFrame(
+            [
+                {
+                    "Name": p["name"],
+                    "Start Date": pd.to_datetime(p["start_date"]).strftime("%Y-%m-%d"),
+                    "End Date": pd.to_datetime(p["end_date"]).strftime("%Y-%m-%d"),
+                    "Priority": p["priority"],
+                    "Duration (Days)": (
+                        pd.to_datetime(p["end_date"]) - pd.to_datetime(p["start_date"])
+                    ).days
+                    + 1,
+                    "Budget": f"{currency} {p.get('allocated_budget', 0):,.2f}",
+                    "Assigned People": parse_resources(p["assigned_resources"])[0],
+                    "Assigned Teams": parse_resources(p["assigned_resources"])[1],
+                    "Assigned Departments": parse_resources(p["assigned_resources"])[2],
+                }
+                for p in st.session_state.data["projects"]
+            ]
+        )
+
+    return st.session_state["projects_df_cache"]
 
 
 def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
@@ -315,6 +319,9 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Filtered DataFrame
     """
+    # Clear the cached dataframe when filters are changed
+    filter_key = "project_filter_changed"
+
     with st.expander("🔍 Search, Sort, and Filter Projects", expanded=False):
         # First row: Search, Date Range, and Sort options
         col1, col2, col3 = st.columns([1, 1, 1])
@@ -378,6 +385,14 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
                 key="filter_departments_projects",
             )
 
+        # Apply filters (any filter change should update the UI)
+        if any_filter_changed():
+            if "projects_df_cache" in st.session_state:
+                del st.session_state["projects_df_cache"]
+            if filter_key not in st.session_state:
+                st.session_state[filter_key] = True
+                st.rerun()
+
         # Apply search filter
         if search_term:
             mask = np.column_stack(
@@ -433,6 +448,31 @@ def _filter_projects_dataframe(projects_df: pd.DataFrame) -> pd.DataFrame:
     projects_df = paginate_dataframe(projects_df, "projects", items_per_page=page_size)
 
     return projects_df
+
+
+def any_filter_changed() -> bool:
+    """Check if any filter has changed since last render."""
+    filter_keys = [
+        "search_projects",
+        "sort_by_projects",
+        "sort_ascending_projects",
+        "filter_people_projects",
+        "filter_teams_projects",
+        "filter_departments_projects",
+    ]
+
+    current_values = {
+        key: st.session_state.get(key) for key in filter_keys if key in st.session_state
+    }
+
+    if "prev_filter_values" not in st.session_state:
+        st.session_state["prev_filter_values"] = current_values
+        return False
+
+    changed = current_values != st.session_state["prev_filter_values"]
+    st.session_state["prev_filter_values"] = current_values
+
+    return changed
 
 
 def add_project_form():
@@ -616,10 +656,19 @@ def add_project_form():
             # Add to session state
             st.session_state.data["projects"].append(new_project)
 
+            # Clear the dataframe cache to force a refresh of the table
+            if "projects_df_cache" in st.session_state:
+                del st.session_state["projects_df_cache"]
+
             # Display a more prominent success message
             st.success(f"✅ Project '{project_name}' added successfully!")
 
-            # Refresh UI immediately - no balloons
+            # Clear any form state to prepare for next add
+            for key in list(st.session_state.keys()):
+                if key.startswith("add_project_"):
+                    del st.session_state[key]
+
+            # Refresh UI immediately
             st.rerun()
 
 
@@ -640,6 +689,7 @@ def edit_project_form():
     )
 
     if project:
+        # Edit form
         project_name = st.text_input(
             "Project Name", value=project["name"], key="edit_project_name"
         )
@@ -649,50 +699,38 @@ def edit_project_form():
 
         col1, col2 = st.columns(2)
         with col1:
-            # Use get() with default value for start_date
-            default_start = datetime.now()
-            try:
-                if "start_date" in project:
-                    default_start = pd.to_datetime(project["start_date"])
-            except (ValueError, TypeError) as e:
-                # Log or inform about the conversion error
-                st.debug(f"Could not convert start date: {e}")
-                pass
-
+            # Format dates for date input
+            start_date = pd.to_datetime(project["start_date"]).date()
             start_date = st.date_input(
-                "Start Date",
-                value=default_start,
-                key="edit_project_start",
+                "Start Date", value=start_date, key="edit_project_start_date"
             )
-        with col2:
-            # Use get() with default value for end_date
-            default_end = datetime.now() + timedelta(days=30)
-            try:
-                if "end_date" in project:
-                    default_end = pd.to_datetime(project["end_date"])
-            except (ValueError, TypeError) as e:
-                # Log or inform about the conversion error
-                st.debug(f"Could not convert end date: {e}")
-                pass
 
+        with col2:
+            end_date = pd.to_datetime(project["end_date"]).date()
             end_date = st.date_input(
-                "End Date",
-                value=default_end,
-                key="edit_project_end",
+                "End Date", value=end_date, key="edit_project_end_date"
             )
+
+        # Use str(project["priority"]) to ensure consistent session state keys
+        priority_key = f"edit_project_priority_{selected_project}"
+
+        # Initialize session state for priority if not already done
+        if priority_key not in st.session_state:
+            st.session_state[priority_key] = int(project["priority"])
 
         priority = st.number_input(
             "Priority (1 is highest)",
             min_value=1,
-            value=project.get("priority", 1),
-            help="Each project must have a unique priority. Lower number = higher priority.",
-            key="edit_project_priority",
+            value=st.session_state[priority_key],
+            key=priority_key,
         )
 
+        # Convert budget to float before passing to number_input to ensure type consistency
+        current_budget = float(project.get("allocated_budget", 0))
         budget = st.number_input(
             "Budget",
             min_value=0.0,
-            value=project.get("allocated_budget", 0.0),
+            value=current_budget,
             step=1000.0,
             format="%.2f",
             key="edit_project_budget",
@@ -890,8 +928,20 @@ def edit_project_form():
                     # Update in session state
                     st.session_state.data["projects"][project_index] = updated_project
 
+                    # Clear the cached dataframe if it exists to force a refresh
+                    if "projects_df_cache" in st.session_state:
+                        del st.session_state["projects_df_cache"]
+
                     # Display a more prominent success message
                     st.success(f"✅ Project '{project_name}' updated successfully!")
+
+                    # Important: Force complete reinitialization of the form
+                    for key in list(st.session_state.keys()):
+                        if (
+                            key.startswith("edit_project_")
+                            and key != "edit_project_select"
+                        ):
+                            del st.session_state[key]
 
                     # Refresh UI immediately
                     st.rerun()
