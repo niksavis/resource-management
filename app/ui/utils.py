@@ -5,7 +5,11 @@ This module provides helper functions for UI modules.
 """
 
 import streamlit as st
+import pandas as pd
+import numpy as np
 from typing import List, Dict, Tuple
+from app.utils.ui_components import paginate_dataframe
+from app.services.config_service import load_currency_settings
 
 
 def check_circular_dependencies() -> Tuple[
@@ -190,11 +194,6 @@ def display_filtered_resource(
         distinct_filters: Whether to use resource-specific filters
         filter_by: Field to filter on (e.g., "department")
     """
-    import streamlit as st
-    import pandas as pd
-    import numpy as np
-    from app.utils.ui_components import paginate_dataframe
-    from app.services.config_service import load_currency_settings
 
     # If no data, show a helpful empty state message
     if not st.session_state.data.get(data_key, []):

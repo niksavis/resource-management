@@ -5,7 +5,6 @@ This module provides validation and conflict resolution functions for importing 
 """
 
 from typing import Dict, Any, List, Tuple
-import pandas as pd
 from app.services.validation_service import (
     validate_imported_data,
     suggest_relationship_fixes,

@@ -13,13 +13,22 @@ from app.services.config_service import (
     load_currency_settings,
     load_display_preferences,
     load_daily_cost_settings,
+    remove_department_color,
 )
-from app.utils.resource_utils import calculate_team_cost, calculate_department_cost
+from app.utils.resource_utils import (
+    calculate_team_cost,
+    calculate_department_cost,
+    update_resource_references,
+    delete_resource,
+    add_resource,
+    update_resource,
+)
 from app.ui.forms.person_form import display_person_form as person_crud_form
 from app.ui.forms.team_form import display_team_form as team_crud_form
 from app.ui.forms.department_form import display_department_form as department_crud_form
 from app.utils.formatting import format_circular_dependency_message
 from app.services.data_service import check_circular_dependencies, parse_resources
+from app.ui.visualizations import display_sunburst_organization
 
 
 def display_manage_resources_tab():
@@ -585,7 +594,6 @@ def _display_resource_visual_map(
     type_filter: List[str],
 ):
     """Display resources as a network using sunburst visualization."""
-    from app.ui.visualizations import display_sunburst_organization
 
     # Prepare filtered data for the visualization
     filtered_data = {
@@ -598,8 +606,6 @@ def _display_resource_visual_map(
 
 
 def _update_person(person, old_name=None):
-    from app.utils.resource_utils import update_resource_references, update_resource
-
     # Check against maximum daily cost limit
     max_daily_cost = load_daily_cost_settings()
     if person.get("daily_cost", 0) > max_daily_cost:
@@ -639,8 +645,6 @@ def _update_person(person, old_name=None):
 
 
 def _add_person(person):
-    from app.utils.resource_utils import add_resource
-
     # Check against maximum daily cost limit
     max_daily_cost = load_daily_cost_settings()
     if person.get("daily_cost", 0) > max_daily_cost:
@@ -676,8 +680,6 @@ def _add_person(person):
 
 
 def _delete_person(name):
-    from app.utils.resource_utils import delete_resource
-
     delete_resource(st.session_state.data["people"], name, "person")
 
     # Clear all caches that might include person data
@@ -697,8 +699,6 @@ def _delete_person(name):
 
 
 def _add_team(team):
-    from app.utils.resource_utils import add_resource
-
     if add_resource(st.session_state.data["teams"], team):
         # Clear all caches that might include team data
         if "teams_df_cache" in st.session_state:
@@ -714,8 +714,6 @@ def _add_team(team):
 
 
 def _update_team(team, old_name=None):
-    from app.utils.resource_utils import update_resource_references, update_resource
-
     # Find the team to update
     team_name = old_name if old_name else team["name"]
     team_index = next(
@@ -798,8 +796,6 @@ def _update_team(team, old_name=None):
 
 
 def _delete_team(name):
-    from app.utils.resource_utils import delete_resource
-
     delete_resource(st.session_state.data["teams"], name, "team")
 
     # Clear all caches that might include team data
@@ -812,8 +808,6 @@ def _delete_team(name):
 
 
 def _add_department(department):
-    from app.utils.resource_utils import add_resource
-
     if add_resource(st.session_state.data["departments"], department):
         # Clear all caches that might include department data
         if "departments_df_cache" in st.session_state:
@@ -829,8 +823,6 @@ def _add_department(department):
 
 
 def _update_department(department, old_name=None):
-    from app.utils.resource_utils import update_resource_references, update_resource
-
     # Find the department to update
     dept_name = old_name if old_name else department["name"]
     dept_index = next(
@@ -901,9 +893,6 @@ def _update_department(department, old_name=None):
 
 
 def _delete_department(name):
-    from app.utils.resource_utils import delete_resource
-    from app.services.config_service import remove_department_color
-
     # Remove color from settings first, then delete the resource
     remove_department_color(name)
     delete_resource(st.session_state.data["departments"], name, "department")

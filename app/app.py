@@ -20,6 +20,7 @@ from app.services.session_service import (
     initialize_filter_state,
 )
 from app.utils.styling import apply_custom_css
+from app.services.search_service import global_search
 
 
 def main():
@@ -93,7 +94,6 @@ def _display_sidebar():
 
 def _display_search_box():
     """Display search box with results."""
-    from app.services.search_service import global_search
 
     search_query = st.text_input("Search resources and projects")
     if search_query:

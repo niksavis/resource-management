@@ -9,7 +9,11 @@ import pandas as pd
 import numpy as np
 import os
 from typing import Dict, List, Any, Optional, Tuple
-from app.services.config_service import load_display_preferences
+from app.services.config_service import (
+    load_display_preferences,
+    ensure_department_colors,
+)
+from app.utils.resource_utils import delete_resource
 
 
 def load_demo_data() -> Dict[str, List[Dict[str, Any]]]:
@@ -63,7 +67,6 @@ def save_json(data: Dict[str, Any], filename: str) -> str:
 
 def check_data_integrity():
     """Check and fix data integrity issues."""
-    from app.utils.resource_utils import delete_resource
 
     # Check for teams with insufficient members
     invalid_teams = [
@@ -650,7 +653,6 @@ def check_circular_dependencies():
     # Get data
     people = st.session_state.data["people"]
     teams = st.session_state.data["teams"]
-    departments = st.session_state.data["departments"]
 
     # Check for people in multiple teams
     team_memberships = {}
@@ -978,23 +980,12 @@ def load_data() -> Dict[str, List[Dict[str, Any]]]:
         if os.path.exists("resource_data.json"):
             with open("resource_data.json", "r") as file:
                 data = json.load(file)
-
-            # Ensure all departments have colors assigned
-            from app.services.config_service import ensure_department_colors
-
             ensure_department_colors(data.get("departments", []))
-
             return data
         else:
-            # File doesn't exist, create with demo data
             data = load_demo_data()
             save_data(data)
-
-            # Ensure all departments have colors assigned
-            from app.services.config_service import ensure_department_colors
-
             ensure_department_colors(data.get("departments", []))
-
             return data
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
@@ -1012,6 +1003,5 @@ def import_data(data: Dict[str, List[Dict[str, Any]]]) -> None:
     st.session_state.data = data
 
     # Ensure all departments have colors assigned
-    from app.services.config_service import ensure_department_colors
 
     ensure_department_colors(data.get("departments", []))

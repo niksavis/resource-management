@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from app.utils.ui_components import display_action_bar
 from app.services.data_service import load_json, save_json
+from app.services.config_service import regenerate_department_colors
 
 
 def display_import_export_data_tab():
@@ -492,7 +493,6 @@ def _merge_imported_data(imported_data: Dict[str, List[Dict[str, Any]]]):
                 existing_names.add(item["name"])
 
     # Update department colors
-    from app.services.config_service import regenerate_department_colors
 
     department_names = [d["name"] for d in st.session_state.data["departments"]]
     regenerate_department_colors(department_names)
