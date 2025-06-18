@@ -26,7 +26,7 @@ A comprehensive resource management application built with Streamlit. This app a
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/resource-management.git
+   git clone https://github.com/niksavis/resource-management.git
    cd resource-management
    ```
 
